@@ -3,14 +3,23 @@
   "version": "0.0.1",
   "description": "A context layer backed by a second brain of markdown files.",
   "type": "module",
-  "main": "dist/mcp.js",
   "bin": {
-    "mnemo": "dist/cli.js"
+    "mnemo": "dist/cli.mjs"
   },
   "scripts": {
     "build": "tsdown",
     "dev": "bun run src/mcp.ts",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "yaml": "^2.8.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.3",
+    "tsdown": "^0.21.0-beta.2",
+    "typescript": "^5.9.3"
   },
   "keywords": [
     "mcp",
@@ -19,14 +28,5 @@
     "context",
     "claude"
   ],
-  "license": "MIT",
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.27.1",
-    "@types/node": "^25.3.3",
-    "yaml": "^2.8.2"
-  },
-  "devDependencies": {
-    "tsdown": "^0.21.0-beta.2",
-    "typescript": "^5.9.3"
-  }
+  "license": "MIT"
 }
