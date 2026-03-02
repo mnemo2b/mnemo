@@ -2,6 +2,7 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { parseFrontmatter } from "../frontmatter";
 
 export function registerLoadTool(server: McpServer, kbRoot: string) {
   server.registerTool(
@@ -32,7 +33,8 @@ export function registerLoadTool(server: McpServer, kbRoot: string) {
       }
 
       try {
-        const text = readFileSync(absolutePath, "utf-8");
+        const raw = readFileSync(absolutePath, "utf-8");
+        const { content } = parseFrontmatter(raw, filePath);
 
         return {
           content: [
@@ -42,7 +44,7 @@ export function registerLoadTool(server: McpServer, kbRoot: string) {
                 uri: `mnemo://${filePath}`,
                 name: filePath,
                 mimeType: "text/markdown",
-                text,
+                text: content,
               },
             },
           ],

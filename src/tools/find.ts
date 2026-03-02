@@ -1,7 +1,8 @@
-import { readdirSync, statSync } from "fs";
+import { readdirSync, readFileSync, statSync } from "fs";
 import { join, resolve, dirname, relative } from "path";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { parseFrontmatter } from "../frontmatter";
 
 export function registerFindTool(server: McpServer, kbRoot: string) {
   server.registerTool(
@@ -64,13 +65,19 @@ export function registerFindTool(server: McpServer, kbRoot: string) {
         ...dirs.map((d) => ({
           path: relative(kbRoot, join(dirToList, d.name)),
           type: "directory" as const,
+          title: null as string | null,
+          description: null as string | null,
           match: false,
         })),
         ...files.map((f) => {
           const fullPath = join(dirToList, f.name);
+          const raw = readFileSync(fullPath, "utf-8");
+          const { title, description } = parseFrontmatter(raw, f.name);
           return {
             path: relative(kbRoot, fullPath),
             type: "file" as const,
+            title,
+            description,
             match: matchedFile === fullPath,
           };
         }),
