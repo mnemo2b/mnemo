@@ -1,9 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { loadConfig } from "./config";
-import { registerFindTool } from "./tools/find";
+import { registerListTool } from "./tools/list";
 import { registerLoadTool } from "./tools/load";
-import { registerTreeTool } from "./tools/tree";
 
 // read the kb root path
 const config = loadConfig();
@@ -15,9 +14,8 @@ const server = new McpServer({
 });
 
 // register tools
-registerFindTool(server, config.root);
+registerListTool(server, config.root);
 registerLoadTool(server, config.root);
-registerTreeTool(server, config.root);
 
 // connect via stdio and start listening
 const transport = new StdioServerTransport();
