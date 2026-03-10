@@ -32,25 +32,28 @@ root: ~/path/to/your/knowledge-base
 
 mnemo exposes two tools over MCP. AI tools call these automatically — you trigger them by asking questions about your knowledge base.
 
-### `mnemo_find`
+### `mnemo_list`
 
-Browse the knowledge base by directory path. Pass a directory to list its contents, a file path to see its siblings, or nothing to list the top-level directories.
+Browse the knowledge base by listing directory contents recursively. Pass a directory to see everything inside it, a file path to see its siblings, or nothing to list the full tree.
 
 ```
 You: "What's in my knowledge base?"
-→ mnemo_find() returns top-level directories
+→ mnemo_list() returns the full tree
 
 You: "Show me what's in the product folder"
-→ mnemo_find("product/") returns its contents
+→ mnemo_list("product/") returns its recursive contents
 ```
 
 ### `mnemo_load`
 
-Load a note's full content. Use this after `mnemo_find` to read a specific note.
+Load notes into context. Pass a file path to load one note, or a directory path to load all notes inside it recursively. The `.md` extension is optional.
 
 ```
 You: "Read the roadmap note"
-→ mnemo_load("product/roadmap.md") returns the full markdown
+→ mnemo_load("product/roadmap") returns the full markdown
+
+You: "Load everything in core"
+→ mnemo_load("core/") returns all notes in that directory
 ```
 
 ## Development
@@ -77,8 +80,8 @@ src/
   mcp.ts              # server entry — creates MCP server, registers tools, connects stdio
   config.ts            # reads kb root from ~/.config/mnemo/config.yml
   tools/
-    find.ts            # mnemo_find — directory browsing
-    load.ts            # mnemo_load — note reading
+    list.ts            # mnemo_list — recursive directory browsing
+    load.ts            # mnemo_load — note reading (files and directories)
 dist/                  # build output (not committed)
 tsdown.config.ts       # bundler config (esm, node platform)
 ```

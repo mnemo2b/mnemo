@@ -31,4 +31,4 @@ No Bun-specific APIs — code must be Node.js-compatible for distribution.
 
 ## Context
 
-This project has a knowledge base accessible via mnemo. Use `mnemo_tree("mnemo")` to see what's available — the directory structure will guide you to specs, decisions, and documentation relevant to whatever you're working on.
+This project has a knowledge base accessible via mnemo. Use `mnemo_list("mnemo")` to see what's available — the directory structure will guide you to specs, decisions, and documentation relevant to whatever you're working on.
