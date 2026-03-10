@@ -1,58 +1,128 @@
-import { readFileSync } from "fs";
-import { resolve } from "path";
+import { readFileSync, readdirSync, statSync, existsSync } from "fs";
+import { join, resolve, relative } from "path";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { parseFrontmatter } from "../frontmatter";
+
+/** recursively collect all markdown file paths in a directory */
+function collectFiles(dir: string): string[] {
+  const entries = readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => !entry.name.startsWith("."));
+
+  const dirs = entries
+    .filter((e) => e.isDirectory())
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const files = entries
+    .filter((e) => e.isFile() && e.name.endsWith(".md"))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const results: string[] = [];
+
+  for (const d of dirs) {
+    results.push(...collectFiles(join(dir, d.name)));
+  }
+
+  for (const f of files) {
+    results.push(join(dir, f.name));
+  }
+
+  return results;
+}
+
+/** load a single file and return it as an mcp resource */
+function loadFile(absolutePath: string, kbRoot: string) {
+  const filePath = relative(kbRoot, absolutePath);
+  const raw = readFileSync(absolutePath, "utf-8");
+  const { content } = parseFrontmatter(raw, filePath);
+
+  return {
+    type: "resource" as const,
+    resource: {
+      uri: `mnemo://${filePath}`,
+      name: filePath,
+      mimeType: "text/markdown",
+      text: content,
+    },
+  };
+}
+
+/** resolve a path, trying .md extension if the exact path doesn't exist */
+function resolvePath(kbRoot: string, inputPath: string): string {
+  const exact = resolve(kbRoot, inputPath);
+  if (existsSync(exact)) return exact;
+
+  // try appending .md for convenience
+  const withExtension = resolve(kbRoot, inputPath + ".md");
+  if (existsSync(withExtension)) return withExtension;
+
+  return exact;
+}
 
 export function registerLoadTool(server: McpServer, kbRoot: string) {
   server.registerTool(
     "mnemo_load",
     {
       description:
-        "Load a note from the knowledge base and return its full content. " +
-        "Use this after mnemo_find to read a specific note.",
+        "Load notes from the knowledge base and return their full content. " +
+        "Pass a file path to load one note, or a directory path to load all notes inside it recursively.",
       annotations: { readOnlyHint: true },
       inputSchema: z.object({
-        path: z.string().describe("file path within the knowledge base"),
+        path: z.string().describe("file or directory path within the knowledge base"),
       }),
     },
-    async ({ path: filePath }) => {
-      const absolutePath = resolve(kbRoot, filePath);
+    async ({ path: inputPath }) => {
+      const absolutePath = resolvePath(kbRoot, inputPath);
 
       // make sure the path stays inside the knowledge base
       if (!absolutePath.startsWith(kbRoot)) {
         return {
           content: [
-            {
-              type: "text" as const,
-              text: "path is outside the knowledge base",
-            },
+            { type: "text" as const, text: "path is outside the knowledge base" },
           ],
           isError: true,
         };
       }
 
       try {
-        const raw = readFileSync(absolutePath, "utf-8");
-        const { content } = parseFrontmatter(raw, filePath);
+        const stat = statSync(absolutePath);
+
+        if (stat.isFile()) {
+          const resource = loadFile(absolutePath, kbRoot);
+          const filePath = relative(kbRoot, absolutePath);
+          return {
+            content: [
+              { type: "text" as const, text: `Loaded: ${filePath}` },
+              resource,
+            ],
+          };
+        }
+
+        // directory — load all markdown files recursively
+        const files = collectFiles(absolutePath);
+
+        if (files.length === 0) {
+          return {
+            content: [
+              { type: "text" as const, text: `no notes found in: ${inputPath}` },
+            ],
+          };
+        }
+
+        const resources = files.map((f) => loadFile(f, kbRoot));
+        const paths = files.map((f) => relative(kbRoot, f));
+        const summary = `Loaded ${files.length} notes:\n${paths.map((p) => `- ${p}`).join("\n")}`;
 
         return {
           content: [
-            {
-              type: "resource" as const,
-              resource: {
-                uri: `mnemo://${filePath}`,
-                name: filePath,
-                mimeType: "text/markdown",
-                text: content,
-              },
-            },
+            { type: "text" as const, text: summary },
+            ...resources,
           ],
         };
       } catch {
         return {
           content: [
-            { type: "text" as const, text: `could not read: ${filePath}` },
+            { type: "text" as const, text: `could not read: ${inputPath}` },
           ],
           isError: true,
         };
