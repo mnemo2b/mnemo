@@ -1,11 +1,12 @@
 import { readFileSync, statSync, existsSync } from "fs";
-import { join, resolve, dirname, basename } from "path";
+import { join, dirname, basename } from "path";
 import { loadConfig } from "./core/config";
 import { parseFrontmatter } from "./core/frontmatter";
 import { resolvePath } from "./core/resolve-path";
 import { scanDirectory } from "./core/scan";
 
-// --- tree structure ---
+// ---------------------------------------------------------------------------
+// tree structure
 
 interface TreeNode {
   name: string;
@@ -50,7 +51,8 @@ function buildTree(dir: string): TreeNode[] {
   return nodes;
 }
 
-// --- output formatting ---
+// ----------------------------------------------------------------
+// output formatting
 
 /** Format a token count for display with tiered rounding */
 function formatTokens(tokens: number): string {
@@ -77,8 +79,8 @@ const DIM = isTTY ? "\x1b[2m" : "";
 const RESET = isTTY ? "\x1b[0m" : "";
 
 interface TreeLine {
-  structure: string;  // prefix + connector (always normal)
-  name: string;       // file or directory name
+  structure: string; // prefix + connector (always normal)
+  name: string; // file or directory name
   tokens: string;
   isDirectory: boolean;
 }
@@ -176,7 +178,11 @@ function collectPaths(nodes: TreeNode[]): string[] {
   return paths;
 }
 
-function printTree(rootLabel: string, nodes: TreeNode[], matchedPath: string | null): void {
+function printTree(
+  rootLabel: string,
+  nodes: TreeNode[],
+  matchedPath: string | null,
+): void {
   const lines = renderTree(nodes, "", matchedPath);
 
   console.log("");
@@ -187,10 +193,13 @@ function printTree(rootLabel: string, nodes: TreeNode[], matchedPath: string | n
   const { dirs, files } = countTree(nodes);
   const totalTokens = nodes.reduce((sum, node) => sum + node.tokens, 0);
   console.log("");
-  console.log(`${dirs} directories, ${files} files ${DIM}(${formatTokens(totalTokens)} tokens)${RESET}`);
+  console.log(
+    `${dirs} directories, ${files} files ${DIM}(${formatTokens(totalTokens)} tokens)${RESET}`,
+  );
 }
 
-// --- main ---
+// ----------------------------------------------------------------
+// main
 
 const args = process.argv.slice(2);
 const command = args[0];
