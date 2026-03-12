@@ -1,7 +1,8 @@
 import { readFileSync, statSync, existsSync } from "fs";
 import { join, resolve, dirname, basename } from "path";
 import { homedir } from "os";
-import { loadConfig, loadBaseConfig, saveConfig, shortenPath } from "./core/config";
+import { loadConfig, saveConfig, shortenPath } from "./core/config";
+import { parseBasePath } from "./core/base";
 import { parseFrontmatter } from "./core/frontmatter";
 import { resolvePath } from "./core/resolve-path";
 import { scanDirectory } from "./core/scan";
@@ -223,7 +224,7 @@ if (command === "base") {
   const subcommand = args[1];
 
   if (subcommand === "list") {
-    const { bases } = loadBaseConfig();
+    const { bases } = loadConfig();
 
     if (Object.keys(bases).length === 0) {
       console.log('no bases configured — run "mnemo base add <name> <path>"');
@@ -262,7 +263,7 @@ if (command === "base") {
       process.exit(1);
     }
 
-    const { bases } = loadBaseConfig();
+    const { bases } = loadConfig();
 
     if (bases[name]) {
       console.error(`base "${name}" already exists`);
@@ -283,7 +284,7 @@ if (command === "base") {
       process.exit(1);
     }
 
-    const { bases } = loadBaseConfig();
+    const { bases } = loadConfig();
 
     if (!bases[name]) {
       console.error(`unknown base: ${name}`);
@@ -308,48 +309,87 @@ if (command !== "list") {
   process.exit(1);
 }
 
-const { root: kbRoot } = loadConfig();
+const { bases } = loadConfig();
 const pathsFlag = args.includes("--paths");
 
 // filter out flags to get the optional path argument
 const positional = args.slice(1).filter((a) => !a.startsWith("--"));
 const inputPath = positional[0];
 
-// resolve what to list
-const targetPath = inputPath ? resolvePath(kbRoot, inputPath) : kbRoot;
-
-if (!existsSync(targetPath)) {
-  console.error(`nothing found at: ${inputPath}`);
+if (Object.keys(bases).length === 0) {
+  console.error('no bases configured — run "mnemo base add <name> <path>"');
   process.exit(1);
 }
 
-const stat = statSync(targetPath);
-
-if (stat.isFile()) {
-  if (pathsFlag) {
-    console.log(targetPath);
-  } else {
-    // show the parent directory tree with this file marked
-    const parentDir = dirname(targetPath);
-    const parentName = basename(parentDir);
-    const nodes = buildTree(parentDir);
-    printTree(parentName, nodes, targetPath);
-  }
-} else {
-  const nodes = buildTree(targetPath);
-
-  if (nodes.length === 0) {
-    console.error(`no notes found in: ${inputPath ?? "root"}`);
-    process.exit(1);
+if (!inputPath) {
+  // no path — show all bases as top-level tree nodes
+  const allNodes: TreeNode[] = [];
+  for (const [name, root] of Object.entries(bases)) {
+    const children = buildTree(root);
+    const tokens = children.reduce((sum, child) => sum + child.tokens, 0);
+    allNodes.push({
+      name,
+      type: "directory",
+      absolutePath: root,
+      tokens,
+      children,
+    });
   }
 
   if (pathsFlag) {
-    const paths = collectPaths(nodes);
+    const paths = collectPaths(allNodes);
     for (const p of paths) {
       console.log(p);
     }
   } else {
-    const label = inputPath ?? basename(kbRoot);
-    printTree(label, nodes, null);
+    printTree("mnemo", allNodes, null);
+  }
+} else {
+  // parse base name from the first path segment
+  const { baseName, relativePath } = parseBasePath(inputPath);
+  const baseRoot = bases[baseName];
+
+  if (!baseRoot) {
+    console.error(`unknown base: ${baseName}`);
+    process.exit(1);
+  }
+
+  const targetPath = relativePath
+    ? resolvePath(baseRoot, relativePath)
+    : baseRoot;
+
+  if (!existsSync(targetPath)) {
+    console.error(`nothing found at: ${inputPath}`);
+    process.exit(1);
+  }
+
+  const stat = statSync(targetPath);
+
+  if (stat.isFile()) {
+    if (pathsFlag) {
+      console.log(targetPath);
+    } else {
+      // show the parent directory tree with this file marked
+      const parentDir = dirname(targetPath);
+      const parentName = basename(parentDir);
+      const nodes = buildTree(parentDir);
+      printTree(parentName, nodes, targetPath);
+    }
+  } else {
+    const nodes = buildTree(targetPath);
+
+    if (nodes.length === 0) {
+      console.error(`no notes found in: ${inputPath}`);
+      process.exit(1);
+    }
+
+    if (pathsFlag) {
+      const paths = collectPaths(nodes);
+      for (const p of paths) {
+        console.log(p);
+      }
+    } else {
+      printTree(inputPath, nodes, null);
+    }
   }
 }

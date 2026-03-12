@@ -19,20 +19,8 @@ export function shortenPath(path: string): string {
   return path.startsWith(home) ? path.replace(home, "~") : path;
 }
 
-/** Read the knowledge base root path from ~/.config/mnemo/config.yml */
-export function loadConfig(): { root: string } {
-  const raw = readFileSync(CONFIG_PATH, "utf-8");
-  const config = parse(raw);
-
-  if (!config?.root || typeof config.root !== "string") {
-    throw new Error(`missing "root" directory in ${CONFIG_PATH}`);
-  }
-
-  return { root: expandPath(config.root) };
-}
-
 /** Read named bases from ~/.config/mnemo/config.yml */
-export function loadBaseConfig(): { bases: Bases } {
+export function loadConfig(): { bases: Bases } {
   if (!existsSync(CONFIG_PATH)) {
     return { bases: {} };
   }
