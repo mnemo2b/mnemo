@@ -5,13 +5,13 @@ description: Personal knowledge base powered by mnemo. Use when the user mention
 
 # mnemo — Knowledge Base Skill
 
-Three commands: `/mnemo list` (browse), `/mnemo load` (read), `/mnemo save` (write). All reading goes through the mnemo MCP server tools (`mnemo_list`, `mnemo_load`). All writing uses native file tools (Write, Edit).
+Three commands: `/mnemo list` (browse), `/mnemo load` (read), `/mnemo save` (write). Reading uses the `mnemo` CLI for path resolution and the Read tool for file content. Writing uses native file tools (Write, Edit).
 
 ## /mnemo list
 
-Call `mnemo_list` with the user's input. Format the results as an indented tree using the `depth` field.
+Run `mnemo list [path]` via Bash. Display the output directly — it's already formatted as an indented tree.
 
-**Directory or no input** — show the recursive tree. Directories end with `/`, files show the filename:
+**Directory or no input:**
 
 ```
 product/
@@ -27,7 +27,7 @@ product/
   questions.md
 ```
 
-**File target** — show the parent directory tree with all siblings. Mark the targeted file (where `match: true`) with `→`:
+**File target** — shows the parent directory tree with the targeted file marked with `→`:
 
 ```
 product/
@@ -47,7 +47,9 @@ product/
 
 ## /mnemo load
 
-Call `mnemo_load` with the path. The `.md` extension is optional — `zed/cheatsheet` works the same as `zed/cheatsheet.md`. Display only the summary confirmation, not the note content (the content is already in context):
+1. Run `mnemo list <path> --paths` via Bash to get one absolute file path per line
+2. Read each file individually using the Read tool (parallel where possible)
+3. Display only the summary confirmation, not the note content (the content is already in context)
 
 Single file:
 
@@ -60,16 +62,18 @@ Directory:
 ```
 Loaded 3 notes:
 - job/ai-engineer/profile.md
-- job/ai-engineer/resources/boomarks.md
+- job/ai-engineer/resources/bookmarks.md
 - job/ai-engineer/resources/field-guide-notes.md
 ```
+
+The `.md` extension is optional — `zed/cheatsheet` works the same as `zed/cheatsheet.md`.
 
 ## /mnemo save
 
 Save is always a multi-step conversation. Nothing writes to disk until the user approves.
 
 1. **Interpret** — summarize what you think the user wants saved. Present for confirmation. No KB research yet.
-2. **Research** — once confirmed, use `mnemo_list` to explore the KB. Understand what exists, where things live, what's related.
+2. **Research** — once confirmed, run `mnemo list` to explore the KB. Understand what exists, where things live, what's related.
 3. **Propose one-by-one** — for each piece of content, present:
    - what you want to write
    - where it would go (new file or update to existing)
@@ -103,7 +107,7 @@ Note content goes here.
 
 When project config (CLAUDE.md, AGENTS.md) mentions a mnemo knowledge base directory:
 
-- **Do:** call `mnemo_list` to see what's available for orientation
+- **Do:** run `mnemo list` to see what's available for orientation
 - **Do:** mention relevant notes you spotted if they seem useful
 - **Don't:** auto-load note content without the user asking or telling you to
-- **Don't:** call mnemo tools if the project has no mention of a knowledge base
+- **Don't:** use mnemo if the project has no mention of a knowledge base
