@@ -213,6 +213,7 @@ if (!command || command === "--help") {
   console.log("  list [path] [--paths]       browse the knowledge base");
   console.log("  base add <name> <path>      register a knowledge base");
   console.log("  base remove <name>          unregister a knowledge base");
+  console.log("  base move <name> <path>     change a base's path");
   console.log("  base list                   show registered bases");
   process.exit(0);
 }
@@ -297,7 +298,39 @@ if (command === "base") {
     process.exit(0);
   }
 
-  console.error("usage: mnemo base <add|remove|list>");
+  if (subcommand === "move") {
+    const name = args[2];
+    const rawPath = args[3];
+
+    if (!name || !rawPath) {
+      console.error("usage: mnemo base move <name> <path>");
+      process.exit(1);
+    }
+
+    const { bases } = loadConfig();
+
+    if (!bases[name]) {
+      console.error(`unknown base: ${name}`);
+      process.exit(1);
+    }
+
+    const expanded = rawPath.startsWith("~")
+      ? rawPath.replace("~", homedir())
+      : rawPath;
+    const absolutePath = resolve(expanded);
+
+    if (!existsSync(absolutePath) || !statSync(absolutePath).isDirectory()) {
+      console.error(`not a directory: ${rawPath}`);
+      process.exit(1);
+    }
+
+    bases[name] = absolutePath;
+    saveConfig(bases);
+    console.log(`moved base "${name}" → ${shortenPath(absolutePath)}`);
+    process.exit(0);
+  }
+
+  console.error("usage: mnemo base <add|remove|move|list>");
   process.exit(1);
 }
 
