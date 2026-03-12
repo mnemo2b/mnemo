@@ -1,18 +1,18 @@
 import { readdirSync, statSync, existsSync } from "fs";
-import { join, resolve, dirname, relative, basename } from "path";
+import { join, resolve, dirname, basename } from "path";
 import { loadConfig } from "./config";
 
-// --- directory traversal ---
+// --- tree structure ---
 
-interface TreeEntry {
+interface TreeNode {
   name: string;
   type: "directory" | "file";
-  depth: number;
   absolutePath: string;
+  children: TreeNode[];
 }
 
-/** recursively collect directories and markdown files */
-function collectTree(dir: string, depth: number): TreeEntry[] {
+/** recursively build a nested tree of directories and markdown files */
+function buildTree(dir: string): TreeNode[] {
   const entries = readdirSync(dir, { withFileTypes: true })
     .filter((e) => !e.name.startsWith("."));
 
@@ -24,20 +24,28 @@ function collectTree(dir: string, depth: number): TreeEntry[] {
     .filter((e) => e.isFile() && e.name.endsWith(".md"))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const results: TreeEntry[] = [];
+  const nodes: TreeNode[] = [];
 
   for (const d of dirs) {
     const fullPath = join(dir, d.name);
-    results.push({ name: d.name, type: "directory", depth, absolutePath: fullPath });
-    results.push(...collectTree(fullPath, depth + 1));
+    nodes.push({
+      name: d.name,
+      type: "directory",
+      absolutePath: fullPath,
+      children: buildTree(fullPath),
+    });
   }
 
   for (const f of files) {
-    const fullPath = join(dir, f.name);
-    results.push({ name: f.name, type: "file", depth, absolutePath: fullPath });
+    nodes.push({
+      name: f.name,
+      type: "file",
+      absolutePath: join(dir, f.name),
+      children: [],
+    });
   }
 
-  return results;
+  return nodes;
 }
 
 /** resolve a path, trying .md extension if the exact path doesn't exist */
@@ -53,20 +61,79 @@ function resolvePath(kbRoot: string, inputPath: string): string {
 
 // --- output formatting ---
 
-function printTree(entries: TreeEntry[]): void {
-  for (const entry of entries) {
-    const indent = "  ".repeat(entry.depth);
-    const label = entry.type === "directory" ? `${entry.name}/` : entry.name;
-    console.log(`${indent}${label}`);
-  }
+/** render tree lines with box-drawing connectors */
+function renderTree(
+  nodes: TreeNode[],
+  prefix: string,
+  matchedPath: string | null,
+): string[] {
+  const lines: string[] = [];
+
+  nodes.forEach((node, index) => {
+    const isLast = index === nodes.length - 1;
+    const connector = isLast ? "└── " : "├── ";
+    const childPrefix = prefix + (isLast ? "    " : "│   ");
+
+    // mark matched file with →
+    const isMatch = matchedPath && node.absolutePath === matchedPath;
+    const label = isMatch ? `→ ${node.name}` : node.name;
+
+    lines.push(`${prefix}${connector}${label}`);
+
+    if (node.children.length > 0) {
+      lines.push(...renderTree(node.children, childPrefix, matchedPath));
+    }
+  });
+
+  return lines;
 }
 
-function printPaths(entries: TreeEntry[]): void {
-  for (const entry of entries) {
-    if (entry.type === "file") {
-      console.log(entry.absolutePath);
+/** count directories and files in a tree */
+function countTree(nodes: TreeNode[]): { dirs: number; files: number } {
+  let dirs = 0;
+  let files = 0;
+
+  for (const node of nodes) {
+    if (node.type === "directory") {
+      dirs++;
+      const sub = countTree(node.children);
+      dirs += sub.dirs;
+      files += sub.files;
+    } else {
+      files++;
     }
   }
+
+  return { dirs, files };
+}
+
+/** collect all absolute file paths from a tree */
+function collectPaths(nodes: TreeNode[]): string[] {
+  const paths: string[] = [];
+
+  for (const node of nodes) {
+    if (node.type === "file") {
+      paths.push(node.absolutePath);
+    }
+    if (node.children.length > 0) {
+      paths.push(...collectPaths(node.children));
+    }
+  }
+
+  return paths;
+}
+
+function printTree(rootLabel: string, nodes: TreeNode[], matchedPath: string | null): void {
+  console.log(rootLabel);
+  const lines = renderTree(nodes, "", matchedPath);
+  for (const line of lines) {
+    console.log(line);
+  }
+
+  // summary line
+  const { dirs, files } = countTree(nodes);
+  console.log("");
+  console.log(`${dirs} directories, ${files} files`);
 }
 
 // --- main ---
@@ -102,38 +169,30 @@ if (!existsSync(targetPath)) {
 const stat = statSync(targetPath);
 
 if (stat.isFile()) {
-  // single file — just output its absolute path
   if (pathsFlag) {
     console.log(targetPath);
   } else {
     // show the parent directory tree with this file marked
     const parentDir = dirname(targetPath);
-    const entries = collectTree(parentDir, 0);
-    const targetName = basename(targetPath);
-
-    for (const entry of entries) {
-      const indent = "  ".repeat(entry.depth);
-      if (entry.type === "directory") {
-        console.log(`${indent}${entry.name}/`);
-      } else if (entry.name === targetName && entry.absolutePath === targetPath) {
-        console.log(`${indent}→ ${entry.name}`);
-      } else {
-        console.log(`${indent}${entry.name}`);
-      }
-    }
+    const parentName = basename(parentDir);
+    const nodes = buildTree(parentDir);
+    printTree(parentName, nodes, targetPath);
   }
 } else {
-  // directory — show tree or paths
-  const entries = collectTree(targetPath, 0);
+  const nodes = buildTree(targetPath);
 
-  if (entries.length === 0) {
+  if (nodes.length === 0) {
     console.error(`no notes found in: ${inputPath ?? "root"}`);
     process.exit(1);
   }
 
   if (pathsFlag) {
-    printPaths(entries);
+    const paths = collectPaths(nodes);
+    for (const p of paths) {
+      console.log(p);
+    }
   } else {
-    printTree(entries);
+    const label = inputPath ?? basename(kbRoot);
+    printTree(label, nodes, null);
   }
 }
