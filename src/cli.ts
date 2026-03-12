@@ -231,9 +231,8 @@ if (command === "base") {
       process.exit(0);
     }
 
-    const maxNameWidth = Math.max(...Object.keys(bases).map((n) => n.length));
     for (const [name, path] of Object.entries(bases)) {
-      console.log(`${name.padEnd(maxNameWidth + 3)}${shortenPath(path)}`);
+      console.log(`${name}: ${DIM}${shortenPath(path)}${RESET}`);
     }
     process.exit(0);
   }
@@ -350,7 +349,11 @@ if (!inputPath) {
   const baseRoot = bases[baseName];
 
   if (!baseRoot) {
-    console.error(`unknown base: ${baseName}`);
+    console.error(`Unknown base: "${baseName}"\n`);
+    console.error("Bases:");
+    for (const [name, path] of Object.entries(bases)) {
+      console.error(`  ${name}: ${DIM}${shortenPath(path)}${RESET}`);
+    }
     process.exit(1);
   }
 
