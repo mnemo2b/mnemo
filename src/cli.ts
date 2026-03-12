@@ -1,6 +1,7 @@
-import { readdirSync, statSync, existsSync } from "fs";
+import { readFileSync, readdirSync, statSync, existsSync } from "fs";
 import { join, resolve, dirname, basename } from "path";
 import { loadConfig } from "./config";
+import { parseFrontmatter } from "./frontmatter";
 
 // --- tree structure ---
 
@@ -8,6 +9,7 @@ interface TreeNode {
   name: string;
   type: "directory" | "file";
   absolutePath: string;
+  tokens: number;
   children: TreeNode[];
 }
 
@@ -28,19 +30,27 @@ function buildTree(dir: string): TreeNode[] {
 
   for (const d of dirs) {
     const fullPath = join(dir, d.name);
+    const children = buildTree(fullPath);
+    const tokens = children.reduce((sum, child) => sum + child.tokens, 0);
     nodes.push({
       name: d.name,
       type: "directory",
       absolutePath: fullPath,
-      children: buildTree(fullPath),
+      tokens,
+      children,
     });
   }
 
   for (const f of files) {
+    const fullPath = join(dir, f.name);
+    const raw = readFileSync(fullPath, "utf-8");
+    const { content } = parseFrontmatter(raw, f.name);
+    const tokens = Math.round(content.length / 4);
     nodes.push({
       name: f.name,
       type: "file",
-      absolutePath: join(dir, f.name),
+      absolutePath: fullPath,
+      tokens,
       children: [],
     });
   }
@@ -61,13 +71,42 @@ function resolvePath(kbRoot: string, inputPath: string): string {
 
 // --- output formatting ---
 
-/** render tree lines with box-drawing connectors */
+/** format a token count for display with tiered rounding */
+function formatTokens(tokens: number): string {
+  // 10k+ → nearest 1k: "~12k", "~36k"
+  if (tokens >= 10000) {
+    return `~${Math.round(tokens / 1000)}k`;
+  }
+  // 1k–10k → one decimal: "~2.4k", "~6.4k"
+  if (tokens >= 1000) {
+    const k = tokens / 1000;
+    const formatted = k % 1 === 0 ? k.toFixed(0) : k.toFixed(1);
+    return `~${formatted}k`;
+  }
+  // under 1k → nearest 100: "~100", "~600"
+  const rounded = Math.max(100, Math.round(tokens / 100) * 100);
+  return `~${rounded}`;
+}
+
+// ansi codes — only used when stdout is a terminal
+const isTTY = process.stdout.isTTY ?? false;
+const DIM = isTTY ? "\x1b[2m" : "";
+const RESET = isTTY ? "\x1b[0m" : "";
+
+interface TreeLine {
+  structure: string;  // prefix + connector (always normal)
+  name: string;       // file or directory name
+  tokens: string;
+  isDirectory: boolean;
+}
+
+/** render tree lines with box-drawing connectors and token counts */
 function renderTree(
   nodes: TreeNode[],
   prefix: string,
   matchedPath: string | null,
-): string[] {
-  const lines: string[] = [];
+): TreeLine[] {
+  const lines: TreeLine[] = [];
 
   nodes.forEach((node, index) => {
     const isLast = index === nodes.length - 1;
@@ -76,9 +115,15 @@ function renderTree(
 
     // mark matched file with →
     const isMatch = matchedPath && node.absolutePath === matchedPath;
-    const label = isMatch ? `→ ${node.name}` : node.name;
+    const name = isMatch ? `→ ${node.name}` : node.name;
+    const tokens = node.tokens > 0 ? formatTokens(node.tokens) : "";
 
-    lines.push(`${prefix}${connector}${label}`);
+    lines.push({
+      structure: `${prefix}${connector}`,
+      name,
+      tokens,
+      isDirectory: node.type === "directory",
+    });
 
     if (node.children.length > 0) {
       lines.push(...renderTree(node.children, childPrefix, matchedPath));
@@ -86,6 +131,31 @@ function renderTree(
   });
 
   return lines;
+}
+
+/** print lines with dimming for files and token counts, right-aligned */
+function printLines(lines: TreeLine[]): void {
+  // measure by the full plain-text width (no ansi) for alignment
+  const maxWidth = lines.reduce(
+    (max, line) => Math.max(max, line.structure.length + line.name.length),
+    0,
+  );
+
+  for (const line of lines) {
+    const plainWidth = line.structure.length + line.name.length;
+    const padding = line.tokens ? " ".repeat(maxWidth - plainWidth + 3) : "";
+
+    // structure (connectors) always normal brightness
+    // directories: name + tokens normal
+    // files: name + tokens dim
+    if (line.isDirectory) {
+      const tokenPart = line.tokens ? `${padding}${line.tokens}` : "";
+      console.log(`${line.structure}${line.name}${tokenPart}`);
+    } else {
+      const tokenPart = line.tokens ? `${padding}${line.tokens}` : "";
+      console.log(`${line.structure}${DIM}${line.name}${tokenPart}${RESET}`);
+    }
+  }
 }
 
 /** count directories and files in a tree */
@@ -124,16 +194,17 @@ function collectPaths(nodes: TreeNode[]): string[] {
 }
 
 function printTree(rootLabel: string, nodes: TreeNode[], matchedPath: string | null): void {
-  console.log(rootLabel);
   const lines = renderTree(nodes, "", matchedPath);
-  for (const line of lines) {
-    console.log(line);
-  }
 
-  // summary line
-  const { dirs, files } = countTree(nodes);
   console.log("");
-  console.log(`${dirs} directories, ${files} files`);
+  console.log(rootLabel);
+  printLines(lines);
+
+  // summary line with total tokens
+  const { dirs, files } = countTree(nodes);
+  const totalTokens = nodes.reduce((sum, node) => sum + node.tokens, 0);
+  console.log("");
+  console.log(`${dirs} directories, ${files} files ${DIM}(${formatTokens(totalTokens)} tokens)${RESET}`);
 }
 
 // --- main ---
