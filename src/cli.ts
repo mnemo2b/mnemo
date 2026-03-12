@@ -231,7 +231,8 @@ if (command === "base") {
       process.exit(0);
     }
 
-    for (const [name, path] of Object.entries(bases)) {
+    const sorted = Object.entries(bases).sort(([a], [b]) => a.localeCompare(b));
+    for (const [name, path] of sorted) {
       console.log(`${name}: ${DIM}${shortenPath(path)}${RESET}`);
     }
     process.exit(0);
