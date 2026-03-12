@@ -8,7 +8,7 @@ The current paradigm embeds AI inside apps, but each one rebuilds understanding 
 
 ## Where We Are
 
-Slice 1 (browse + read) is complete. The MCP server can list directories, show the full tree, and read notes. Next: frontmatter parsing, then SQLite + FTS5 search, then a Claude Code skill, then a CLI for installation and maintenance.
+v0.3 (multi-base support) is complete. The MCP server and CLI can browse and load notes across multiple named bases. The Claude Code skill provides `/mnemo list`, `/mnemo load`, and `/mnemo save` commands. Next: v0.4 (sets + .mnemo project config).
 
 ## Principles
 
@@ -31,4 +31,4 @@ No Bun-specific APIs — code must be Node.js-compatible for distribution.
 
 ## Context
 
-This project has a knowledge base accessible via mnemo. Use `mnemo_list("mnemo")` to see what's available — the directory structure will guide you to specs, decisions, and documentation relevant to whatever you're working on.
+This project has a knowledge base accessible via mnemo. Use `mnemo list` to see what's available — the directory structure will guide you to specs, decisions, and documentation relevant to whatever you're working on.

@@ -53,7 +53,7 @@ function buildTree(dir: string): TreeNode[] {
   return nodes;
 }
 
-// ----------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // output formatting
 
 /** Format a token count for display with tiered rounding */
@@ -195,7 +195,7 @@ function printTree(
   );
 }
 
-// ----------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // command handler
 
 export function runList(args: string[]): void {

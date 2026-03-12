@@ -7,6 +7,8 @@ import { DIM, RESET } from "./format";
 export function runBase(args: string[]): void {
   const subcommand = args[0];
 
+  // ---------------------------------------------------------------------------
+
   if (subcommand === "list") {
     const { bases } = loadConfig();
 
@@ -22,6 +24,8 @@ export function runBase(args: string[]): void {
     return;
   }
 
+  // ---------------------------------------------------------------------------
+
   if (subcommand === "add") {
     const name = args[1];
     const rawPath = args[2];
@@ -32,7 +36,9 @@ export function runBase(args: string[]): void {
     }
 
     if (!/^[a-z0-9-]+$/.test(name)) {
-      console.error("base name must be lowercase letters, numbers, and hyphens");
+      console.error(
+        "base name must be lowercase letters, numbers, and hyphens",
+      );
       process.exit(1);
     }
 
@@ -60,6 +66,8 @@ export function runBase(args: string[]): void {
     return;
   }
 
+  // ---------------------------------------------------------------------------
+
   if (subcommand === "remove") {
     const name = args[1];
 
@@ -80,6 +88,8 @@ export function runBase(args: string[]): void {
     console.log(`removed base "${name}"`);
     return;
   }
+
+  // ---------------------------------------------------------------------------
 
   if (subcommand === "move") {
     const name = args[1];
@@ -113,6 +123,8 @@ export function runBase(args: string[]): void {
     return;
   }
 
+  // ---------------------------------------------------------------------------
+
   if (subcommand === "rename") {
     const oldName = args[1];
     const newName = args[2];
@@ -123,7 +135,9 @@ export function runBase(args: string[]): void {
     }
 
     if (!/^[a-z0-9-]+$/.test(newName)) {
-      console.error("base name must be lowercase letters, numbers, and hyphens");
+      console.error(
+        "base name must be lowercase letters, numbers, and hyphens",
+      );
       process.exit(1);
     }
 
@@ -145,6 +159,8 @@ export function runBase(args: string[]): void {
     console.log(`renamed base "${oldName}" → "${newName}"`);
     return;
   }
+
+  // ---------------------------------------------------------------------------
 
   console.error("usage: mnemo base <add|remove|move|rename|list>");
   process.exit(1);
