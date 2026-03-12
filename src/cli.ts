@@ -1,6 +1,7 @@
 import { readFileSync, statSync, existsSync } from "fs";
-import { join, dirname, basename } from "path";
-import { loadConfig } from "./core/config";
+import { join, resolve, dirname, basename } from "path";
+import { homedir } from "os";
+import { loadConfig, loadBaseConfig, saveConfig, shortenPath } from "./core/config";
 import { parseFrontmatter } from "./core/frontmatter";
 import { resolvePath } from "./core/resolve-path";
 import { scanDirectory } from "./core/scan";
@@ -205,9 +206,102 @@ const args = process.argv.slice(2);
 const command = args[0];
 
 if (!command || command === "--help") {
-  console.log("usage: mnemo list [path] [--paths]");
+  console.log("usage: mnemo <list|base> [options]");
+  console.log("");
+  console.log("commands:");
+  console.log("  list [path] [--paths]       browse the knowledge base");
+  console.log("  base add <name> <path>      register a knowledge base");
+  console.log("  base remove <name>          unregister a knowledge base");
+  console.log("  base list                   show registered bases");
   process.exit(0);
 }
+
+// ----------------------------------------------------------------
+// mnemo base <add|remove|list>
+
+if (command === "base") {
+  const subcommand = args[1];
+
+  if (subcommand === "list") {
+    const { bases } = loadBaseConfig();
+
+    if (Object.keys(bases).length === 0) {
+      console.log('no bases configured — run "mnemo base add <name> <path>"');
+      process.exit(0);
+    }
+
+    const maxNameWidth = Math.max(...Object.keys(bases).map((n) => n.length));
+    for (const [name, path] of Object.entries(bases)) {
+      console.log(`${name.padEnd(maxNameWidth + 3)}${shortenPath(path)}`);
+    }
+    process.exit(0);
+  }
+
+  if (subcommand === "add") {
+    const name = args[2];
+    const rawPath = args[3];
+
+    if (!name || !rawPath) {
+      console.error("usage: mnemo base add <name> <path>");
+      process.exit(1);
+    }
+
+    if (!/^[a-z0-9-]+$/.test(name)) {
+      console.error("base name must be lowercase letters, numbers, and hyphens");
+      process.exit(1);
+    }
+
+    // expand ~ and resolve to absolute path
+    const expanded = rawPath.startsWith("~")
+      ? rawPath.replace("~", homedir())
+      : rawPath;
+    const absolutePath = resolve(expanded);
+
+    if (!existsSync(absolutePath) || !statSync(absolutePath).isDirectory()) {
+      console.error(`not a directory: ${rawPath}`);
+      process.exit(1);
+    }
+
+    const { bases } = loadBaseConfig();
+
+    if (bases[name]) {
+      console.error(`base "${name}" already exists`);
+      process.exit(1);
+    }
+
+    bases[name] = absolutePath;
+    saveConfig(bases);
+    console.log(`added base "${name}" → ${shortenPath(absolutePath)}`);
+    process.exit(0);
+  }
+
+  if (subcommand === "remove") {
+    const name = args[2];
+
+    if (!name) {
+      console.error("usage: mnemo base remove <name>");
+      process.exit(1);
+    }
+
+    const { bases } = loadBaseConfig();
+
+    if (!bases[name]) {
+      console.error(`unknown base: ${name}`);
+      process.exit(1);
+    }
+
+    delete bases[name];
+    saveConfig(bases);
+    console.log(`removed base "${name}"`);
+    process.exit(0);
+  }
+
+  console.error("usage: mnemo base <add|remove|list>");
+  process.exit(1);
+}
+
+// ----------------------------------------------------------------
+// mnemo list
 
 if (command !== "list") {
   console.error(`unknown command: ${command}`);
