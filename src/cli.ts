@@ -1,7 +1,9 @@
-import { readFileSync, readdirSync, statSync, existsSync } from "fs";
+import { readFileSync, statSync, existsSync } from "fs";
 import { join, resolve, dirname, basename } from "path";
-import { loadConfig } from "./config";
-import { parseFrontmatter } from "./frontmatter";
+import { loadConfig } from "./core/config";
+import { parseFrontmatter } from "./core/frontmatter";
+import { resolvePath } from "./core/resolve-path";
+import { scanDirectory } from "./core/scan";
 
 // --- tree structure ---
 
@@ -13,19 +15,9 @@ interface TreeNode {
   children: TreeNode[];
 }
 
-/** recursively build a nested tree of directories and markdown files */
+/** Recursively build a nested tree of directories and markdown files */
 function buildTree(dir: string): TreeNode[] {
-  const entries = readdirSync(dir, { withFileTypes: true })
-    .filter((e) => !e.name.startsWith("."));
-
-  const dirs = entries
-    .filter((e) => e.isDirectory())
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  const files = entries
-    .filter((e) => e.isFile() && e.name.endsWith(".md"))
-    .sort((a, b) => a.name.localeCompare(b.name));
-
+  const { dirs, files } = scanDirectory(dir);
   const nodes: TreeNode[] = [];
 
   for (const d of dirs) {
@@ -58,20 +50,9 @@ function buildTree(dir: string): TreeNode[] {
   return nodes;
 }
 
-/** resolve a path, trying .md extension if the exact path doesn't exist */
-function resolvePath(kbRoot: string, inputPath: string): string {
-  const exact = resolve(kbRoot, inputPath);
-  if (existsSync(exact)) return exact;
-
-  const withExtension = resolve(kbRoot, inputPath + ".md");
-  if (existsSync(withExtension)) return withExtension;
-
-  return exact;
-}
-
 // --- output formatting ---
 
-/** format a token count for display with tiered rounding */
+/** Format a token count for display with tiered rounding */
 function formatTokens(tokens: number): string {
   // 10k+ → nearest 1k: "~12k", "~36k"
   if (tokens >= 10000) {
@@ -85,6 +66,8 @@ function formatTokens(tokens: number): string {
   }
   // under 1k → nearest 100: "~100", "~600"
   const rounded = Math.max(100, Math.round(tokens / 100) * 100);
+  // edge case: 950–999 rounds to 1000
+  if (rounded >= 1000) return "~1k";
   return `~${rounded}`;
 }
 
@@ -100,7 +83,7 @@ interface TreeLine {
   isDirectory: boolean;
 }
 
-/** render tree lines with box-drawing connectors and token counts */
+/** Render tree lines with box-drawing connectors and token counts */
 function renderTree(
   nodes: TreeNode[],
   prefix: string,
@@ -133,7 +116,7 @@ function renderTree(
   return lines;
 }
 
-/** print lines with dimming for files and token counts, right-aligned */
+/** Print lines with dimming for files and token counts, right-aligned */
 function printLines(lines: TreeLine[]): void {
   // measure by the full plain-text width (no ansi) for alignment
   const maxWidth = lines.reduce(
@@ -158,7 +141,7 @@ function printLines(lines: TreeLine[]): void {
   }
 }
 
-/** count directories and files in a tree */
+/** Count directories and files in a tree */
 function countTree(nodes: TreeNode[]): { dirs: number; files: number } {
   let dirs = 0;
   let files = 0;
@@ -177,7 +160,7 @@ function countTree(nodes: TreeNode[]): { dirs: number; files: number } {
   return { dirs, files };
 }
 
-/** collect all absolute file paths from a tree */
+/** Collect all absolute file paths from a tree */
 function collectPaths(nodes: TreeNode[]): string[] {
   const paths: string[] = [];
 

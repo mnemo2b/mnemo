@@ -7,7 +7,7 @@ interface Frontmatter {
   content: string;
 }
 
-/** extract title and description from yaml frontmatter in a markdown file */
+/** Extract title and description from YAML frontmatter in a markdown file */
 export function parseFrontmatter(raw: string, filePath?: string): Frontmatter {
   // frontmatter must start at the very beginning of the file
   if (!raw.startsWith("---\n") && !raw.startsWith("---\r\n")) {
@@ -52,7 +52,7 @@ export function parseFrontmatter(raw: string, filePath?: string): Frontmatter {
   }
 }
 
-/** convert a filename like "my-cool-note.md" to "My Cool Note" */
+/** Convert a filename like "my-cool-note.md" to "My Cool Note" */
 function titleFromFilename(filePath?: string): string | null {
   if (!filePath) return null;
 

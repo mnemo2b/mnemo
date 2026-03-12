@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { loadConfig } from "./config";
+import { loadConfig } from "./core/config";
 import { registerListTool } from "./tools/list";
 import { registerLoadTool } from "./tools/load";
 

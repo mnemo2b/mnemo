@@ -1,22 +1,14 @@
-import { readFileSync, readdirSync, statSync, existsSync } from "fs";
-import { join, resolve, relative } from "path";
+import { readFileSync, statSync } from "fs";
+import { join, relative } from "path";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { parseFrontmatter } from "../frontmatter";
+import { parseFrontmatter } from "../core/frontmatter";
+import { resolvePath } from "../core/resolve-path";
+import { scanDirectory } from "../core/scan";
 
-/** recursively collect all markdown file paths in a directory */
+/** Recursively collect all markdown file paths in a directory */
 function collectFiles(dir: string): string[] {
-  const entries = readdirSync(dir, { withFileTypes: true })
-    .filter((entry) => !entry.name.startsWith("."));
-
-  const dirs = entries
-    .filter((e) => e.isDirectory())
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  const files = entries
-    .filter((e) => e.isFile() && e.name.endsWith(".md"))
-    .sort((a, b) => a.name.localeCompare(b.name));
-
+  const { dirs, files } = scanDirectory(dir);
   const results: string[] = [];
 
   for (const d of dirs) {
@@ -30,7 +22,7 @@ function collectFiles(dir: string): string[] {
   return results;
 }
 
-/** load a single file and return it as an mcp resource */
+/** Load a single file and return it as an MCP resource */
 function loadFile(absolutePath: string, kbRoot: string) {
   const filePath = relative(kbRoot, absolutePath);
   const raw = readFileSync(absolutePath, "utf-8");
@@ -45,18 +37,6 @@ function loadFile(absolutePath: string, kbRoot: string) {
       text: content,
     },
   };
-}
-
-/** resolve a path, trying .md extension if the exact path doesn't exist */
-function resolvePath(kbRoot: string, inputPath: string): string {
-  const exact = resolve(kbRoot, inputPath);
-  if (existsSync(exact)) return exact;
-
-  // try appending .md for convenience
-  const withExtension = resolve(kbRoot, inputPath + ".md");
-  if (existsSync(withExtension)) return withExtension;
-
-  return exact;
 }
 
 export function registerLoadTool(server: McpServer, kbRoot: string) {

@@ -1,7 +1,8 @@
-import { readdirSync, statSync } from "fs";
+import { statSync } from "fs";
 import { join, resolve, dirname, relative } from "path";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { scanDirectory } from "../core/scan";
 
 interface ListEntry {
   path: string;
@@ -10,24 +11,14 @@ interface ListEntry {
   match: boolean;
 }
 
-/** recursively collect all directories and markdown files from a starting directory */
+/** Recursively collect all directories and markdown files from a starting directory */
 function collectEntries(
   dir: string,
   kbRoot: string,
   depth: number,
   matchedFile: string | null,
 ): ListEntry[] {
-  const entries = readdirSync(dir, { withFileTypes: true })
-    .filter((entry) => !entry.name.startsWith("."));
-
-  const dirs = entries
-    .filter((e) => e.isDirectory())
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  const files = entries
-    .filter((e) => e.isFile() && e.name.endsWith(".md"))
-    .sort((a, b) => a.name.localeCompare(b.name));
-
+  const { dirs, files } = scanDirectory(dir);
   const results: ListEntry[] = [];
 
   // directories first — add the directory, then recurse into it
