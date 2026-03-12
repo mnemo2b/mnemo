@@ -214,6 +214,7 @@ if (!command || command === "--help") {
   console.log("  base add <name> <path>      register a knowledge base");
   console.log("  base remove <name>          unregister a knowledge base");
   console.log("  base move <name> <path>     change a base's path");
+  console.log("  base rename <old> <new>     rename a base");
   console.log("  base list                   show registered bases");
   process.exit(0);
 }
@@ -330,7 +331,40 @@ if (command === "base") {
     process.exit(0);
   }
 
-  console.error("usage: mnemo base <add|remove|move|list>");
+  if (subcommand === "rename") {
+    const oldName = args[2];
+    const newName = args[3];
+
+    if (!oldName || !newName) {
+      console.error("usage: mnemo base rename <old-name> <new-name>");
+      process.exit(1);
+    }
+
+    if (!/^[a-z0-9-]+$/.test(newName)) {
+      console.error("base name must be lowercase letters, numbers, and hyphens");
+      process.exit(1);
+    }
+
+    const { bases } = loadConfig();
+
+    if (!bases[oldName]) {
+      console.error(`unknown base: ${oldName}`);
+      process.exit(1);
+    }
+
+    if (bases[newName]) {
+      console.error(`base "${newName}" already exists`);
+      process.exit(1);
+    }
+
+    bases[newName] = bases[oldName];
+    delete bases[oldName];
+    saveConfig(bases);
+    console.log(`renamed base "${oldName}" → "${newName}"`);
+    process.exit(0);
+  }
+
+  console.error("usage: mnemo base <add|remove|move|rename|list>");
   process.exit(1);
 }
 
