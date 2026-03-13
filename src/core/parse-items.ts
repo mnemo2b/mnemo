@@ -1,0 +1,17 @@
+export type LoadItem =
+  | { type: "set"; name: string }
+  | { type: "path"; path: string };
+
+/** Parse comma-separated input into structured load items */
+export function parseLoadItems(input: string): LoadItem[] {
+  return input
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+    .map((s) => {
+      if (s.startsWith(":")) {
+        return { type: "set", name: s.slice(1) };
+      }
+      return { type: "path", path: s };
+    });
+}
