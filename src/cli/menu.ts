@@ -60,9 +60,11 @@ export function runMenu(): void {
   const names = Object.keys(allSets).sort();
 
   if (names.length === 0) {
-    console.log("no sets available");
     return;
   }
+
+  console.log("[mnemo] Present these knowledge sets to the user and ask which to load. Do NOT load anything automatically. If the user replies with numbers, run `mnemo load :<set-name>` via Bash (mnemo is a globally installed CLI — do not use npx), then Read each returned file path. If they ignore the menu, proceed with their question.");
+  console.log("");
 
   for (let i = 0; i < names.length; i++) {
     const name = names[i];
