@@ -1,6 +1,6 @@
 import { loadConfig, loadProjectConfig, mergeSets, saveConfig } from "../core/config";
 import { resolveSet } from "../core/sets";
-import { isValidName } from "../core/validate-name";
+import { isValidSetName } from "../core/validate-name";
 import { DIM, RESET } from "./format";
 
 export function runSet(args: string[]): void {
@@ -71,8 +71,8 @@ export function runSet(args: string[]): void {
       process.exit(1);
     }
 
-    if (!isValidName(name)) {
-      console.error("set name must be lowercase letters, numbers, and hyphens");
+    if (!isValidSetName(name)) {
+      console.error("set name must be lowercase letters, numbers, hyphens, and slashes");
       process.exit(1);
     }
 
