@@ -159,22 +159,6 @@ function countTree(nodes: TreeNode[]): { dirs: number; files: number } {
   return { dirs, files };
 }
 
-/** Collect all absolute file paths from a tree */
-function collectPaths(nodes: TreeNode[]): string[] {
-  const paths: string[] = [];
-
-  for (const node of nodes) {
-    if (node.type === "file") {
-      paths.push(node.absolutePath);
-    }
-    if (node.children.length > 0) {
-      paths.push(...collectPaths(node.children));
-    }
-  }
-
-  return paths;
-}
-
 function printTree(
   rootLabel: string,
   nodes: TreeNode[],
@@ -200,11 +184,7 @@ function printTree(
 
 export function runList(args: string[]): void {
   const { bases } = loadConfig();
-  const pathsFlag = args.includes("--paths");
-
-  // filter out flags to get the optional path argument
-  const positional = args.filter((a) => !a.startsWith("--"));
-  const inputPath = positional[0];
+  const inputPath = args[0];
 
   if (Object.keys(bases).length === 0) {
     console.error('no bases configured — run "mnemo base add <name> <path>"');
@@ -226,14 +206,7 @@ export function runList(args: string[]): void {
       });
     }
 
-    if (pathsFlag) {
-      const paths = collectPaths(allNodes);
-      for (const p of paths) {
-        console.log(p);
-      }
-    } else {
-      printTree("mnemo", allNodes, null);
-    }
+    printTree("mnemo", allNodes, null);
     return;
   }
 
@@ -262,15 +235,11 @@ export function runList(args: string[]): void {
   const stat = statSync(targetPath);
 
   if (stat.isFile()) {
-    if (pathsFlag) {
-      console.log(targetPath);
-    } else {
-      // show the parent directory tree with this file marked
-      const parentDir = dirname(targetPath);
-      const parentName = basename(parentDir);
-      const nodes = buildTree(parentDir);
-      printTree(parentName, nodes, targetPath);
-    }
+    // show the parent directory tree with this file marked
+    const parentDir = dirname(targetPath);
+    const parentName = basename(parentDir);
+    const nodes = buildTree(parentDir);
+    printTree(parentName, nodes, targetPath);
   } else {
     const nodes = buildTree(targetPath);
 
@@ -279,13 +248,6 @@ export function runList(args: string[]): void {
       process.exit(1);
     }
 
-    if (pathsFlag) {
-      const paths = collectPaths(nodes);
-      for (const p of paths) {
-        console.log(p);
-      }
-    } else {
-      printTree(inputPath, nodes, null);
-    }
+    printTree(inputPath, nodes, null);
   }
 }
