@@ -31,4 +31,4 @@ No Bun-specific APIs — code must be Node.js-compatible for distribution.
 
 ## Context
 
-This project uses mnemo. Load the `.mnemo` config on session start.
+This project uses mnemo.

@@ -1,2 +1,3 @@
-load:
-  - base/mnemo/tool/product/roadmap/v0
+sets:
+  roadmap:
+    - base/mnemo/tool/product/roadmap/v0
