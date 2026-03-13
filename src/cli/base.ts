@@ -61,7 +61,7 @@ export function runBase(args: string[]): void {
     }
 
     bases[name] = absolutePath;
-    saveConfig(bases);
+    saveConfig({ bases });
     console.log(`added base "${name}" → ${shortenPath(absolutePath)}`);
     return;
   }
@@ -84,7 +84,7 @@ export function runBase(args: string[]): void {
     }
 
     delete bases[name];
-    saveConfig(bases);
+    saveConfig({ bases });
     console.log(`removed base "${name}"`);
     return;
   }
@@ -118,7 +118,7 @@ export function runBase(args: string[]): void {
     }
 
     bases[name] = absolutePath;
-    saveConfig(bases);
+    saveConfig({ bases });
     console.log(`moved base "${name}" → ${shortenPath(absolutePath)}`);
     return;
   }
@@ -155,7 +155,7 @@ export function runBase(args: string[]): void {
 
     bases[newName] = bases[oldName];
     delete bases[oldName];
-    saveConfig(bases);
+    saveConfig({ bases });
     console.log(`renamed base "${oldName}" → "${newName}"`);
     return;
   }
