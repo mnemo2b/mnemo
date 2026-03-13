@@ -2,17 +2,18 @@ import { runList } from "./cli/list";
 import { runLoad } from "./cli/load";
 import { runBase } from "./cli/base";
 import { runSet } from "./cli/set";
-import { runInit } from "./cli/init";
+import { runMenu } from "./cli/menu";
 
 const args = process.argv.slice(2);
 const command = args[0];
 
 if (!command || command === "--help") {
-  console.log("usage: mnemo <list|load|base|set> [options]");
+  console.log("usage: mnemo <list|load|base|set|menu> [options]");
   console.log("");
   console.log("commands:");
   console.log("  list [path]                 browse the knowledge base");
   console.log("  load <path|:set|mixed,...>   resolve paths to absolute files");
+  console.log("  menu                        show available sets with token counts");
   console.log("  base add <name> <path>      register a knowledge base");
   console.log("  base remove <name>          unregister a knowledge base");
   console.log("  base move <name> <path>     change a base's path");
@@ -22,7 +23,6 @@ if (!command || command === "--help") {
   console.log("  set remove <name>           remove a set");
   console.log("  set show <name>             show resolved paths in a set");
   console.log("  set list                    show all sets");
-  console.log("  init                        resolve .mnemo load entries");
   process.exit(0);
 }
 
@@ -34,8 +34,8 @@ if (command === "base") {
   runLoad(args.slice(1));
 } else if (command === "set") {
   runSet(args.slice(1));
-} else if (command === "init") {
-  runInit();
+} else if (command === "menu") {
+  runMenu();
 } else {
   console.error(`unknown command: ${command}`);
   process.exit(1);

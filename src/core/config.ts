@@ -15,7 +15,6 @@ export interface Config {
 
 export interface ProjectConfig {
   sets: Sets;
-  load: string[];
 }
 
 /** Expand ~ to home directory and resolve to absolute path */
@@ -100,26 +99,19 @@ export function loadProjectConfig(cwd: string): ProjectConfig {
   const configPath = join(cwd, ".mnemo");
 
   if (!existsSync(configPath)) {
-    return { sets: {}, load: [] };
+    return { sets: {} };
   }
 
   const raw = readFileSync(configPath, "utf-8");
   const config = parse(raw);
 
   if (!config || typeof config !== "object") {
-    return { sets: {}, load: [] };
+    return { sets: {} };
   }
 
   const sets = parseSets(config.sets);
 
-  const load: string[] = [];
-  if (Array.isArray(config.load)) {
-    for (const entry of config.load) {
-      if (typeof entry === "string") load.push(entry);
-    }
-  }
-
-  return { sets, load };
+  return { sets };
 }
 
 /** Merge global and project sets — project overrides global on collision */
