@@ -2,6 +2,7 @@ import { runList } from "./cli/list";
 import { runLoad } from "./cli/load";
 import { runBase } from "./cli/base";
 import { runSet } from "./cli/set";
+import { runInit } from "./cli/init";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -21,6 +22,7 @@ if (!command || command === "--help") {
   console.log("  set remove <name>           remove a set");
   console.log("  set show <name>             show resolved paths in a set");
   console.log("  set list                    show all sets");
+  console.log("  init                        resolve .mnemo load entries");
   process.exit(0);
 }
 
@@ -32,6 +34,8 @@ if (command === "base") {
   runLoad(args.slice(1));
 } else if (command === "set") {
   runSet(args.slice(1));
+} else if (command === "init") {
+  runInit();
 } else {
   console.error(`unknown command: ${command}`);
   process.exit(1);

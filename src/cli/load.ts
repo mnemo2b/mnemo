@@ -8,7 +8,7 @@ import { resolvePath } from "../core/resolve-path";
 import { join } from "path";
 
 /** Recursively collect all markdown file paths under a directory */
-function collectFiles(dir: string): string[] {
+export function collectFiles(dir: string): string[] {
   const { dirs, files } = scanDirectory(dir);
   const paths: string[] = [];
 
@@ -24,7 +24,7 @@ function collectFiles(dir: string): string[] {
 }
 
 /** Resolve a single base-prefixed path to one or more absolute file paths */
-function resolveToFiles(bases: Record<string, string>, path: string): string[] {
+export function resolveToFiles(bases: Record<string, string>, path: string): string[] {
   const absolute = resolveBasePath(bases, path);
 
   if (!existsSync(absolute)) {
