@@ -1,12 +1,13 @@
 import { runList } from "./cli/list";
 import { runLoad } from "./cli/load";
 import { runBase } from "./cli/base";
+import { runSet } from "./cli/set";
 
 const args = process.argv.slice(2);
 const command = args[0];
 
 if (!command || command === "--help") {
-  console.log("usage: mnemo <list|load|base> [options]");
+  console.log("usage: mnemo <list|load|base|set> [options]");
   console.log("");
   console.log("commands:");
   console.log("  list [path]                 browse the knowledge base");
@@ -16,6 +17,10 @@ if (!command || command === "--help") {
   console.log("  base move <name> <path>     change a base's path");
   console.log("  base rename <old> <new>     rename a base");
   console.log("  base list                   show registered bases");
+  console.log("  set add <name> <paths...>   create or update a set");
+  console.log("  set remove <name>           remove a set");
+  console.log("  set show <name>             show resolved paths in a set");
+  console.log("  set list                    show all sets");
   process.exit(0);
 }
 
@@ -25,6 +30,8 @@ if (command === "base") {
   runList(args.slice(1));
 } else if (command === "load") {
   runLoad(args.slice(1));
+} else if (command === "set") {
+  runSet(args.slice(1));
 } else {
   console.error(`unknown command: ${command}`);
   process.exit(1);
