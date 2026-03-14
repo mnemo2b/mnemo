@@ -123,7 +123,7 @@ export function mergeSets(global: Sets, project: Sets): Sets {
     if (merged[name]) {
       console.error(`set "${name}" defined in both global and project config — using project`);
     }
-    merged[name] = project[name];
+    merged[name] = project[name]!;
   }
 
   return merged;

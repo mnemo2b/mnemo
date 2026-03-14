@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { loadConfig, loadProjectConfig, mergeSets } from "../core/config";
+import { resolveToFiles } from "../core/base";
 import { resolveSet } from "../core/set";
-import { resolveToFiles } from "../core/scan";
 import { parseFrontmatter } from "../core/frontmatter";
 import { formatTokens } from "./format";
 
@@ -37,7 +37,7 @@ export function runMenu(): void {
   console.log("");
 
   for (let i = 0; i < names.length; i++) {
-    const name = names[i];
+    const name = names[i]!;
     const source = name in projectSets ? "project" : "global";
 
     // resolve set paths to files and count tokens

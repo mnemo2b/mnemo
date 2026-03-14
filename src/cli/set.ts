@@ -22,7 +22,7 @@ function setList(): void {
     const inGlobal = name in globalSets;
     const inProject = name in projectSets;
     // project overrides global on collision
-    const entries = inProject ? projectSets[name] : globalSets[name];
+    const entries = (inProject ? projectSets[name] : globalSets[name])!;
     const source = inGlobal && inProject ? "project (override)" : inProject ? "project" : "global";
 
     console.log(`${name} ${DIM}[${source}]${RESET}`);
