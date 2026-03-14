@@ -1,27 +1,9 @@
-import { readFileSync, statSync, existsSync } from "fs";
-import { join } from "path";
+import { readFileSync } from "fs";
 import { loadConfig, loadProjectConfig, mergeSets } from "../core/config";
 import { resolveSet } from "../core/sets";
-import { resolveBasePath } from "../core/base";
+import { resolveToFiles } from "../core/scan";
 import { parseFrontmatter } from "../core/frontmatter";
-import { scanDirectory } from "../core/scan";
 import { formatTokens } from "./format";
-
-/** Recursively collect all markdown file paths under a directory */
-function collectFiles(dir: string): string[] {
-  const { dirs, files } = scanDirectory(dir);
-  const paths: string[] = [];
-
-  for (const f of files) {
-    paths.push(join(dir, f.name));
-  }
-
-  for (const d of dirs) {
-    paths.push(...collectFiles(join(dir, d.name)));
-  }
-
-  return paths;
-}
 
 /** Count tokens across a list of absolute file paths */
 function countTokens(files: string[]): number {
@@ -38,18 +20,6 @@ function countTokens(files: string[]): number {
   }
 
   return total;
-}
-
-/** Resolve a base-prefixed path to absolute files */
-function resolveToFiles(bases: Record<string, string>, path: string): string[] {
-  try {
-    const absolute = resolveBasePath(bases, path);
-    if (!existsSync(absolute)) return [];
-    if (statSync(absolute).isDirectory()) return collectFiles(absolute);
-    return [absolute];
-  } catch {
-    return [];
-  }
 }
 
 export function runMenu(): void {

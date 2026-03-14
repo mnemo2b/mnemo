@@ -1,44 +1,8 @@
-import { statSync, existsSync } from "fs";
 import { loadConfig, loadProjectConfig, mergeSets } from "../core/config";
 import { CLIError } from "../core/errors";
-import { resolveBasePath } from "../core/base";
 import { resolveSet } from "../core/sets";
 import { parseLoadItems } from "../core/parse-items";
-import { scanDirectory } from "../core/scan";
-import { resolvePath } from "../core/resolve-path";
-import { join } from "path";
-
-/** Recursively collect all markdown file paths under a directory */
-export function collectFiles(dir: string): string[] {
-  const { dirs, files } = scanDirectory(dir);
-  const paths: string[] = [];
-
-  for (const f of files) {
-    paths.push(join(dir, f.name));
-  }
-
-  for (const d of dirs) {
-    paths.push(...collectFiles(join(dir, d.name)));
-  }
-
-  return paths;
-}
-
-/** Resolve a single base-prefixed path to one or more absolute file paths */
-export function resolveToFiles(bases: Record<string, string>, path: string): string[] {
-  const absolute = resolveBasePath(bases, path);
-
-  if (!existsSync(absolute)) {
-    console.error(`warning: path not found: ${path}`);
-    return [];
-  }
-
-  if (statSync(absolute).isDirectory()) {
-    return collectFiles(absolute);
-  }
-
-  return [absolute];
-}
+import { resolveToFiles } from "../core/scan";
 
 export function runLoad(args: string[]): void {
   const input = args.join(" ").trim();
@@ -67,13 +31,21 @@ export function runLoad(args: string[]): void {
       // resolve set to base-prefixed paths, then each to files
       const paths = resolveSet(item.name, sets);
       for (const p of paths) {
-        for (const file of resolveToFiles(bases, p)) {
+        const files = resolveToFiles(bases, p);
+        if (files.length === 0) {
+          console.error(`warning: path not found: ${p}`);
+        }
+        for (const file of files) {
           add(file);
         }
       }
     } else {
       // direct base-prefixed path
-      for (const file of resolveToFiles(bases, item.path)) {
+      const files = resolveToFiles(bases, item.path);
+      if (files.length === 0) {
+        console.error(`warning: path not found: ${item.path}`);
+      }
+      for (const file of files) {
         add(file);
       }
     }
