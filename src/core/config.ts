@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { resolve, dirname, join } from "path";
 import { homedir } from "os";
 import { parse, stringify } from "yaml";
+import { CLIError } from "./errors";
 import type { Sets } from "./sets";
 
 export const CONFIG_PATH = resolve(homedir(), ".config/mnemo/config.yml");
@@ -59,7 +60,7 @@ export function loadConfig(): Config {
   if (config.bases && typeof config.bases === "object") {
     for (const [name, path] of Object.entries(config.bases)) {
       if (typeof path !== "string") {
-        throw new Error(`invalid path for base "${name}" in ${CONFIG_PATH}`);
+        throw new CLIError(`invalid path for base "${name}" in ${CONFIG_PATH}`);
       }
       bases[name] = expandPath(path);
     }

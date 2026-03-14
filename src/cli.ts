@@ -3,6 +3,7 @@ import { runLoad } from "./cli/load";
 import { runBase } from "./cli/base";
 import { runSet } from "./cli/set";
 import { runMenu } from "./cli/menu";
+import { CLIError } from "./core/errors";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -26,17 +27,26 @@ if (!command || command === "--help") {
   process.exit(0);
 }
 
-if (command === "base") {
-  runBase(args.slice(1));
-} else if (command === "list") {
-  runList(args.slice(1));
-} else if (command === "load") {
-  runLoad(args.slice(1));
-} else if (command === "set") {
-  runSet(args.slice(1));
-} else if (command === "menu") {
-  runMenu();
-} else {
-  console.error(`unknown command: ${command}`);
+try {
+  if (command === "base") {
+    runBase(args.slice(1));
+  } else if (command === "list") {
+    runList(args.slice(1));
+  } else if (command === "load") {
+    runLoad(args.slice(1));
+  } else if (command === "set") {
+    runSet(args.slice(1));
+  } else if (command === "menu") {
+    runMenu();
+  } else {
+    throw new CLIError(`unknown command: ${command}`);
+  }
+} catch (error) {
+  if (error instanceof CLIError) {
+    console.error(error.message);
+    process.exit(1);
+  }
+  // unexpected error — show the full stack trace
+  console.error(error);
   process.exit(1);
 }

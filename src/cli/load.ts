@@ -1,5 +1,6 @@
 import { statSync, existsSync } from "fs";
 import { loadConfig, loadProjectConfig, mergeSets } from "../core/config";
+import { CLIError } from "../core/errors";
 import { resolveBasePath } from "../core/base";
 import { resolveSet } from "../core/sets";
 import { parseLoadItems } from "../core/parse-items";
@@ -43,8 +44,7 @@ export function runLoad(args: string[]): void {
   const input = args.join(" ").trim();
 
   if (!input) {
-    console.error("usage: mnemo load <path|:set|mixed,...>");
-    process.exit(1);
+    throw new CLIError("usage: mnemo load <path|:set|mixed,...>");
   }
 
   const { bases, sets: globalSets } = loadConfig();

@@ -1,3 +1,4 @@
+import { CLIError } from "./errors";
 import { resolvePath } from "./resolve-path";
 
 export interface ParsedBasePath {
@@ -29,7 +30,7 @@ export function resolveBasePath(
   const baseRoot = bases[baseName];
 
   if (!baseRoot) {
-    throw new Error(`unknown base: ${baseName}`);
+    throw new CLIError(`unknown base: ${baseName}`);
   }
 
   // no relative path means the caller wants the base root itself

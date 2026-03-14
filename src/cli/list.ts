@@ -1,6 +1,7 @@
 import { readFileSync, statSync, existsSync } from "fs";
 import { join, dirname, basename } from "path";
 import { loadConfig, shortenPath } from "../core/config";
+import { CLIError } from "../core/errors";
 import { parseBasePath } from "../core/base";
 import { parseFrontmatter } from "../core/frontmatter";
 import { resolvePath } from "../core/resolve-path";
@@ -168,8 +169,7 @@ export function runList(args: string[]): void {
   const inputPath = args[0];
 
   if (Object.keys(bases).length === 0) {
-    console.error('no bases configured — run "mnemo base add <name> <path>"');
-    process.exit(1);
+    throw new CLIError('no bases configured — run "mnemo base add <name> <path>"');
   }
 
   if (!inputPath) {
@@ -196,12 +196,10 @@ export function runList(args: string[]): void {
   const baseRoot = bases[baseName];
 
   if (!baseRoot) {
-    console.error(`Unknown base: "${baseName}"\n`);
-    console.error("Bases:");
-    for (const [name, path] of Object.entries(bases)) {
-      console.error(`  ${name}: ${DIM}${shortenPath(path)}${RESET}`);
-    }
-    process.exit(1);
+    const baseList = Object.entries(bases)
+      .map(([name, path]) => `  ${name}: ${shortenPath(path)}`)
+      .join("\n");
+    throw new CLIError(`unknown base: "${baseName}"\n\nbases:\n${baseList}`);
   }
 
   const targetPath = relativePath
@@ -209,8 +207,7 @@ export function runList(args: string[]): void {
     : baseRoot;
 
   if (!existsSync(targetPath)) {
-    console.error(`nothing found at: ${inputPath}`);
-    process.exit(1);
+    throw new CLIError(`nothing found at: ${inputPath}`);
   }
 
   const stat = statSync(targetPath);
@@ -225,8 +222,7 @@ export function runList(args: string[]): void {
     const nodes = buildTree(targetPath);
 
     if (nodes.length === 0) {
-      console.error(`no notes found in: ${inputPath}`);
-      process.exit(1);
+      throw new CLIError(`no notes found in: ${inputPath}`);
     }
 
     printTree(inputPath, nodes, null);

@@ -1,4 +1,5 @@
 import { loadConfig, loadProjectConfig, mergeSets, saveConfig } from "../core/config";
+import { CLIError } from "../core/errors";
 import { resolveSet } from "../core/sets";
 import { isValidSetName } from "../core/validate-name";
 import { DIM, RESET } from "./format";
@@ -17,7 +18,7 @@ export function runSet(args: string[]): void {
 
     if (globalNames.length === 0 && projectNames.length === 0) {
       console.log('no sets configured — run "mnemo set add <name> <paths...>"');
-      process.exit(0);
+      return;
     }
 
     const allNames = [...new Set([...globalNames, ...projectNames])].sort();
@@ -43,8 +44,7 @@ export function runSet(args: string[]): void {
     const name = args[1];
 
     if (!name) {
-      console.error("usage: mnemo set show <name>");
-      process.exit(1);
+      throw new CLIError("usage: mnemo set show <name>");
     }
 
     const { sets: globalSets } = loadConfig();
@@ -67,13 +67,11 @@ export function runSet(args: string[]): void {
     const paths = args.slice(2);
 
     if (!name || paths.length === 0) {
-      console.error("usage: mnemo set add <name> <paths...>");
-      process.exit(1);
+      throw new CLIError("usage: mnemo set add <name> <paths...>");
     }
 
     if (!isValidSetName(name)) {
-      console.error("set name must be lowercase letters, numbers, hyphens, and slashes");
-      process.exit(1);
+      throw new CLIError("set name must be lowercase letters, numbers, hyphens, and slashes");
     }
 
     const { sets } = loadConfig();
@@ -105,15 +103,13 @@ export function runSet(args: string[]): void {
     const name = args[1];
 
     if (!name) {
-      console.error("usage: mnemo set remove <name>");
-      process.exit(1);
+      throw new CLIError("usage: mnemo set remove <name>");
     }
 
     const { sets } = loadConfig();
 
     if (!sets[name]) {
-      console.error(`unknown set: ${name}`);
-      process.exit(1);
+      throw new CLIError(`unknown set: ${name}`);
     }
 
     delete sets[name];
@@ -124,6 +120,5 @@ export function runSet(args: string[]): void {
 
   // ---------------------------------------------------------------------------
 
-  console.error("usage: mnemo set <list|show|add|remove>");
-  process.exit(1);
+  throw new CLIError("usage: mnemo set <list|show|add|remove>");
 }

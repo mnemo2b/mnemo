@@ -1,3 +1,5 @@
+import { CLIError } from "./errors";
+
 export type Sets = Record<string, string[]>;
 
 /** Resolve a set name to a flat, deduplicated list of base-prefixed paths */
@@ -12,14 +14,14 @@ export function resolveSet(name: string, sets: Sets): string[] {
   function expand(current: string, chain: string[]): void {
     if (chain.includes(current)) {
       const cycle = [...chain, current].map((s) => `:${s}`).join(" → ");
-      throw new Error(`circular set reference: ${cycle}`);
+      throw new CLIError(`circular set reference: ${cycle}`);
     }
 
     const entries = sets[current];
     if (!entries) {
       const available = Object.keys(sets).sort().join(", ");
       const hint = available ? ` — available sets: ${available}` : "";
-      throw new Error(`unknown set: ${current}${hint}`);
+      throw new CLIError(`unknown set: ${current}${hint}`);
     }
 
     for (const entry of entries) {
