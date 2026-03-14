@@ -1,5 +1,7 @@
+import { existsSync, statSync } from "fs";
 import { CLIError } from "./errors";
 import { resolvePath } from "./resolve-path";
+import { collectFiles } from "./scan";
 
 export interface ParsedBasePath {
   baseName: string;
@@ -39,4 +41,13 @@ export function resolveBasePath(
   }
 
   return resolvePath(baseRoot, relativePath);
+}
+
+/** Resolve a base-prefixed path to absolute file paths, returns [] if not found */
+export function resolveToFiles(bases: Record<string, string>, path: string): string[] {
+  const absolute = resolveBasePath(bases, path);
+
+  if (!existsSync(absolute)) return [];
+  if (statSync(absolute).isDirectory()) return collectFiles(absolute);
+  return [absolute];
 }

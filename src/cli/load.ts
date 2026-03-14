@@ -1,8 +1,8 @@
 import { loadConfig, loadProjectConfig, mergeSets } from "../core/config";
 import { CLIError } from "../core/errors";
+import { resolveToFiles } from "../core/base";
 import { resolveSet } from "../core/set";
 import { parseLoadItems } from "../core/parse-items";
-import { resolveToFiles } from "../core/scan";
 
 export function runLoad(args: string[]): void {
   const input = args.join(" ").trim();
