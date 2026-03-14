@@ -8,7 +8,7 @@ The current paradigm embeds AI inside apps, but each one rebuilds understanding 
 
 ## Where We Are
 
-v0.4 (sets + .mnemo project config) is complete. Named sets bundle paths for reuse, `.mnemo` project files handle auto-loading, and the skill uses hub-and-spoke references.
+v0.5 (codebase audit) is complete. Named sets bundle paths for reuse, `.mnemo` project files handle auto-loading, and the skill uses hub-and-spoke references. The MCP layer has been removed in favor of skills — the CLI is the only programmatic interface.
 
 ## Principles
 
@@ -25,7 +25,6 @@ v0.4 (sets + .mnemo project config) is complete. Named sets bundle paths for reu
 - **tsdown** — build tool (esbuild-based bundler)
 - **Node.js** — distribution runtime (`npm install -g`)
 - **TypeScript** — single package, no monorepo
-- **MCP SDK** (@modelcontextprotocol/sdk) — tool integration
 
 No Bun-specific APIs — code must be Node.js-compatible for distribution.
 

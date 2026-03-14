@@ -10,7 +10,7 @@ if (!command || command === "--help") {
   console.log("");
   console.log("commands:");
   console.log("  list [path]                 browse the knowledge base");
-  console.log("  load <path|:set|mixed,...>   resolve paths to absolute files");
+  console.log("  load <path|:set ...>         resolve paths to absolute files");
   console.log("  menu                        show available sets with token counts");
   console.log("  base add <name> <path>      register a knowledge base");
   console.log("  base remove <name>          unregister a knowledge base");
@@ -32,7 +32,11 @@ try {
     console.error(error.message);
     process.exit(1);
   }
-  // unexpected error — show the full stack trace
-  console.error(error);
+  // unexpected error — show message, stack trace only with DEBUG=1
+  const err = error instanceof Error ? error : new Error(String(error));
+  console.error(err.message);
+  if (process.env.DEBUG) {
+    console.error(err.stack);
+  }
   process.exit(1);
 }

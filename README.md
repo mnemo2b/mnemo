@@ -42,7 +42,7 @@ Your notes are plain markdown files in directories you already have. mnemo conne
 
 - **Bases** give a name to a directory: `personal` points to `~/notes`
 - **Sets** bundle paths into named groups you can load with one command
-- Your AI agent browses and loads notes through the Claude Code skill or MCP — you just ask for what you need
+- Your AI agent browses and loads notes through the Claude Code skill — you just ask for what you need
 - All paths are base-prefixed: `personal/code/react` = the `code/react` path inside the `personal` base
 - Everything resolves to file paths. No database, no metadata, no lock-in.
 
@@ -130,23 +130,13 @@ Add a hook to show available sets at the start of every session:
 
 This surfaces a numbered list of your sets with file counts and token costs. Pick a number to load, or just start working — the menu is optional.
 
-## MCP
-
-mnemo also runs as an MCP server for tools that support the protocol:
-
-```sh
-claude mcp add mnemo -- node /path/to/mnemo/dist/mcp.mjs
-```
-
-This exposes `mnemo_list` and `mnemo_load` as MCP tools your AI can call directly.
-
 ## CLI Reference
 
 The CLI is for setup and management. Run `mnemo --help` for the full list.
 
 ```
 mnemo list [path]                 browse the knowledge base
-mnemo load <path|:set|mixed,...>  resolve paths/sets to files
+mnemo load <path|:set ...>       resolve paths/sets to files
 mnemo menu                        show sets with token counts
 mnemo base <add|remove|move|rename|list>  manage bases
 mnemo set <add|remove|show|list>          manage sets
@@ -188,7 +178,7 @@ Requires [Bun](https://bun.sh) for package management and running TypeScript dir
 ```sh
 bun install       # install dependencies
 bun run build     # bundle to dist/
-bun run dev       # start the MCP server (stdio)
+bun run typecheck  # check types
 ```
 
 ## License
