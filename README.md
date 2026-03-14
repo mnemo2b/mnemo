@@ -176,9 +176,10 @@ Project sets override global sets when names collide.
 Requires [Bun](https://bun.sh) for package management and running TypeScript directly.
 
 ```sh
-bun install       # install dependencies
-bun run build     # bundle to dist/
-bun run typecheck  # check types
+bun install        # install dependencies
+bun run build      # bundle to dist/
+bun run typecheck   # check types
+bun test           # run tests
 ```
 
 ## License
