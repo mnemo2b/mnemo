@@ -1,13 +1,10 @@
-import { runList } from "./cli/list";
-import { runLoad } from "./cli/load";
-import { runBase } from "./cli/base";
-import { runSet } from "./cli/set";
-import { runMenu } from "./cli/menu";
+import { runCommand } from "./cli/run";
 import { CLIError } from "./core/errors";
 
 const args = process.argv.slice(2);
 const command = args[0];
 
+// help text — shown when no command or --help
 if (!command || command === "--help") {
   console.log("usage: mnemo <list|load|base|set|menu> [options]");
   console.log("");
@@ -27,20 +24,9 @@ if (!command || command === "--help") {
   process.exit(0);
 }
 
+// dispatch with a single error boundary
 try {
-  if (command === "base") {
-    runBase(args.slice(1));
-  } else if (command === "list") {
-    runList(args.slice(1));
-  } else if (command === "load") {
-    runLoad(args.slice(1));
-  } else if (command === "set") {
-    runSet(args.slice(1));
-  } else if (command === "menu") {
-    runMenu();
-  } else {
-    throw new CLIError(`unknown command: ${command}`);
-  }
+  runCommand(command, args.slice(1));
 } catch (error) {
   if (error instanceof CLIError) {
     console.error(error.message);
