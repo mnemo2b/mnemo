@@ -2,11 +2,10 @@ export type LoadItem =
   | { type: "set"; name: string }
   | { type: "path"; path: string };
 
-/** Parse comma-separated input into structured load items */
+/** Parse space or comma-separated input into structured load items */
 export function parseLoadItems(input: string): LoadItem[] {
   return input
-    .split(",")
-    .map((s) => s.trim())
+    .split(/[\s,]+/)
     .filter((s) => s.length > 0)
     .map((s) => {
       if (s.startsWith(":")) {
