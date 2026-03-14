@@ -3,7 +3,7 @@ import { resolve, dirname, join } from "path";
 import { homedir } from "os";
 import { parse, stringify } from "yaml";
 import { CLIError } from "./errors";
-import type { Sets } from "./sets";
+import type { Sets } from "./set";
 
 export const CONFIG_PATH = resolve(homedir(), ".config/mnemo/config.yml");
 

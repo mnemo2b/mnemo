@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import { loadConfig, loadProjectConfig, mergeSets } from "../core/config";
-import { resolveSet } from "../core/sets";
+import { resolveSet } from "../core/set";
 import { resolveToFiles } from "../core/scan";
 import { parseFrontmatter } from "../core/frontmatter";
 import { formatTokens } from "./format";

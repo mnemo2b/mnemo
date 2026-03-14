@@ -1,6 +1,6 @@
 import { loadConfig, loadProjectConfig, mergeSets, saveConfig } from "../core/config";
 import { CLIError } from "../core/errors";
-import { resolveSet } from "../core/sets";
+import { resolveSet } from "../core/set";
 import { isValidSetName } from "../core/validate-name";
 import { DIM, RESET } from "./format";
 
