@@ -33,7 +33,9 @@ export function runMenu(): void {
     return;
   }
 
-  console.log("[mnemo] Present these knowledge sets to the user and ask which to load. Do NOT load anything automatically. If the user replies with numbers, run `mnemo load :<set-name>` via Bash (mnemo is a globally installed CLI — do not use npx), then Read each returned file path. If they ignore the menu, proceed with their question.");
+  console.log(
+    "[mnemo] Present these sets to the user and ask which to load. Do NOT load anything automatically. If the user replies with numbers, run `mnemo load :<set-name>` via Bash (mnemo is a globally installed CLI — do not use npx), then Read each returned file path. If they ignore the menu, proceed with their question.",
+  );
   console.log("");
 
   for (let i = 0; i < names.length; i++) {
@@ -65,6 +67,8 @@ export function runMenu(): void {
 
     const num = String(i + 1).padStart(2);
     const noteLabel = fileCount === 1 ? "note" : "notes";
-    console.log(`${num}. ${name} — ${fileCount} ${noteLabel}, ${formatTokens(tokens)} tokens [${source}]`);
+    console.log(
+      `${num}. ${name} — ${fileCount} ${noteLabel}, ${formatTokens(tokens)} tokens [${source}]`,
+    );
   }
 }
