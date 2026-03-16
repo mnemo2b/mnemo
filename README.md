@@ -1,14 +1,14 @@
 # mnemo
 
-A personal knowledge base for your AI tools.
+Tools for leveraging knowledge bases as AI context. (for Claude Code)
 
-Every AI tool starts cold. mnemo gives your agent access to your knowledge — conventions, research, preferences, domain expertise — so every session starts informed. You curate the notes, the agent retrieves what's relevant.
-
-<!-- screenshot: Claude Code session showing menu + load flow -->
+- Load files, folders, or predefined sets of notes into your AI sessions.
+- Sets give quick access to load commonly used context additions.
+- Access multiple knowledge bases simultaneously.
 
 ## Quick Start
 
-Setup is CLI. Daily use is through your AI tool.
+Setup via CLI. Daily use is through your AI tool.
 
 **1. Install**
 
@@ -19,7 +19,7 @@ npm install -g @mnemo2b/mnemo
 **2. Connect a directory of markdown notes**
 
 ```sh
-mnemo base add personal ~/notes
+mnemo base add kb ~/notes
 ```
 
 **3. Install the Claude Code skill**
@@ -34,7 +34,6 @@ claude skill add --file /path/to/mnemo/skill/SKILL.md
 - Pick a number to load, or ignore the menu and start working
 - Browse your knowledge base: `/mnemo list`
 - Load notes into context: `/mnemo load personal/react-patterns`
-- Save new notes from conversation: `/mnemo save`
 
 ## How It Works
 
@@ -55,11 +54,11 @@ mnemo base add work ~/work/docs
 mnemo base add personal ~/notes
 ```
 
-You can connect as many directories as you want — personal notes, work docs, project research. All paths in mnemo are base-prefixed: `personal/code/react` means the `code/react` path inside `personal`.
+You can connect as many directories as you want — personal notes, work docs, project research. All paths in mnemo are base-prefixed: `kb/code/react` means the `code/react` path inside `kb`.
 
 ```sh
-mnemo base list              # show registered bases
-mnemo base remove <name>     # unregister a base
+mnemo base list                 # show registered bases
+mnemo base remove <name>        # unregister a base
 mnemo base move <name> <path>   # change a base's directory
 mnemo base rename <old> <new>   # rename a base
 ```
@@ -69,7 +68,7 @@ mnemo base rename <old> <new>   # rename a base
 A set bundles paths into a named group your agent can load at once:
 
 ```sh
-mnemo set add react personal/react-patterns personal/typescript
+mnemo set add react kb/react-patterns kb/typescript
 ```
 
 Your agent loads it by name: `:react`
@@ -105,11 +104,10 @@ The primary experience. Install the skill and optionally add a session-start hoo
 
 **Skill commands:**
 
-| Command | Description |
-|---------|-------------|
+| Command              | Description                    |
+| -------------------- | ------------------------------ |
 | `/mnemo list [path]` | Browse the knowledge base tree |
-| `/mnemo load <path>` | Load notes into context |
-| `/mnemo save [path]` | Interactively save content from your conversation |
+| `/mnemo load <path>` | Load notes into context        |
 
 **Session menu:**
 
@@ -185,3 +183,9 @@ bun test           # run tests
 ## License
 
 MIT
+
+# TODO
+
+- Add knowledge base organization section
+- Need helper for installing the claude code skill
+- When a set is defined, ONLY get sets, never search for directories on your own

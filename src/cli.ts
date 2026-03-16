@@ -9,18 +9,18 @@ if (!command || command === "--help") {
   console.log("usage: mnemo <list|load|base|set|menu> [options]");
   console.log("");
   console.log("commands:");
-  console.log("  list [path]                 browse the knowledge base");
-  console.log("  load <path|:set ...>         resolve paths to absolute files");
-  console.log("  menu                        show available sets with token counts");
-  console.log("  base add <name> <path>      register a knowledge base");
-  console.log("  base remove <name>          unregister a knowledge base");
-  console.log("  base move <name> <path>     change a base's path");
-  console.log("  base rename <old> <new>     rename a base");
-  console.log("  base list                   show registered bases");
-  console.log("  set add <name> <paths...>   create or update a set");
-  console.log("  set remove <name>           remove a set");
-  console.log("  set show <name>             show resolved paths in a set");
-  console.log("  set list                    show all sets");
+  console.log("  list [path]               browse the knowledge base");
+  console.log("  load <path|:set ...>      resolve paths to absolute files");
+  console.log("  menu                      show available sets with token counts");
+  console.log("  base add <name> <path>    register a knowledge base");
+  console.log("  base remove <name>        unregister a knowledge base");
+  console.log("  base move <name> <path>   change a base's path");
+  console.log("  base rename <old> <new>   rename a base");
+  console.log("  base list                 show registered bases");
+  console.log("  set add <name> <paths...> create or update a set");
+  console.log("  set remove <name>         remove a set");
+  console.log("  set show <name>           show resolved paths in a set");
+  console.log("  set list                  show all sets");
   process.exit(0);
 }
 
