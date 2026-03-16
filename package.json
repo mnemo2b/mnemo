@@ -1,10 +1,21 @@
 {
   "name": "@mnemo2b/mnemo",
-  "version": "0.0.1",
+  "version": "0.6.0",
   "description": "A context layer backed by a second brain of markdown files.",
   "type": "module",
   "bin": {
     "mnemo": "dist/cli.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mnemo2b/mnemo.git"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "scripts": {
     "build": "tsdown",
