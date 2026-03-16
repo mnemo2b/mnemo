@@ -16,10 +16,10 @@ Setup via CLI. Daily use is through your AI tool.
 npm install -g @mnemo2b/mnemo
 ```
 
-**2. Connect a directory of markdown notes**
+**2. Connect a knowledge base of markdown notes**
 
 ```sh
-mnemo base add kb ~/notes
+mnemo base add notes ~/notes
 ```
 
 **3. Install the Claude Code skill**
@@ -30,14 +30,14 @@ claude skill add --file /path/to/mnemo/skill/SKILL.md
 
 **Then in Claude Code:**
 
-- Start a session — available knowledge sets appear as a numbered menu
+- Start a session — available sets appear as a numbered menu
 - Pick a number to load, or ignore the menu and start working
 - Browse your knowledge base: `/mnemo list`
 - Load notes into context: `/mnemo load personal/react-patterns`
 
 ## How It Works
 
-Your notes are plain markdown files in directories you already have. mnemo connects them to your AI tools.
+Your notes are plain markdown files in directories you already have. mnemo makes them easy to inject into your AI workflows.
 
 - **Bases** give a name to a directory: `personal` points to `~/notes`
 - **Sets** bundle paths into named groups you can load with one command
@@ -50,57 +50,80 @@ Your notes are plain markdown files in directories you already have. mnemo conne
 A base connects a directory to mnemo by name:
 
 ```sh
+# base add <name> <path>
+```
+
+```sh
 mnemo base add work ~/work/docs
 mnemo base add personal ~/notes
 ```
 
-You can connect as many directories as you want — personal notes, work docs, project research. All paths in mnemo are base-prefixed: `kb/code/react` means the `code/react` path inside `kb`.
+You can connect as many directories as you want — personal notes, work docs, project research. All paths in mnemo are base-prefixed: `base/code/react` means the `code/react` path inside `base`.
 
 ```sh
-mnemo base list                 # show registered bases
-mnemo base remove <name>        # unregister a base
+mnemo base list                 # list all bases
+mnemo base remove <name>        # stop tracking a base
 mnemo base move <name> <path>   # change a base's directory
-mnemo base rename <old> <new>   # rename a base
+mnemo base rename <old> <new>   # rename a base (updates global set paths)
 ```
+
+Renaming a base automatically updates any global set paths that reference it. Project `.mnemo` files are not updated — edit those manually.
 
 ## Sets
 
 A set bundles paths into a named group your agent can load at once:
 
 ```sh
+# mnemo set add <name> <path>[]
+```
+
+```sh
 mnemo set add react kb/react-patterns kb/typescript
 ```
 
-Your agent loads it by name: `:react`
-
-Sets are composable — they can include other sets by prefixing with `:`:
+Now you can load the set by name: `:react`
 
 ```sh
-mnemo set add frontend personal/react-patterns personal/css :typescript
+# Claude Code
+mnemo load :react
 ```
 
-Set names support slash namespacing for organization: `code/react`, `work/onboarding`.
+```sh
+mnemo set list               # show all sets (global + project)
+mnemo set show <name>        # show resolved paths in a set
+mnemo set remove <name>      # remove a set
+mnemo set rename <old> <new> # rename a set (updates global references)
+```
 
-**Project-level sets** live in a `.mnemo` file in any directory:
+Renaming a set automatically updates any global sets that reference it via `:old-name`. Project `.mnemo` files are not updated — edit those manually.
+
+### Composable
+
+Sets are composable — they can include other sets:
+
+```sh
+mnemo set add frontend personal/react/patterns personal/css project/design-patterns :typescript
+```
+
+Set names support slash namespacing for organization: `code/react`, `work/writing`.
+
+### Project sets
+
+mnemo supports project-level sets that live in a `.mnemo` file:
 
 ```yaml
 sets:
   stack:
     - personal/code/react
     - personal/code/typescript
+    - work/docs
 ```
 
 Project sets override global sets on name collision.
 
-```sh
-mnemo set list               # show all sets (global + project)
-mnemo set show <name>        # show resolved paths in a set
-mnemo set remove <name>      # remove a set
-```
-
 ## Claude Code
 
-The primary experience. Install the skill and optionally add a session-start hook to see available sets when you begin a session.
+The mnemo experience was primarily build for Claude Code. Install the skill and optionally add a session-start hook to see available sets when you begin a session.
 
 **Skill commands:**
 
@@ -130,14 +153,14 @@ This surfaces a numbered list of your sets with file counts and token costs. Pic
 
 ## CLI Reference
 
-The CLI is for setup and management. Run `mnemo --help` for the full list.
+The CLI is primarily for setup and management. Run `mnemo --help` for the full list.
 
 ```
-mnemo list [path]                 browse the knowledge base
-mnemo load <path|:set ...>       resolve paths/sets to files
-mnemo menu                        show sets with token counts
-mnemo base <add|remove|move|rename|list>  manage bases
-mnemo set <add|remove|show|list>          manage sets
+mnemo list [path]                           browse the knowledge base
+mnemo load <path|:set ...>                  resolve paths/sets to files
+mnemo menu                                  show sets with token counts
+mnemo base <add|remove|move|rename|list>    manage bases
+mnemo set <add|remove|rename|show|list>     manage sets
 ```
 
 ## Configuration
