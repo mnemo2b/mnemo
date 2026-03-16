@@ -1,7 +1,16 @@
 import { existsSync, statSync } from "fs";
 import { CLIError } from "./errors";
+import { shortenPath } from "./config";
 import { resolvePath } from "./resolve-path";
 import { collectFiles } from "./scan";
+
+/** Format a "bases:" hint listing registered bases with shortened paths */
+export function formatBasesHint(bases: Record<string, string>): string {
+  const entries = Object.entries(bases).sort(([a], [b]) => a.localeCompare(b));
+  if (entries.length === 0) return "";
+  const list = entries.map(([name, path]) => `  ${name}: ${shortenPath(path)}`).join("\n");
+  return `\n\nbases:\n${list}`;
+}
 
 export interface ParsedBasePath {
   baseName: string;
@@ -32,7 +41,7 @@ export function resolveBasePath(
   const baseRoot = bases[baseName];
 
   if (!baseRoot) {
-    throw new CLIError(`unknown base: ${baseName}`);
+    throw new CLIError(`unknown base: "${baseName}"${formatBasesHint(bases)}`);
   }
 
   // no relative path means the caller wants the base root itself

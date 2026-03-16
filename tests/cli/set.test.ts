@@ -95,14 +95,22 @@ describe("set commands", () => {
     expect(list.stdout).toContain("no sets configured");
   });
 
-  test("set remove on unknown set shows error", async () => {
+  test("set remove on unknown set shows error with hint", async () => {
+    // re-add a set so the hint has something to list
+    await runCli(["set", "add", "react", "notes/topic-a"], { home });
+
     const { stderr, exitCode } = await runCli(
       ["set", "remove", "nonexistent"],
       { home },
     );
 
     expect(exitCode).toBe(1);
-    expect(stderr).toContain("unknown set");
+    expect(stderr).toContain('unknown set: "nonexistent"');
+    expect(stderr).toContain("sets:");
+    expect(stderr).toContain("react");
+
+    // clean up
+    await runCli(["set", "remove", "react"], { home });
   });
 
   test("set with no subcommand shows usage error", async () => {

@@ -1,6 +1,6 @@
 import { loadConfig, loadProjectConfig, mergeSets, saveConfig } from "../core/config";
 import { CLIError } from "../core/errors";
-import { resolveSet } from "../core/set";
+import { resolveSet, formatSetsHint } from "../core/set";
 import { isValidSetName } from "../core/validate-name";
 import { DIM, RESET } from "./format";
 
@@ -88,7 +88,7 @@ function setRemove(name: string | undefined): void {
   const { sets } = loadConfig();
 
   if (!sets[name]) {
-    throw new CLIError(`unknown set: ${name}`);
+    throw new CLIError(`unknown set: "${name}"${formatSetsHint(sets)}`);
   }
 
   delete sets[name];

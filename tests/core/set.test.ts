@@ -88,17 +88,17 @@ describe("resolveSet", () => {
     };
 
     expect(() => resolveSet("nonexistent", sets)).toThrow(CLIError);
-    expect(() => resolveSet("nonexistent", sets)).toThrow(/unknown set: nonexistent/);
-    expect(() => resolveSet("nonexistent", sets)).toThrow(/available sets/);
+    expect(() => resolveSet("nonexistent", sets)).toThrow(/unknown set: "nonexistent"/);
+    expect(() => resolveSet("nonexistent", sets)).toThrow(/sets:/);
   });
 
   test("throws CLIError on unknown set with no hint when no sets exist", () => {
-    expect(() => resolveSet("anything", {})).toThrow(/unknown set: anything/);
-    // should not include "available sets" when there are none
+    expect(() => resolveSet("anything", {})).toThrow(/unknown set: "anything"/);
+    // should not include "sets:" list when there are none
     try {
       resolveSet("anything", {});
     } catch (e) {
-      expect((e as Error).message).not.toContain("available sets");
+      expect((e as Error).message).not.toContain("sets:");
     }
   });
 });

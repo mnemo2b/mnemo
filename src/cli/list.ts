@@ -1,8 +1,8 @@
 import { readFileSync, statSync, existsSync } from "fs";
 import { join, dirname, basename } from "path";
-import { loadConfig, shortenPath } from "../core/config";
+import { loadConfig } from "../core/config";
 import { CLIError } from "../core/errors";
-import { parseBasePath } from "../core/base";
+import { parseBasePath, formatBasesHint } from "../core/base";
 import { parseFrontmatter } from "../core/frontmatter";
 import { resolvePath } from "../core/resolve-path";
 import { scanDirectory } from "../core/scan";
@@ -196,10 +196,7 @@ export function runList(args: string[]): void {
   const baseRoot = bases[baseName];
 
   if (!baseRoot) {
-    const baseList = Object.entries(bases)
-      .map(([name, path]) => `  ${name}: ${shortenPath(path)}`)
-      .join("\n");
-    throw new CLIError(`unknown base: "${baseName}"\n\nbases:\n${baseList}`);
+    throw new CLIError(`unknown base: "${baseName}"${formatBasesHint(bases)}`);
   }
 
   const targetPath = relativePath

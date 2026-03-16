@@ -2,6 +2,14 @@ import { CLIError } from "./errors";
 
 export type Sets = Record<string, string[]>;
 
+/** Format a "sets:" hint listing available set names */
+export function formatSetsHint(sets: Sets): string {
+  const names = Object.keys(sets).sort();
+  if (names.length === 0) return "";
+  const list = names.map((n) => `  ${n}`).join("\n");
+  return `\n\nsets:\n${list}`;
+}
+
 /** Resolve a set name to a flat, deduplicated list of base-prefixed paths */
 export function resolveSet(name: string, sets: Sets): string[] {
   const seen = new Set<string>();
@@ -19,9 +27,7 @@ export function resolveSet(name: string, sets: Sets): string[] {
 
     const entries = sets[current];
     if (!entries) {
-      const available = Object.keys(sets).sort().join(", ");
-      const hint = available ? ` — available sets: ${available}` : "";
-      throw new CLIError(`unknown set: ${current}${hint}`);
+      throw new CLIError(`unknown set: "${current}"${formatSetsHint(sets)}`);
     }
 
     for (const entry of entries) {

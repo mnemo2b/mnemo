@@ -66,6 +66,7 @@ describe("list command", () => {
 
     expect(exitCode).toBe(1);
     expect(stderr).toContain('unknown base: "nonexistent"');
+    expect(stderr).toContain("bases:");
     expect(stderr).toContain("notes:");
   });
 

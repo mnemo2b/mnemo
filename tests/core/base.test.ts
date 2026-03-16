@@ -44,11 +44,12 @@ describe("resolveBasePath", () => {
     expect(result).toEndWith("standalone.md");
   });
 
-  test("throws CLIError on unknown base", () => {
+  test("throws CLIError on unknown base with hint", () => {
     expect(() => resolveBasePath(bases, "nonexistent/path")).toThrow(CLIError);
     expect(() => resolveBasePath(bases, "nonexistent/path")).toThrow(
-      /unknown base: nonexistent/,
+      /unknown base: "nonexistent"/,
     );
+    expect(() => resolveBasePath(bases, "nonexistent/path")).toThrow(/bases:/);
   });
 });
 

@@ -3,6 +3,7 @@ import { resolve } from "path";
 import { homedir } from "os";
 import { loadConfig, saveConfig, shortenPath } from "../core/config";
 import { CLIError } from "../core/errors";
+import { formatBasesHint } from "../core/base";
 import { isValidName } from "../core/validate-name";
 import { DIM, RESET } from "./format";
 
@@ -60,7 +61,7 @@ function baseRemove(name: string | undefined): void {
   const { bases } = loadConfig();
 
   if (!bases[name]) {
-    throw new CLIError(`unknown base: ${name}`);
+    throw new CLIError(`unknown base: "${name}"${formatBasesHint(bases)}`);
   }
 
   delete bases[name];
@@ -76,7 +77,7 @@ function baseMove(name: string | undefined, rawPath: string | undefined): void {
   const { bases } = loadConfig();
 
   if (!bases[name]) {
-    throw new CLIError(`unknown base: ${name}`);
+    throw new CLIError(`unknown base: "${name}"${formatBasesHint(bases)}`);
   }
 
   const expanded = rawPath.startsWith("~")
@@ -107,7 +108,7 @@ function baseRename(oldName: string | undefined, newName: string | undefined): v
   const { bases } = loadConfig();
 
   if (!bases[oldName]) {
-    throw new CLIError(`unknown base: ${oldName}`);
+    throw new CLIError(`unknown base: "${oldName}"${formatBasesHint(bases)}`);
   }
 
   if (bases[newName]) {
