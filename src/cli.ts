@@ -19,6 +19,7 @@ if (!command || command === "--help") {
   console.log("  base list                 show registered bases");
   console.log("  set add <name> <paths...> create or update a set");
   console.log("  set remove <name>         remove a set");
+  console.log("  set rename <old> <new>    rename a set");
   console.log("  set show <name>           show resolved paths in a set");
   console.log("  set list                  show all sets");
   process.exit(0);

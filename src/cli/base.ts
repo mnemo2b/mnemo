@@ -105,7 +105,7 @@ function baseRename(oldName: string | undefined, newName: string | undefined): v
     );
   }
 
-  const { bases } = loadConfig();
+  const { bases, sets } = loadConfig();
 
   if (!bases[oldName]) {
     throw new CLIError(`unknown base: "${oldName}"${formatBasesHint(bases)}`);
@@ -117,8 +117,22 @@ function baseRename(oldName: string | undefined, newName: string | undefined): v
 
   bases[newName] = bases[oldName];
   delete bases[oldName];
-  saveConfig({ bases });
-  console.log(`renamed base "${oldName}" → "${newName}"`);
+
+  // update set entries that reference the old base name
+  const prefix = oldName + "/";
+  let updatedPaths = 0;
+  for (const entries of Object.values(sets)) {
+    for (let i = 0; i < entries.length; i++) {
+      if (entries[i]!.startsWith(prefix)) {
+        entries[i] = newName + "/" + entries[i]!.slice(prefix.length);
+        updatedPaths++;
+      }
+    }
+  }
+
+  saveConfig({ bases, sets });
+  const hint = updatedPaths > 0 ? ` (updated ${updatedPaths} set path${updatedPaths !== 1 ? "s" : ""})` : "";
+  console.log(`renamed base "${oldName}" → "${newName}"${hint}`);
 }
 
 export function runBase(args: string[]): void {

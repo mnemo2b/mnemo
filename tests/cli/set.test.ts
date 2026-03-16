@@ -113,6 +113,47 @@ describe("set commands", () => {
     await runCli(["set", "remove", "react"], { home });
   });
 
+  test("set rename changes the name", async () => {
+    await runCli(["set", "add", "old-name", "notes/topic-a"], { home });
+
+    const { stdout, exitCode } = await runCli(
+      ["set", "rename", "old-name", "new-name"],
+      { home },
+    );
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('renamed set "old-name" → "new-name"');
+
+    // verify old name is gone, new name exists
+    const show = await runCli(["set", "show", "new-name"], { home, cwd: home });
+    expect(show.exitCode).toBe(0);
+    expect(show.stdout).toContain("notes/topic-a");
+
+    // clean up
+    await runCli(["set", "remove", "new-name"], { home });
+  });
+
+  test("set rename updates references in other sets", async () => {
+    await runCli(["set", "add", "base-set", "notes/topic-a"], { home });
+    await runCli(["set", "add", "composite", ":base-set", "notes/topic-b"], { home });
+
+    const { stdout, exitCode } = await runCli(
+      ["set", "rename", "base-set", "renamed-set"],
+      { home },
+    );
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("1 reference");
+
+    // verify the composite set now references :renamed-set
+    const show = await runCli(["set", "show", "composite"], { home, cwd: home });
+    expect(show.exitCode).toBe(0);
+
+    // clean up
+    await runCli(["set", "remove", "renamed-set"], { home });
+    await runCli(["set", "remove", "composite"], { home });
+  });
+
   test("set with no subcommand shows usage error", async () => {
     const { stderr, exitCode } = await runCli(["set"], { home });
 

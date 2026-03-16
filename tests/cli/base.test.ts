@@ -2,6 +2,7 @@ import { describe, expect, test, beforeAll, afterAll } from "bun:test";
 import { runCli } from "../helpers/run-cli";
 import {
   makeTempHome,
+  seedConfig,
   cleanupTempDir,
   FIXTURES_DIR,
 } from "../helpers/fixtures";
@@ -105,5 +106,37 @@ describe("base commands", () => {
 
     expect(exitCode).toBe(1);
     expect(stderr).toContain("usage:");
+  });
+});
+
+describe("base rename updates set paths", () => {
+  let home: string;
+
+  beforeAll(() => {
+    home = makeTempHome();
+    seedConfig(home, {
+      bases: { old: FIXTURES_DIR },
+      sets: { reading: ["old/topic-a", "old/standalone"] },
+    });
+  });
+
+  afterAll(() => {
+    cleanupTempDir(home);
+  });
+
+  test("renaming a base updates paths in sets", async () => {
+    const { stdout, exitCode } = await runCli(
+      ["base", "rename", "old", "new"],
+      { home },
+    );
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("2 set paths");
+
+    // verify set paths now use the new base name
+    const show = await runCli(["set", "show", "reading"], { home, cwd: home });
+    expect(show.stdout).toContain("new/topic-a");
+    expect(show.stdout).toContain("new/standalone");
+    expect(show.stdout).not.toContain("old/");
   });
 });

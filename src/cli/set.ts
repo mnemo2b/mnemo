@@ -80,6 +80,47 @@ function setAdd(name: string | undefined, paths: string[]): void {
   }
 }
 
+function setRename(oldName: string | undefined, newName: string | undefined): void {
+  if (!oldName || !newName) {
+    throw new CLIError("usage: mnemo set rename <old-name> <new-name>");
+  }
+
+  if (!isValidSetName(newName)) {
+    throw new CLIError("set name must be lowercase letters, numbers, hyphens, and slashes");
+  }
+
+  const { sets } = loadConfig();
+
+  if (!sets[oldName]) {
+    throw new CLIError(`unknown set: "${oldName}"${formatSetsHint(sets)}`);
+  }
+
+  if (sets[newName]) {
+    throw new CLIError(`set "${newName}" already exists`);
+  }
+
+  // rename the set
+  sets[newName] = sets[oldName]!;
+  delete sets[oldName];
+
+  // update references in other sets — `:oldName` becomes `:newName`
+  const oldRef = `:${oldName}`;
+  const newRef = `:${newName}`;
+  let updatedRefs = 0;
+  for (const entries of Object.values(sets)) {
+    for (let i = 0; i < entries.length; i++) {
+      if (entries[i] === oldRef) {
+        entries[i] = newRef;
+        updatedRefs++;
+      }
+    }
+  }
+
+  saveConfig({ sets });
+  const hint = updatedRefs > 0 ? ` (updated ${updatedRefs} reference${updatedRefs !== 1 ? "s" : ""})` : "";
+  console.log(`renamed set "${oldName}" → "${newName}"${hint}`);
+}
+
 function setRemove(name: string | undefined): void {
   if (!name) {
     throw new CLIError("usage: mnemo set remove <name>");
@@ -103,6 +144,7 @@ export function runSet(args: string[]): void {
   if (subcommand === "show") return setShow(args[1]);
   if (subcommand === "add") return setAdd(args[1], args.slice(2));
   if (subcommand === "remove") return setRemove(args[1]);
+  if (subcommand === "rename") return setRename(args[1], args[2]);
 
-  throw new CLIError("usage: mnemo set <list|show|add|remove>");
+  throw new CLIError("usage: mnemo set <list|show|add|remove|rename>");
 }
