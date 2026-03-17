@@ -22,10 +22,10 @@ npm install -g @mnemo2b/mnemo
 mnemo base add notes ~/notes
 ```
 
-**3. Install the Claude Code skill**
+**3. Set up Claude Code integration**
 
 ```sh
-claude skill add --file /path/to/mnemo/skill/SKILL.md
+mnemo setup
 ```
 
 **Then in Claude Code:**
@@ -123,33 +123,23 @@ Project sets override global sets on name collision.
 
 ## Claude Code
 
-The mnemo experience was primarily build for Claude Code. Install the skill and optionally add a session-start hook to see available sets when you begin a session.
+The mnemo experience was primarily built for Claude Code. Run `mnemo setup` to install the skill and session-start hook automatically.
 
-**Skill commands:**
+```sh
+mnemo setup
+```
+
+This installs two things:
+
+- **Skill** — copies to `~/.claude/skills/mnemo/`, giving Claude the `/mnemo list` and `/mnemo load` commands
+- **Session hook** — adds a `SessionStart` entry to `~/.claude/settings.json` that shows available sets when you begin a session
 
 | Command              | Description                    |
 | -------------------- | ------------------------------ |
 | `/mnemo list [path]` | Browse the knowledge base tree |
 | `/mnemo load <path>` | Load notes into context        |
 
-**Session menu:**
-
-Add a hook to show available sets at the start of every session:
-
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      {
-        "type": "command",
-        "command": "mnemo menu"
-      }
-    ]
-  }
-}
-```
-
-This surfaces a numbered list of your sets with file counts and token costs. Pick a number to load, or just start working — the menu is optional.
+The session menu surfaces a numbered list of your sets with file counts and token costs. Pick a number to load, or just start working — the menu is optional.
 
 ## CLI Reference
 
@@ -161,6 +151,7 @@ mnemo load <path|:set ...>                  resolve paths/sets to files
 mnemo menu                                  show sets with token counts
 mnemo base <add|remove|move|rename|list>    manage bases
 mnemo set <add|remove|rename|show|list>     manage sets
+mnemo setup                                 install skill + session hook
 ```
 
 ## Configuration
@@ -197,10 +188,10 @@ Project sets override global sets when names collide.
 Requires [Bun](https://bun.sh) for package management and running TypeScript directly.
 
 ```sh
-bun install        # install dependencies
-bun run build      # bundle to dist/
+bun install         # install dependencies
+bun run build       # bundle to dist/
 bun run typecheck   # check types
-bun test           # run tests
+bun test            # run tests
 ```
 
 ## License
@@ -210,5 +201,4 @@ MIT
 # TODO
 
 - Add knowledge base organization section
-- Need helper for installing the claude code skill
 - When a set is defined, ONLY get sets, never search for directories on your own

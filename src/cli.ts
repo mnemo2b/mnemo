@@ -22,6 +22,7 @@ if (!command || command === "--help") {
   console.log("  set rename <old> <new>    rename a set");
   console.log("  set show <name>           show resolved paths in a set");
   console.log("  set list                  show all sets");
+  console.log("  setup                     install skill + session hook");
   process.exit(0);
 }
 

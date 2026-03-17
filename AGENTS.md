@@ -14,6 +14,8 @@ v0.6 (testing) is complete. Named sets bundle paths for reuse, `.mnemo` project 
 
 After making code changes, run `bun test` to verify nothing is broken. Tests cover all core logic (pure functions in `src/core/`) and CLI behavior (subprocess integration tests). If you add new functionality, add corresponding tests in `tests/`.
 
+After committing files in `skill/`, run `bun src/cli.ts setup` to reinstall the skill locally.
+
 ## Principles
 
 - **Directory-as-location** — file path is the organizational model, no metadata needed
