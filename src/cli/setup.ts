@@ -5,13 +5,16 @@ import {
   writeFileSync,
   mkdirSync,
   rmSync,
+  realpathSync,
 } from "fs";
 import { join, dirname } from "path";
 import { homedir } from "os";
 
 /** Walk up from the CLI entry point to find the package root containing skill/ */
 function findSkillSource(): string {
-  let dir = dirname(process.argv[1]);
+  // resolve symlinks so global installs (npm install -g) start from the
+  // real file location, not the symlink in /usr/local/bin
+  let dir = dirname(realpathSync(process.argv[1]));
   for (let i = 0; i < 10; i++) {
     const candidate = join(dir, "skill", "SKILL.md");
     if (existsSync(candidate)) return join(dir, "skill");
