@@ -1,6 +1,8 @@
 # Session start
 
-A SessionStart hook runs `mnemo prime` automatically and injects its output into your context. The output varies depending on the user's configuration.
+`mnemo prime` runs automatically via the SessionStart hook. Its output is already in your context at the start of every conversation. Do not run it again.
+
+The output varies depending on the user's configuration.
 
 ## If the user has sets
 
