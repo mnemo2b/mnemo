@@ -28,7 +28,7 @@ function baseAdd(name: string | undefined, rawPath: string | undefined): void {
 
   if (!isValidName(name)) {
     throw new CLIError(
-      "failed: base name must be lowercase letters, numbers, and hyphens",
+      "failed: base name must be lowercase letters, numbers, hyphens, and underscores",
     );
   }
 
@@ -101,7 +101,7 @@ function baseRename(oldName: string | undefined, newName: string | undefined): v
 
   if (!isValidName(newName)) {
     throw new CLIError(
-      "failed: base name must be lowercase letters, numbers, and hyphens",
+      "failed: base name must be lowercase letters, numbers, hyphens, and underscores",
     );
   }
 
