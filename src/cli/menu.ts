@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { loadConfig, loadProjectConfig, mergeSets } from "../core/config";
 import { resolveToFiles } from "../core/base";
 import { resolveSet } from "../core/set";
-import { parseFrontmatter } from "../core/frontmatter";
+import { estimateTokens } from "../core/tokens";
 import { formatTokens } from "./format";
 
 /** Count tokens across a list of absolute file paths */
@@ -12,8 +12,7 @@ function countTokens(files: string[]): number {
   for (const file of files) {
     try {
       const raw = readFileSync(file, "utf-8");
-      const { content } = parseFrontmatter(raw, file);
-      total += Math.round(content.length / 4);
+      total += estimateTokens(raw);
     } catch {
       // skip files that can't be read
     }

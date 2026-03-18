@@ -3,9 +3,9 @@ import { join, dirname, basename } from "path";
 import { loadConfig } from "../core/config";
 import { CLIError } from "../core/errors";
 import { parseBasePath, formatBasesHint } from "../core/base";
-import { parseFrontmatter } from "../core/frontmatter";
 import { resolvePath } from "../core/resolve-path";
 import { scanDirectory } from "../core/scan";
+import { estimateTokens } from "../core/tokens";
 import { DIM, RESET, formatTokens } from "./format";
 
 // ---------------------------------------------------------------------------
@@ -40,8 +40,7 @@ function buildTree(dir: string): TreeNode[] {
   for (const f of files) {
     const fullPath = join(dir, f.name);
     const raw = readFileSync(fullPath, "utf-8");
-    const { content } = parseFrontmatter(raw, f.name);
-    const tokens = Math.round(content.length / 4);
+    const tokens = estimateTokens(raw);
     nodes.push({
       name: f.name,
       type: "file",
