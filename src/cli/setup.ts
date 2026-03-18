@@ -30,10 +30,10 @@ function installSkill(): void {
   rmSync(target, { recursive: true, force: true });
   mkdirSync(target, { recursive: true });
   cpSync(source, target, { recursive: true });
-  console.log(`installed skill to ~/.claude/skills/mnemo/`);
 }
 
-function installHook(): void {
+/** Returns true if the hook was already configured */
+function installHook(): boolean {
   const settingsPath = join(homedir(), ".claude", "settings.json");
 
   let settings: Record<string, unknown> = {};
@@ -53,10 +53,7 @@ function installHook(): void {
     entry.hooks?.some((h) => h.command.includes("mnemo prime")),
   );
 
-  if (alreadyInstalled) {
-    console.log("session hook already configured");
-    return;
-  }
+  if (alreadyInstalled) return true;
 
   // add the hook entry
   sessionStart.push({
@@ -69,12 +66,26 @@ function installHook(): void {
 
   mkdirSync(dirname(settingsPath), { recursive: true });
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf-8");
-  console.log("added session hook to ~/.claude/settings.json");
+  return false;
 }
 
 /** Install skill files and session hook */
 export function runSetup(): void {
   installSkill();
-  installHook();
-  console.log("mnemo is ready — start a new Claude Code session");
+  const hookExisted = installHook();
+
+  const hookNote = hookExisted ? " (already configured)" : "";
+
+  console.log("mnemo is ready.");
+  console.log("");
+  console.log("  skill   ~/.claude/skills/mnemo/");
+  console.log(`  hook    ~/.claude/settings.json${hookNote}`);
+  console.log("");
+  console.log("get started by adding a knowledge base:");
+  console.log("");
+  console.log("  mnemo base add <name> <path>");
+  console.log("");
+  console.log("then bundle paths into sets with:");
+  console.log("");
+  console.log("  mnemo set add <name> <paths...>");
 }

@@ -11,7 +11,8 @@ describe("setup command", () => {
     const { exitCode, stdout } = await runCli(["setup"], { home });
 
     expect(exitCode).toBe(0);
-    expect(stdout).toContain("installed skill");
+    expect(stdout).toContain("mnemo is ready.");
+    expect(stdout).toContain("skill");
 
     // skill routing table exists
     const skillPath = join(home, ".claude", "skills", "mnemo", "SKILL.md");
@@ -32,7 +33,7 @@ describe("setup command", () => {
     const { exitCode, stdout } = await runCli(["setup"], { home });
 
     expect(exitCode).toBe(0);
-    expect(stdout).toContain("added session hook");
+    expect(stdout).toContain("hook");
 
     const settingsPath = join(home, ".claude", "settings.json");
     const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
@@ -52,7 +53,7 @@ describe("setup command", () => {
     const { exitCode, stdout } = await runCli(["setup"], { home });
 
     expect(exitCode).toBe(0);
-    expect(stdout).toContain("session hook already configured");
+    expect(stdout).toContain("already configured");
 
     const settingsPath = join(home, ".claude", "settings.json");
     const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
