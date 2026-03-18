@@ -5,19 +5,18 @@ Run `mnemo list [path]` via Bash. Display the output directly — it's already f
 **Directory or no input:**
 
 ```
-product
-├── docs                  2.4k
-│   ├── architecture.md   1.5k
-│   ├── getting-started.md   400
-│   └── schema.md            600
-├── features              6.4k
-│   ├── list.md              500
-│   ├── load.md              300
-│   └── skill.md             500
-└── roadmap                  800
-    └── v0.md                800
+personal
+├── code                     4.2k
+│   ├── react-patterns.md    1.8k
+│   ├── typescript.md        1.6k
+│   └── testing.md              800
+├── research                 3.1k
+│   ├── competitors.md       1.5k
+│   └── market.md            1.6k
+└── conventions                 600
+    └── commit-style.md         600
 
-3 directories, 7 files (9.6k tokens)
+3 directories, 6 files (7.9k tokens)
 ```
 
 **File target** — shows the parent directory tree with the targeted file marked with `→`:
