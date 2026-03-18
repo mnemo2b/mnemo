@@ -6,12 +6,12 @@ const command = args[0];
 
 // help text — shown when no command or --help
 if (!command || command === "--help") {
-  console.log("usage: mnemo <list|load|base|set|menu> [options]");
+  console.log("usage: mnemo <list|load|base|set|prime> [options]");
   console.log("");
   console.log("commands:");
   console.log("  list [path]               browse the knowledge base");
   console.log("  load <path|:set ...>      resolve paths to absolute files");
-  console.log("  menu                      show available sets with token counts");
+  console.log("  prime                     prime an agent with available sets");
   console.log("  base add <name> <path>    register a knowledge base");
   console.log("  base remove <name>        unregister a knowledge base");
   console.log("  base move <name> <path>   change a base's path");

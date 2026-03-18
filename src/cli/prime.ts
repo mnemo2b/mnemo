@@ -21,7 +21,7 @@ function countTokens(files: string[]): number {
   return total;
 }
 
-export function runMenu(): void {
+export function runPrime(): void {
   const { bases, sets: globalSets } = loadConfig();
   const { sets: projectSets } = loadProjectConfig(process.cwd());
   const allSets = mergeSets(globalSets, projectSets);

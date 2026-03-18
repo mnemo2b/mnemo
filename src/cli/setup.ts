@@ -48,9 +48,9 @@ function installHook(): void {
     hooks?: Array<{ type: string; command: string }>;
   }>;
 
-  // check if a mnemo menu hook already exists
+  // check if a mnemo prime hook already exists
   const alreadyInstalled = sessionStart.some((entry) =>
-    entry.hooks?.some((h) => h.command.includes("mnemo menu")),
+    entry.hooks?.some((h) => h.command.includes("mnemo prime")),
   );
 
   if (alreadyInstalled) {
@@ -61,7 +61,7 @@ function installHook(): void {
   // add the hook entry
   sessionStart.push({
     matcher: "",
-    hooks: [{ type: "command", command: "mnemo menu" }],
+    hooks: [{ type: "command", command: "mnemo prime" }],
   });
 
   hooks.SessionStart = sessionStart;

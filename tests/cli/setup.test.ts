@@ -40,7 +40,7 @@ describe("setup command", () => {
 
     expect(sessionStart).toBeArray();
     expect(sessionStart.length).toBe(1);
-    expect(sessionStart[0].hooks[0].command).toBe("mnemo menu");
+    expect(sessionStart[0].hooks[0].command).toBe("mnemo prime");
 
     cleanupTempDir(home);
   });

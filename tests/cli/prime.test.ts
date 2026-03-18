@@ -7,12 +7,12 @@ import {
   FIXTURES_DIR,
 } from "../helpers/fixtures";
 
-describe("menu command", () => {
+describe("prime command", () => {
   test("no sets produces no output", async () => {
     const home = makeTempHome();
     seedConfig(home, { bases: { notes: FIXTURES_DIR } });
 
-    const { stdout, exitCode } = await runCli(["menu"], { home, cwd: home });
+    const { stdout, exitCode } = await runCli(["prime"], { home, cwd: home });
 
     expect(exitCode).toBe(0);
     expect(stdout).toBe("");
@@ -30,7 +30,7 @@ describe("menu command", () => {
       },
     });
 
-    const { stdout, exitCode } = await runCli(["menu"], { home, cwd: home });
+    const { stdout, exitCode } = await runCli(["prime"], { home, cwd: home });
 
     expect(exitCode).toBe(0);
     // numbered entries

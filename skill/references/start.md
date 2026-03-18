@@ -1,6 +1,6 @@
 # Session start
 
-A SessionStart hook runs `mnemo menu` automatically and injects its output into your context. When you see menu output, present it to the user and wait for their selection.
+A SessionStart hook runs `mnemo prime` automatically and injects its output into your context. When you see this output, present it to the user and wait for their selection.
 
 ## What the user sees
 
@@ -16,9 +16,9 @@ Reply with numbers to load, or just start working.
 
 If the user replies with numbers (e.g. `1`, `1 2`, `1,2`):
 
-1. Map each number to the set name from the menu
+1. Map each number to the set name from the output
 2. Run `mnemo load :set-name` for each selected set to get file paths
 3. Read each file using the Read tool (parallel where possible)
 4. Confirm what was loaded
 
-If the user ignores the menu and asks a question instead, proceed with their question — the menu is optional.
+If the user ignores the sets and asks a question instead, proceed with their question — loading sets is optional.
