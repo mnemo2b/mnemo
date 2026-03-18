@@ -1,27 +1,25 @@
 ---
 name: mnemo
-description: Personal knowledge base powered by mnemo. Use when the user mentions "mnemo", "second brain", "knowledge base", or invokes /mnemo commands (list, load) to browse and read notes. Also use proactively when project config (CLAUDE.md, AGENTS.md) references a mnemo knowledge base — browse the tree for orientation, but never auto-load content without the user asking.
+description: Personal knowledge base powered by mnemo. Use when the user mentions "mnemo", "second brain", "knowledge base", or asks to browse/load notes. Also use proactively when project config (CLAUDE.md, AGENTS.md) references a mnemo knowledge base.
 ---
 
 # mnemo — Knowledge Base Skill
 
 Uses the `mnemo` CLI (globally installed) for path resolution and the Read tool for file content. Never use `npx`.
 
-## Commands
+## Reference files
 
-| Command              | Reference                   | Description                    |
-| -------------------- | --------------------------- | ------------------------------ |
-| `/mnemo list [path]` | `references/list.md`        | Browse the knowledge base tree |
-| `/mnemo load <path>` | `references/load.md`        | Load notes into context        |
-| (session start)      | `references/start.md`       | Menu presentation on new session |
+- `references/start.md` — how the session start hook works
+- `references/list.md` — browsing the knowledge base tree
+- `references/load.md` — loading notes into context
 
-When a command is invoked, read the matching reference file for full instructions before acting.
+Read the relevant reference file when you need detailed instructions.
 
 ## Proactive use
 
-When project config (CLAUDE.md, AGENTS.md) mentions a mnemo knowledge base directory:
+When project config (CLAUDE.md, AGENTS.md) mentions a mnemo knowledge base:
 
 - **Do:** run `mnemo list` to see what's available for orientation
 - **Do:** mention relevant notes you spotted if they seem useful
-- **Don't:** auto-load note content without the user asking or telling you to
+- **Don't:** auto-load note content without the user asking
 - **Don't:** use mnemo if the project has no mention of a knowledge base
