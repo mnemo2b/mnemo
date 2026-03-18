@@ -49,7 +49,7 @@ describe("base commands", () => {
     );
 
     expect(exitCode).toBe(1);
-    expect(stderr).toContain('base "notes" already exists');
+    expect(stderr).toContain('failed: base "notes" already exists');
   });
 
   test("base add rejects invalid name", async () => {

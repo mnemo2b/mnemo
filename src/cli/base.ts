@@ -28,7 +28,7 @@ function baseAdd(name: string | undefined, rawPath: string | undefined): void {
 
   if (!isValidName(name)) {
     throw new CLIError(
-      "base name must be lowercase letters, numbers, and hyphens",
+      "failed: base name must be lowercase letters, numbers, and hyphens",
     );
   }
 
@@ -39,13 +39,13 @@ function baseAdd(name: string | undefined, rawPath: string | undefined): void {
   const absolutePath = resolve(expanded);
 
   if (!existsSync(absolutePath) || !statSync(absolutePath).isDirectory()) {
-    throw new CLIError(`not a directory: ${rawPath}`);
+    throw new CLIError(`failed: not a directory: ${rawPath}`);
   }
 
   const { bases } = loadConfig();
 
   if (bases[name]) {
-    throw new CLIError(`base "${name}" already exists`);
+    throw new CLIError(`failed: base "${name}" already exists`);
   }
 
   bases[name] = absolutePath;
@@ -86,7 +86,7 @@ function baseMove(name: string | undefined, rawPath: string | undefined): void {
   const absolutePath = resolve(expanded);
 
   if (!existsSync(absolutePath) || !statSync(absolutePath).isDirectory()) {
-    throw new CLIError(`not a directory: ${rawPath}`);
+    throw new CLIError(`failed: not a directory: ${rawPath}`);
   }
 
   bases[name] = absolutePath;
@@ -101,7 +101,7 @@ function baseRename(oldName: string | undefined, newName: string | undefined): v
 
   if (!isValidName(newName)) {
     throw new CLIError(
-      "base name must be lowercase letters, numbers, and hyphens",
+      "failed: base name must be lowercase letters, numbers, and hyphens",
     );
   }
 
@@ -112,7 +112,7 @@ function baseRename(oldName: string | undefined, newName: string | undefined): v
   }
 
   if (bases[newName]) {
-    throw new CLIError(`base "${newName}" already exists`);
+    throw new CLIError(`failed: base "${newName}" already exists`);
   }
 
   bases[newName] = bases[oldName];

@@ -55,7 +55,7 @@ function setAdd(name: string | undefined, paths: string[]): void {
   }
 
   if (!isValidSetName(name)) {
-    throw new CLIError("set name must be lowercase letters, numbers, hyphens, and slashes");
+    throw new CLIError("failed: set name must be lowercase letters, numbers, hyphens, and slashes");
   }
 
   const { sets } = loadConfig();
@@ -86,7 +86,7 @@ function setRename(oldName: string | undefined, newName: string | undefined): vo
   }
 
   if (!isValidSetName(newName)) {
-    throw new CLIError("set name must be lowercase letters, numbers, hyphens, and slashes");
+    throw new CLIError("failed: set name must be lowercase letters, numbers, hyphens, and slashes");
   }
 
   const { sets } = loadConfig();
@@ -96,7 +96,7 @@ function setRename(oldName: string | undefined, newName: string | undefined): vo
   }
 
   if (sets[newName]) {
-    throw new CLIError(`set "${newName}" already exists`);
+    throw new CLIError(`failed: set "${newName}" already exists`);
   }
 
   // rename the set
