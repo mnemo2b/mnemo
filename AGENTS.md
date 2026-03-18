@@ -8,7 +8,7 @@ The current paradigm embeds AI inside apps, but each one rebuilds understanding 
 
 ## Where We Are
 
-v0.6 (testing) is complete. Named sets bundle paths for reuse, `.mnemo` project files handle auto-loading, and the skill uses hub-and-spoke references. The MCP layer has been removed in favor of skills — the CLI is the only programmatic interface.
+v0.6.0 is published on npm as `@mnemo2b/mnemo`. Named sets bundle paths for reuse, `.mnemo` project files handle auto-loading, and the skill uses hub-and-spoke references. The MCP layer has been removed in favor of skills — the CLI is the only programmatic interface. Releases are automated via GitHub Actions with OIDC trusted publishing.
 
 ## Verification
 
