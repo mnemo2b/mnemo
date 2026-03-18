@@ -81,11 +81,14 @@ export function runSetup(): void {
   console.log("  skill   ~/.claude/skills/mnemo/");
   console.log(`  hook    ~/.claude/settings.json${hookNote}`);
   console.log("");
-  console.log("get started by adding a knowledge base:");
+  console.log("next, add a knowledge base:");
   console.log("");
   console.log("  mnemo base add <name> <path>");
   console.log("");
-  console.log("then bundle paths into sets with:");
+  console.log("when you start a Claude Code session, send any message");
+  console.log("and Claude will present your sets automatically.");
+  console.log("");
+  console.log("to create sets, run:");
   console.log("");
   console.log("  mnemo set add <name> <paths...>");
 }

@@ -8,14 +8,29 @@ import {
 } from "../helpers/fixtures";
 
 describe("prime command", () => {
-  test("no sets produces no output", async () => {
+  test("no bases produces no output", async () => {
+    const home = makeTempHome();
+    seedConfig(home, { bases: {} });
+
+    const { stdout, exitCode } = await runCli(["prime"], { home, cwd: home });
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toBe("");
+
+    cleanupTempDir(home);
+  });
+
+  test("bases without sets shows bases and usage tips", async () => {
     const home = makeTempHome();
     seedConfig(home, { bases: { notes: FIXTURES_DIR } });
 
     const { stdout, exitCode } = await runCli(["prime"], { home, cwd: home });
 
     expect(exitCode).toBe(0);
-    expect(stdout).toBe("");
+    expect(stdout).toContain("bases:");
+    expect(stdout).toContain("notes");
+    // uses real base name in example
+    expect(stdout).toContain("mnemo list notes");
 
     cleanupTempDir(home);
   });

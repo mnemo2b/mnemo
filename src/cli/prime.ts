@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { loadConfig, loadProjectConfig, mergeSets } from "../core/config";
+import { loadConfig, loadProjectConfig, mergeSets, shortenPath } from "../core/config";
 import { resolveToFiles } from "../core/base";
 import { resolveSet } from "../core/set";
 import { estimateTokens } from "../core/tokens";
@@ -21,19 +21,19 @@ function countTokens(files: string[]): number {
   return total;
 }
 
-export function runPrime(): void {
-  const { bases, sets: globalSets } = loadConfig();
-  const { sets: projectSets } = loadProjectConfig(process.cwd());
-  const allSets = mergeSets(globalSets, projectSets);
-
+/** Case 1: user has sets — show numbered list for selection */
+function primeSets(
+  bases: Record<string, string>,
+  allSets: Record<string, string[]>,
+  projectSets: Record<string, string[]>,
+): void {
   const names = Object.keys(allSets).sort();
 
-  if (names.length === 0) {
-    return;
-  }
-
   console.log(
-    "[mnemo] Present these sets to the user and ask which to load. Do NOT load anything automatically. If the user replies with numbers, run `mnemo load :<set-name>` via Bash (mnemo is a globally installed CLI — do not use npx), then Read each returned file path. If they ignore the menu, proceed with their question.",
+    "[mnemo] Present these sets to the user and ask which to load. " +
+    "If they reply with numbers, run `mnemo load :<set-name>` via Bash (mnemo is a globally installed CLI), then Read each returned file path. " +
+    "To preview a set's contents, run `mnemo set show <name>`. " +
+    "If they ignore the sets, proceed with their question.",
   );
   console.log("");
 
@@ -41,7 +41,6 @@ export function runPrime(): void {
     const name = names[i]!;
     const source = name in projectSets ? "project" : "global";
 
-    // resolve set paths to files and count tokens
     let fileCount = 0;
     let tokens = 0;
     try {
@@ -70,4 +69,36 @@ export function runPrime(): void {
       `${num}. ${name} — ${fileCount} ${noteLabel}, ${formatTokens(tokens)} tokens [${source}]`,
     );
   }
+}
+
+/** Case 2: user has bases but no sets — show bases and usage tips */
+function primeBases(bases: Record<string, string>): void {
+  const firstBase = Object.keys(bases).sort()[0]!;
+
+  console.log(
+    "[mnemo] The user has knowledge bases but no sets yet. " +
+    `Show them their bases. They can browse with \`mnemo list ${firstBase}\` or load notes with \`mnemo load ${firstBase}/path\`. ` +
+    "To create a set for quick access: `mnemo set add <name> <paths...>`.",
+  );
+  console.log("");
+  console.log("bases:");
+  for (const [name, path] of Object.entries(bases).sort(([a], [b]) => a.localeCompare(b))) {
+    console.log(`  ${name} — ${shortenPath(path)}`);
+  }
+}
+
+export function runPrime(): void {
+  const { bases, sets: globalSets } = loadConfig();
+  const { sets: projectSets } = loadProjectConfig(process.cwd());
+  const allSets = mergeSets(globalSets, projectSets);
+
+  const hasBases = Object.keys(bases).length > 0;
+  const hasSets = Object.keys(allSets).length > 0;
+
+  if (hasSets) {
+    primeSets(bases, allSets, projectSets);
+  } else if (hasBases) {
+    primeBases(bases);
+  }
+  // case 3: no bases, no sets — stay silent
 }
