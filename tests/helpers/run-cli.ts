@@ -2,7 +2,11 @@ import { resolve } from "path";
 
 // project root — two levels up from tests/helpers/
 const PROJECT_ROOT = resolve(import.meta.dir, "../..");
-const ENTRY_POINT = resolve(PROJECT_ROOT, "src/cli.ts");
+
+// TEST_DIST=1 switches from source (bun src/cli.ts) to built output (node dist/cli.mjs)
+const USE_DIST = !!process.env.TEST_DIST;
+const ENTRY_POINT = resolve(PROJECT_ROOT, USE_DIST ? "dist/cli.mjs" : "src/cli.ts");
+const RUNTIME = USE_DIST ? "node" : "bun";
 
 interface RunOptions {
   home?: string;
@@ -16,12 +20,12 @@ interface RunResult {
   exitCode: number;
 }
 
-/** Spawn `bun src/cli.ts` with args and capture output */
+/** Spawn the CLI as a subprocess and capture output */
 export async function runCli(
   args: string[],
   options: RunOptions = {},
 ): Promise<RunResult> {
-  const proc = Bun.spawn(["bun", ENTRY_POINT, ...args], {
+  const proc = Bun.spawn([RUNTIME, ENTRY_POINT, ...args], {
     cwd: options.cwd ?? PROJECT_ROOT,
     env: {
       ...process.env,
