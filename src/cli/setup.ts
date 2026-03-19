@@ -78,8 +78,8 @@ export function runSetup(): void {
 
   console.log("mnemo is ready.");
   console.log("");
-  console.log("  skill   ~/.claude/skills/mnemo/");
-  console.log(`  hook    ~/.claude/settings.json${hookNote}`);
+  console.log("  skill    ~/.claude/skills/mnemo/");
+  console.log(`  hook     ~/.claude/settings.json${hookNote}`);
   console.log("");
   console.log("next, add a knowledge base:");
   console.log("");
