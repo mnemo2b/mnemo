@@ -1,135 +1,183 @@
 # mnemo
 
-If you find yourself repeating the same instructions, explaining the same architectures, rebuilding the same context, you should try mnemo.
+If chatting with AI has you repeating the same instructions, explaining the same architectures, rebuilding the same context, try mnemo.
 
-It's a context layer for AI tools, backed by markdown files you probably already have. Connect your directories, create sets, and start sessions with exactly the context you need.
+It's a composable way to bring your markdown notes into AI. You probably already have tons of notes, conventions, research. mnemo adds these as context to guide your conversation.
 
-No database, no metadata, no maintenance. Just a simple way of bringing notes into an AI session.
+Currently built for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), more surfaces coming.
 
-Currently built for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). More surfaces coming.
+## What it looks like
 
-## Quick Start
+Say you have a directory of notes you've built up over time:
 
-```sh
-npm install -g @mnemo2b/mnemo
+```
+~/notes/
+  code/
+    svelte/
+      architecture.md
+      components.md
+      state.md
+    nextjs/
+      routing.md
+      architecture.md
+    typescript/
+      patterns.md
+      errors.md
+    api/
+      design.md
+      auth.md
+      errors.md
+  db/
+    drizzle.md
+    postgres.md
+    redis.md
+  reading/
+    designing-data-intensive-apps.md
+    philosophy-of-software-design.md
 ```
 
-Point mnemo at a directory of markdown notes:
+Point mnemo at it:
 
 ```sh
 mnemo base add notes ~/notes
 ```
 
-Install the Claude Code skill and session hook:
+Now when you start a Claude Code session, you can browse and load your notes:
+
+```
+> mnemo list notes/code/svelte
+
+svelte                       1.8k
+├── architecture.md             800
+├── components.md               600
+└── state.md                    400
+
+0 directories, 3 files (1.8k tokens)
+```
+
+```
+> mnemo load notes/code/svelte
+```
+
+Claude now has your Svelte architecture, component patterns, and state management notes in context. No copy-pasting, no re-explaining. Just your knowledge, loaded when you need it.
+
+You can also combine notes from different places into a [set](#sets):
+
+```
+> mnemo load :svelte
+```
+
+That one command loads your Svelte patterns and TypeScript conventions together.
+
+## Getting started
+
+```sh
+npm install -g @mnemo2b/mnemo
+```
+
+Connect a directory of markdown notes:
+
+```sh
+mnemo base add notes ~/notes
+```
+
+If you use Claude Code, install the skill:
 
 ```sh
 mnemo setup
 ```
 
-That's it. Next time you start a Claude Code session you'll be able to browse and load from your knowledge base. To get more out of mnemo, bundle paths into sets so you can load specific context with one command.
-
-**In Claude Code:**
-
-There are commands for browsing (`mnemo list`) and loading (`mnemo load`):
-
-```
-mnemo                   view your set list
-mnemo list              browse your knowledge bases
-mnemo list work/docs    browse a specific directory
-mnemo load :react       load a set into context
-mnemo load work/docs    load a directory into context (works for files too)
-```
-
-## How It Works
-
-mnemo has two concepts: **bases** and **sets**.
-
-A **base** is a named pointer to a directory. You probably already have folders of notes, docs, or research — mnemo just gives them a name so it can find them.
-
-```sh
-mnemo base add work ~/work/docs
-mnemo base add personal ~/notes
-```
-
-All paths in mnemo are base-prefixed: `personal/code/react` means the `code/react` path inside the `personal` base.
-
-A **set** bundles paths into a group you can load with one command:
-
-```sh
-mnemo set add react personal/code/react-patterns personal/code/typescript
-```
-
-Now `mnemo load :react` loads both. Sets are composable — they can reference other sets:
-
-```sh
-mnemo set add frontend :react personal/code/css personal/code/accessibility
-```
-
-Everything resolves to file paths on disk.
+Next time you start a session, you can browse your notes with `mnemo list` and load them with `mnemo load`. Once you create sets, a menu will appear at session start and you can load one by picking a number.
 
 ## Bases
 
-Knowledge bases you want to access with mnemo.
+A **base** is a named pointer to a directory. Connect as many as you want, wherever they live:
+
+```sh
+mnemo base add notes ~/notes
+mnemo base add work ~/work/docs
+```
+
+All paths in mnemo include the base name: `notes/code/svelte` means the `code/svelte` path inside the `notes` base. This keeps things unambiguous when you have multiple knowledge sources.
 
 ```sh
 mnemo base add <name> <path>       # connect a directory
 mnemo base remove <name>           # disconnect
-mnemo base move <name> <path>      # point to a new directory
-mnemo base rename <old> <new>      # rename (updates global set paths)
+mnemo base move <name> <path>      # update the path
+mnemo base rename <old> <new>      # rename (updates set references)
 mnemo base list                    # show all bases
 ```
 
-Renaming a base automatically updates global set paths that reference it. Project `.mnemo` files aren't updated — edit those manually.
-
 ## Sets
 
-Named collections of notes for re-use.
+A **set** saves a combination of notes so you can load them again with one command. Say you load the same Svelte and TypeScript notes for every frontend project:
 
 ```sh
-mnemo set add <name> <paths...>    # create or append paths to a set
-mnemo set remove <name>            # delete a set
-mnemo set rename <old> <new>       # rename (updates global references)
-mnemo set show <name>              # show resolved paths
-mnemo set list                     # show all sets (global + project)
+mnemo set add svelte notes/code/svelte notes/code/typescript
 ```
 
-Set names support slashes for namespacing: `code/react`, `work/onboarding`.
+Now `mnemo load :svelte` loads both (the `:` tells mnemo it's a set, not a path). You can also pull from different places. Starting a Svelte project that uses Postgres?
+
+```sh
+mnemo set add svelte/stack :svelte notes/db/postgres notes/db/drizzle
+```
+
+```
+> mnemo load :svelte/stack
+```
+
+Sets can reference other sets. `:svelte/stack` already builds on `:svelte` above, so updating your Svelte notes updates both.
+
+```sh
+mnemo set add <name> <paths...>    # create or append
+mnemo set remove <name>            # delete
+mnemo set rename <old> <new>       # rename (updates references)
+mnemo set show <name>              # show resolved paths
+mnemo set list                     # show all sets
+```
 
 ### Project sets
 
-For creating project-specific sets or sharing with others. Drop a `.mnemo` file in a project to define project-specific sets. If you start your Claude session from within that directory your sets will get picked up.
+For project-specific context or sharing with a team. Drop a `.mnemo` file in any directory:
 
 ```yaml
 # .mnemo
 sets:
   stack:
-    - personal/code/react
-    - personal/code/typescript
-    - work/project-guidelines
+    - notes/code/svelte
+    - notes/code/typescript
+    - work/conventions
 ```
 
-_Project sets override global sets when names collide._
+Start a Claude Code session from that directory and the set is available automatically. Project sets override global sets when names collide.
 
 ## Claude Code
 
 `mnemo setup` installs two things:
 
-- **Skill** — gives Claude the `mnemo list` and `mnemo load` commands
-- **Session hook** — shows your available sets when you start a session
+- A **skill** that teaches Claude the `mnemo list` and `mnemo load` commands
+- A **session hook** that shows your available sets when you start a session
 
-The session menu shows set names, file counts, and token costs so you know what you're loading before you load it. Pick a number or keep working — the menu is there when you want it.
+The session menu shows set names, file counts, and token costs so you know what you're loading before you load it. Pick a number or keep working. The menu is there when you want it.
 
-| Command                    | What it does                   |
-| -------------------------- | ------------------------------ |
-| `mnemo list [path]`       | Browse the knowledge base tree |
-| `mnemo load <path\|:set>` | Load notes into context        |
+## Organizing your notes
 
-## CLI Reference
+mnemo reads directories of markdown files. It doesn't impose a structure, but the way you organize your notes shapes how useful they are in context.
+
+**One topic per note,** at whatever length it needs. A note about Svelte component patterns doesn't also cover state management. Focused notes let you load exactly what's relevant, and a clear structure helps the agent know where new notes belong.
+
+**Structure around how you'll load.** Loading a full directory is common, so notes that belong in the same conversation should share a folder. `mnemo load notes/code/svelte` pulls everything in that directory.
+
+**Start messy, organize later.** A topic can start as a single note inside an existing folder. As it grows, it splits into files, becomes a subdirectory. `code/svelte.md` becomes `code/svelte/architecture.md`, `code/svelte/components.md`. Structure emerges from use, not upfront planning.
+
+**Be deliberate with context.** A context window full of loosely related notes makes AI less precise, not more capable. Loading exactly what's relevant keeps the signal high.
+
+## CLI reference
 
 ```
 mnemo list [path]                   browse the knowledge base
-mnemo load <path|:set ...>          resolve paths/sets to files
-mnemo menu                          show sets with token counts
+mnemo load <path|:set ...>          load notes into context
+mnemo prime                         prime an agent with available sets
 mnemo base <add|remove|move|rename|list>
 mnemo set <add|remove|rename|show|list>
 mnemo setup                         install skill + session hook
@@ -141,16 +189,17 @@ mnemo setup                         install skill + session hook
 
 ```yaml
 bases:
-  personal: ~/notes
+  notes: ~/notes
   work: ~/work/docs
 
 sets:
-  react:
-    - personal/code/react
-    - personal/code/typescript
-  onboarding:
-    - work/getting-started
-    - :react
+  svelte:
+    - notes/code/svelte
+    - notes/code/typescript
+  svelte/stack:
+    - :svelte
+    - notes/db/postgres
+    - notes/db/drizzle
 ```
 
 **Project** — `.mnemo` in any directory
@@ -158,18 +207,10 @@ sets:
 ```yaml
 sets:
   stack:
-    - personal/code/react
-    - personal/code/typescript
+    - notes/code/svelte
+    - notes/code/typescript
+    - work/conventions
 ```
-
-## Writing Good Notes
-
-mnemo doesn't impose a structure, it reads directories of markdown files. Still, it might change the way you think about organizing your notes. A few things work well:
-
-- **One topic per note**, at whatever length it needs. Not atomic fragments, not kitchen-sink docs.
-- **Shallow hierarchies.** `research/competitors/` over `research/tools/ai/note-taking/competitors/`.
-- **Organize around how you'll load.** Loading a full directory is common, so notes that share context should share a folder. Sometimes a whole folder is the right move, sometimes a set pulling from three bases is better. Learn what works for you.
-- **Be deliberate with context.** A context window full of loosely related content makes your AI less precise, not more capable. Loading exactly what's relevant keeps the signal high and gives the model less room to drift.
 
 ## Development
 
