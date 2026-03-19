@@ -181,6 +181,7 @@ mnemo prime                         prime an agent with available sets
 mnemo base <add|remove|move|rename|list>
 mnemo set <add|remove|rename|show|list>
 mnemo setup                         install skill + session hook
+mnemo teardown                      remove skill + session hook + config
 ```
 
 ## Configuration
@@ -211,6 +212,22 @@ sets:
     - notes/code/typescript
     - work/conventions
 ```
+
+## Uninstalling
+
+First, remove the skill, session hook, and config:
+
+```sh
+mnemo teardown
+```
+
+Then remove the package:
+
+```sh
+npm uninstall -g @mnemo2b/mnemo
+```
+
+This doesn't touch your notes, just mnemo's files.
 
 ## Development
 
