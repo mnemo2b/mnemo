@@ -1,3 +1,6 @@
 sets:
-  roadmap:
-    - base/mnemo/tool/product/roadmap/v0
+  mnemo/tool:
+    - base/mnemo/core
+    - base/mnemo/tool/docs
+    - base/mnemo/tool/product
+    - base/mnemo/tool/vision
