@@ -1,6 +1,6 @@
 ---
 name: mnemo
-description: Personal knowledge base powered by mnemo. Use when the user mentions "mnemo", "second brain", "knowledge base", or asks to browse/load notes. Also use proactively when project config (CLAUDE.md, AGENTS.md) references a mnemo knowledge base.
+description: Personal knowledge base powered by mnemo. Use when the user mentions "mnemo", "second brain", "knowledge base", or asks to browse/load/save notes. Also use proactively when project config (AGENTS.md) references a mnemo knowledge base.
 ---
 
 # mnemo — Knowledge Base Skill
@@ -12,12 +12,13 @@ Uses the `mnemo` CLI (globally installed) for path resolution and the Read tool 
 - `references/start.md` — how the session start hook works
 - `references/list.md` — browsing the knowledge base tree
 - `references/load.md` — loading notes into context
+- `references/save.md` — saving notes to the knowledge base
 
 Read the relevant reference file when you need detailed instructions.
 
 ## Proactive use
 
-When project config (CLAUDE.md, AGENTS.md) mentions a mnemo knowledge base:
+When project config (AGENTS.md) mentions a mnemo knowledge base:
 
 - **Do:** run `mnemo list` to see what's available for orientation
 - **Do:** mention relevant notes you spotted if they seem useful
