@@ -34,6 +34,15 @@ After committing files in `skill/`, run `bun src/cli.ts setup` to reinstall the 
 
 No Bun-specific APIs — code must be Node.js-compatible for distribution.
 
+## Local Dev
+
+The global `mnemo` binary and `bun src/cli.ts` are different builds. Changes to `src/` only take effect in the global binary after rebuild:
+
+`bun run build && npm install -g .`
+
+Rebuild before: running evals, testing CLI in terminal, or running `bun src/cli.ts setup`.
+Not needed for: development with `bun src/cli.ts` directly.
+
 ## Context
 
 This project uses mnemo.
