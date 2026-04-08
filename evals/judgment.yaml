@@ -1,0 +1,24 @@
+description: "mnemo save - judgment evals"
+
+providers:
+  -
+    id: "file://providers/save-agent.ts"
+
+tests:
+  -
+    vars:
+      prompt: >
+        Save this to the knowledge base: Risotto requires patience. The key is
+        adding warm stock one ladle at a time, stirring constantly. The starch
+        releases slowly and builds the creamy texture. Never rush it.
+    assert:
+      -
+        type: javascript
+        value: "['SAVED', 'PROPOSAL'].includes(output.status)"
+      -
+        type: javascript
+        value: "output.files_created.some(f => f.path.startsWith('cooking/'))"
+      -
+        type: javascript
+        value: >
+          output.files_created.some(f => /^[a-z0-9-]+\.md$/.test(f.path.split('/').pop()))
