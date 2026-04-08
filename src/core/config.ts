@@ -5,7 +5,8 @@ import { parse, stringify } from "yaml";
 import { CLIError } from "./errors";
 import type { Sets } from "./set";
 
-export const CONFIG_PATH = resolve(homedir(), ".config/mnemo/config.yml");
+export const CONFIG_PATH =
+  process.env.MNEMO_CONFIG ?? resolve(homedir(), ".config/mnemo/config.yml");
 
 export type Bases = Record<string, string>;
 
