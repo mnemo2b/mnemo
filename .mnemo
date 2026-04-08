@@ -1,6 +1,7 @@
 sets:
-  mnemo/tool:
-    - base/mnemo/core
-    - base/mnemo/tool/docs
-    - base/mnemo/tool/product
-    - base/mnemo/tool/vision
+  mnemo.md:
+    - base/build/mnemo.md/brand
+    - base/build/mnemo.md/product/overview
+    - base/build/mnemo.md/product/features/index
+    - base/build/mnemo.md/product/roadmap
+    - base/build/mnemo.md/project
