@@ -1,20 +1,37 @@
 description: "mnemo save - judgment evals"
 
+prompts:
+  - file://prompts/save.ts
+
 providers:
-  -
-    id: "file://providers/save-agent.ts"
+  - id: "file://providers/agent.ts"
+
+defaultTest:
+  vars:
+    agent: "save"
+    fixture: "minimal"
+    message: "Save the content described in the brief to the knowledge base."
+    state: "INITIAL"
+    base_hint: "eval"
 
 tests:
+
+  # clear destination — cooking area
   -
     vars:
-      prompt: >
-        Save this to the knowledge base: Risotto requires patience. The key is
-        adding warm stock one ladle at a time, stirring constantly. The starch
-        releases slowly and builds the creamy texture. Never rush it.
+      brief: >
+        Risotto requires patience. The key is adding warm stock one ladle
+        at a time, stirring constantly. The starch releases slowly and builds
+        the creamy texture. Never rush it.
+      context: >
+        The user was discussing Italian cooking techniques.
+      user_said: "mnemo save this to my notes"
+      destination_hint: "cooking"
+
     assert:
       -
         type: javascript
-        value: "['SAVED', 'PROPOSAL'].includes(output.status)"
+        value: "output.status === 'SAVED'"
       -
         type: javascript
         value: "output.files_created.some(f => f.path.startsWith('cooking/'))"
@@ -22,3 +39,75 @@ tests:
         type: javascript
         value: >
           output.files_created.some(f => /^[a-z0-9-]+\.md$/.test(f.path.split('/').pop()))
+
+  # clear destination — programming area
+  -
+    vars:
+      brief: >
+        The observer pattern decouples event producers from consumers.
+        Instead of an object calling its dependencies directly, it maintains
+        a list of subscribers and notifies them when state changes. This keeps
+        components independent — the producer doesn't need to know what reacts
+        to its events.
+      context: >
+        The user was learning about software design patterns.
+      user_said: "mnemo save this to my notes"
+      destination_hint: "programming"
+
+    assert:
+      -
+        type: javascript
+        value: "['SAVED', 'PROPOSAL'].includes(output.status)"
+      -
+        type: javascript
+        value: "output.files_created.some(f => f.path.startsWith('programming/'))"
+      -
+        type: javascript
+        value: >
+          output.files_created.some(f => /^[a-z0-9-]+\.md$/.test(f.path.split('/').pop()))
+      -
+        type: javascript
+        value: "output.files_modified.length === 0"
+
+  # update, not create — overlaps existing pasta-carbonara.md
+  -
+    vars:
+      brief: >
+        Made carbonara tonight and used a mix of pecorino romano and
+        parmesan instead of pure pecorino. The texture was creamier and
+        less salty. Worth noting as a variation.
+      context: >
+        The user was sharing a cooking experience that relates to an
+        existing note about pasta carbonara.
+      user_said: "mnemo save this to my notes"
+      destination_hint: "cooking"
+
+    assert:
+      -
+        type: javascript
+        value: "['SAVED', 'PROPOSAL'].includes(output.status)"
+      -
+        type: javascript
+        value: "output.files_modified.some(f => f.path === 'cooking/pasta-carbonara.md')"
+      -
+        type: javascript
+        value: "output.files_created.filter(f => f.path.startsWith('cooking/')).length === 0"
+
+  # no matching area — content doesn't fit cooking or programming
+  -
+    vars:
+      brief: >
+        Packing light for a week-long trip: one carry-on, roll clothes
+        instead of folding, wear the bulkiest shoes on the plane, and
+        always pack a spare ziplock bag.
+      context: >
+        The user was sharing travel tips from a recent trip.
+      user_said: "mnemo save this to my notes"
+
+    assert:
+      -
+        type: javascript
+        value: "['PROPOSAL', 'NEEDS_CONTEXT'].includes(output.status)"
+      -
+        type: javascript
+        value: "output.status !== 'SAVED'"
