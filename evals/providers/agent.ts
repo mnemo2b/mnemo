@@ -1,5 +1,5 @@
 import { mkdtempSync, cpSync, readFileSync, writeFileSync, rmSync, readdirSync, statSync } from 'fs';
-import { execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
@@ -127,7 +127,6 @@ export default class AgentProvider {
 	private async execute(prompt: string, tempDir: string, tempConfig: string, message: string) {
 		const token = this.getAuthToken();
 		const settings = JSON.stringify({ apiKeyHelper: `echo ${token}` })
-		const { spawn } = await import("child_process");
 		writeFileSync(join(tempDir, '.system-prompt.md'), prompt);
 
 		return new Promise<{ raw: string; parsed: Record<string, unknown> }>((resolve, reject) => {
