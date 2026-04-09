@@ -59,31 +59,70 @@ The save agent needs to understand *why* something is worth saving, not just *wh
 - **What's the user's relationship to this content?** Is it their original thinking? Something they learned? A decision they made? This shapes how the save agent writes it.
 - **What was the user's language?** If they articulated something well — a phrase, a framing, a metaphor — include it verbatim. The save agent should know which words are the user's own.
 
-A brief that says "save our discussion about save architecture" forces the save agent to guess what mattered. A brief that says "save these three architectural decisions about sub-agent boundaries, with Neil's framing: 'the agent is the author, the user is the editor'" gives the save agent everything it needs.
+A brief that says "save our discussion about save architecture" forces the save agent to guess what mattered. A brief that says "save these three architectural decisions about sub-agent boundaries, with the user's framing: 'the agent is the author, the user is the editor'" gives the save agent everything it needs.
 
-### Always include
+### Brief template
 
-- **State** — one of `INITIAL`, `REVISION`, `FOLLOW_UP`, or `WRITE`. The save agent needs to know what phase it's in immediately. See `agents/save.md` for the state format.
-- **What to save** — the distilled content: key insights, decisions, conclusions. Include the user's own phrasing where it was distinctive.
-- **Why it matters** — enough context that the save agent understands the significance, not just the content
-- **User hints** — any destination or organizational hints the user provided, verbatim
-- **Base path** — the root path to the knowledge base (get this from `mnemo base list` if not known)
+Every brief follows this structure. The save agent expects this shape — don't improvise the format.
 
-### Include for revisions (REVISION state)
+```
+## State: INITIAL
 
-- **Previous draft** — the full proposal from the last save agent run
-- **User feedback** — the user's words about what to change, verbatim. Do not interpret or rewrite their feedback.
-- **What was approved** — if the user approved some parts and not others, be explicit
+## Brief
+[distilled content — the insights, decisions, or conclusions worth saving.
+include the user's own phrasing where it was distinctive.]
 
-### Include for follow-ups (FOLLOW_UP state)
+## Context
+[your observations as dispatcher — session context, why this matters,
+relationship to prior saves, anything that helps the agent make decisions.]
 
-- **Previous questions** — the NEEDS_CONTEXT response from the last save agent run
-- **User answers** — the user's responses, verbatim
+User said: "[the user's exact words that triggered the save]"
+Base hint: [which knowledge base — always include, even with a single base]
+Destination hint: [area within the base, if you have a suggestion]
+```
+
+**State** — one of `INITIAL`, `REVISION`, `FOLLOW_UP`, or `WRITE`. The save agent needs to know what phase it's in immediately. See `agents/save.md` for the state format.
+
+**Brief** — the distilled content. Not the conversation, not a summary of the discussion — the knowledge itself. Key insights, decisions, conclusions.
+
+**Context** — your insight as the dispatcher. What was the session about? Why is this worth saving? What's the user's relationship to this content? This is routing guidance, not content — the save agent uses it to make better placement and confidence decisions.
+
+**User said** — the exact trigger phrase. Not paraphrased, not cleaned up.
+
+**Base hint** — which knowledge base to target. Your best guess based on the conversation and the user's bases.
+
+**Destination hint** — which area within the base. Include when you have a reasonable suggestion. Omit the line entirely when you don't — the save agent will research and decide.
+
+### Revisions (REVISION state)
+
+Append to the template:
+
+```
+## Previous draft
+[the full proposal from the last save agent run]
+
+## User feedback
+[the user's words about what to change, verbatim.
+do not interpret or rewrite their feedback.
+if they approved some parts and not others, be explicit.]
+```
+
+### Follow-ups (FOLLOW_UP state)
+
+Append to the template:
+
+```
+## Your previous questions
+[the NEEDS_CONTEXT response from the last save agent run]
+
+## User answers
+[the user's responses, verbatim]
+```
 
 ### Do not include
 
 - Raw session transcript — the save agent needs the distilled context, not the full conversation
-- Your own opinions about where the note should go — let the save agent research and decide
+- Your own opinions about where the note should go — the hints are suggestions, not instructions
 - Writing style instructions — the save agent has its own conventions
 
 ## After save completes

@@ -7,13 +7,11 @@ This file teaches the main agent how to spawn the save agent. The section below 
 Use the Agent tool with `subagent_type: "general-purpose"`. Construct the prompt by combining:
 
 1. The core prompt (below the divider)
-2. The brief (what to save, user hints, base path)
+2. The brief — following the template in `references/save.md`
 3. For revisions: previous draft + user feedback
 4. For writes: the approved proposal
 
 The save agent determines its own mode — it returns SAVED, PROPOSAL, or NEEDS_CONTEXT based on what it finds. You do not tell it which mode to use (except for WRITE after approval).
-
-Always include a `## State` header so the save agent knows what phase it's in.
 
 Example spawn (initial):
 
@@ -22,16 +20,20 @@ prompt: |
   [core prompt from below]
 
   ## State: INITIAL
-  First pass — research the knowledge base and determine your confidence.
 
   ## Brief
-  Save the following insights about skill philosophy from a brainstorming session:
+  Three insights about skill philosophy from a brainstorming session:
   - skills encode practitioner judgment, not prescriptive steps
   - "what would a great librarian think about before shelving this?"
   - artifacts are the goal — every skill interaction should produce or improve a tangible artifact
 
+  ## Context
+  Session was about defining what makes a good skill vs a rigid template.
+  The user coined the librarian framing — preserve their phrasing.
+
   User said: "save these notes about skill philosophy"
-  Base path: ~/_/base/base/
+  Base hint: base
+  Destination hint: build/mnemo.md/product
 ```
 
 Example spawn (revision):
@@ -41,9 +43,11 @@ prompt: |
   [core prompt from below]
 
   ## State: REVISION
-  The user reviewed your previous proposal and has feedback.
 
   ## Brief
+  [same as original]
+
+  ## Context
   [same as original]
 
   ## Previous draft
@@ -60,9 +64,11 @@ prompt: |
   [core prompt from below]
 
   ## State: FOLLOW_UP
-  You previously asked questions. The user has answered.
 
   ## Brief
+  [same as original]
+
+  ## Context
   [same as original]
 
   ## Your previous questions
@@ -79,7 +85,6 @@ prompt: |
   [core prompt from below]
 
   ## State: WRITE
-  The user approved your proposal. Execute exactly as proposed.
 
   ## Approved proposal
   [the approved proposal, exactly as the user saw it]
