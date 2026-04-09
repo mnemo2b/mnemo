@@ -33,6 +33,7 @@ interface CallApiContext {
 		message: string;
 		prompt: string;
 		fixture: string;
+		model?: string;
 	}
 }
 
@@ -124,7 +125,7 @@ export default class AgentProvider {
 
 	// run the agent (using claude -p one shots)
 
-	private async execute(prompt: string, tempDir: string, tempConfig: string, message: string) {
+	private async execute(prompt: string, tempDir: string, tempConfig: string, message: string, model?: string) {
 		const token = this.getAuthToken();
 		const settings = JSON.stringify({ apiKeyHelper: `echo ${token}` })
 		writeFileSync(join(tempDir, '.system-prompt.md'), prompt);
@@ -141,7 +142,7 @@ export default class AgentProvider {
 				fn();
 			};
 
-			const proc = spawn("claude", [
+			const args = [
 				"-p",
 				"--bare",
 				"--system-prompt-file", join(tempDir, '.system-prompt.md'),
@@ -150,8 +151,11 @@ export default class AgentProvider {
 				"--output-format", "json",
 				"--permission-mode", "bypassPermissions",
 				"--settings", settings,
-				message
-			], {
+			];
+			if (model) args.push("--model", model);
+			args.push(message);
+
+			const proc = spawn("claude", args, {
 				env: { ...process.env, MNEMO_CONFIG: tempConfig },
 				stdio: ['ignore', 'pipe', 'pipe'],
 			});
@@ -190,13 +194,13 @@ export default class AgentProvider {
 	// orchestrates the eval
 
 	async callApi (prompt: string, context: CallApiContext): Promise<ProviderResponse> {
-		const { agent, fixture, message } = context.vars
+		const { agent, fixture, message, model } = context.vars
 		const { tempDir, tempConfig } = this.setup(fixture);
 		const before = this.listFiles(tempDir);
 
 		try {
 			const agentPrompt = this.buildPrompt(agent, prompt);
-			const { parsed } = await this.execute(agentPrompt, tempDir, tempConfig, message);
+			const { parsed } = await this.execute(agentPrompt, tempDir, tempConfig, message, model);
 			const { created, modified } = this.inspect(tempDir, before);
 
 			// extract the agents response
@@ -206,18 +210,31 @@ export default class AgentProvider {
 			const statusMatch = result.match(/## Status: (\w+)/);
 			const status = statusMatch ? statusMatch[1] : 'UNKNOWN';
 
+			// extract model info from per-model usage breakdown
+			const modelUsage = parsed.modelUsage as Record<string, Record<string, unknown>> | undefined;
+			const resolvedModel = modelUsage ? Object.keys(modelUsage)[0] : 'unknown';
+
+			const usage = parsed.usage as Record<string, unknown> | undefined;
+
 			return {
 				output: {
 					status,
 					files_created: created,
 					files_modified: modified,
 					reasoning: result,
+					session_id: parsed.session_id,
+					duration_ms: parsed.duration_ms,
+					duration_api_ms: parsed.duration_api_ms,
+					num_turns: parsed.num_turns,
+					stop_reason: parsed.stop_reason,
+					model: resolvedModel,
+					cache_read_tokens: (usage?.cache_read_input_tokens as number) ?? 0,
 				},
 				tokenUsage: {
-					total: (parsed.usage as Record<string, number>)?.input_tokens
-						+ (parsed.usage as Record<string, number>)?.output_tokens,
-					prompt: (parsed.usage as Record<string, number>)?.input_tokens,
-					completion: (parsed.usage as Record<string, number>)?.output_tokens,
+					total: (usage?.input_tokens as number ?? 0)
+						+ (usage?.output_tokens as number ?? 0),
+					prompt: usage?.input_tokens as number,
+					completion: usage?.output_tokens as number,
 				},
 				cost: parsed.total_cost_usd as number,
 			};
