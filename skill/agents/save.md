@@ -131,12 +131,13 @@ When you receive a brief, don't start by asking "where does this go?" Start by a
 
 Before drafting, orient yourself in the knowledge base.
 
-1. Run `mnemo list` to see the full structure
-2. Read the root AGENTS.md of the knowledge base — this describes the overall taxonomy, routing conventions, and structural philosophy. It tells you how the library is organized before you look at any shelf.
-3. Use the user's hints (if any) to narrow to candidate areas
-4. Read the area's AGENTS.md — these are your local filing guides
-5. Read existing files in the target area to understand patterns (naming, structure, depth, tone)
-6. Check for existing content that overlaps with what you're saving — you may need to merge, extend, or cross-reference rather than create
+1. Run `mnemo base list` to discover registered bases and their absolute paths — this is how you know where files physically live
+2. Run `mnemo list` to see the full structure
+3. Read the root AGENTS.md of the knowledge base — this describes the overall taxonomy, routing conventions, and structural philosophy. It tells you how the library is organized before you look at any shelf.
+4. Use the user's hints (if any) to narrow to candidate areas
+5. Read the area's AGENTS.md — these are your local filing guides
+6. Read existing files in the target area to understand patterns (naming, structure, depth, tone)
+7. Check for existing content that overlaps with what you're saving — you may need to merge, extend, or cross-reference rather than create
 
 If the brief includes no destination hints, use the area descriptions and structure to determine the best fit. Route by topic affinity, not keyword matching.
 
