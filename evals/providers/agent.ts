@@ -1,8 +1,8 @@
-import { mkdtempSync, cpSync, readFileSync, writeFileSync, rmSync, readdirSync, statSync } from 'fs';
+import { mkdtempSync, cpSync, readFileSync, writeFileSync, rmSync, readdirSync, statSync, existsSync } from 'fs';
 import { execSync, spawn } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { tmpdir } from 'os';
+import { tmpdir, homedir } from 'os';
 
 //-----------------------------------------------------------------------------
 
@@ -25,6 +25,11 @@ interface FileChange {
 interface InspectResult {
 	created: FileChange[];
 	modified: FileChange[];
+}
+
+interface ToolCall {
+	name: string;
+	summary: string;
 }
 
 interface ProviderOptions {
@@ -117,6 +122,41 @@ export default class AgentProvider {
 
 	private teardown(tempDir: string) {
 		rmSync(tempDir, { recursive: true, force: true })
+	}
+
+	// extracts the tool call sequence from the session jsonl
+
+	private extractToolCalls(sessionId: string): ToolCall[] {
+		const projectDir = join(homedir(), '.claude', 'projects', '-Users-neil---mnemo-mnemo');
+		const jsonlPath = join(projectDir, `${sessionId}.jsonl`);
+		if (!existsSync(jsonlPath)) return [];
+
+		const lines = readFileSync(jsonlPath, 'utf-8').split('\n').filter(Boolean);
+		const toolCalls: ToolCall[] = [];
+
+		for (const line of lines) {
+			const row = JSON.parse(line);
+			const msg = row.message;
+			if (msg?.role !== 'assistant') continue;
+
+			for (const block of msg.content ?? []) {
+				if (block.type !== 'tool_use') continue;
+				const name = block.name;
+				const input = block.input ?? {};
+
+				// summarize each tool call into a readable one-liner
+				let summary: string;
+				if (name === 'Bash') summary = input.command?.slice(0, 120) ?? '';
+				else if (['Read', 'Write', 'Edit'].includes(name)) summary = input.file_path ?? '';
+				else if (name === 'Glob') summary = input.pattern ?? '';
+				else if (name === 'Grep') summary = input.pattern ?? '';
+				else summary = JSON.stringify(input).slice(0, 120);
+
+				toolCalls.push({ name, summary });
+			}
+		}
+
+		return toolCalls;
 	}
 
 	// load the agent prompt and append the brief
@@ -223,6 +263,8 @@ export default class AgentProvider {
 			const agentPrompt = this.buildPrompt(agent, prompt);
 			const { parsed } = await this.execute(agentPrompt, tempDir, tempConfig, message, model);
 			const { created, modified } = this.inspect(tempDir, before);
+			const sessionId = parsed.session_id as string;
+			const toolCalls = this.extractToolCalls(sessionId);
 
 			// extract the agents response
 			const result = typeof parsed.result === 'string' ? parsed.result : '';
@@ -242,8 +284,9 @@ export default class AgentProvider {
 					status,
 					files_created: created,
 					files_modified: modified,
+					tool_calls: toolCalls,
 					reasoning: result,
-					session_id: parsed.session_id,
+					session_id: sessionId,
 					duration_ms: parsed.duration_ms,
 					duration_api_ms: parsed.duration_api_ms,
 					num_turns: parsed.num_turns,
