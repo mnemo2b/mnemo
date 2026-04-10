@@ -46,6 +46,10 @@ const __dirname = dirname(__filename)
 
 export default class AgentProvider {
 
+	// cached across test cases within a single eval run
+	private authToken: string | null = null;
+	private agentPrompts = new Map<string, string>();
+
 	id () {
 		return "agent";
 	}
@@ -106,21 +110,26 @@ export default class AgentProvider {
 	// load the agent prompt and append the brief
 
 	private buildPrompt(agent: string, brief: string) {
-		const agentPromptPath = join(__dirname, '..', '..', 'skill', 'agents', `${agent}.md`);
-		const agentPrompt = readFileSync(agentPromptPath, 'utf-8');
-		return [agentPrompt, brief].join('\n')
+		if (!this.agentPrompts.has(agent)) {
+			const agentPromptPath = join(__dirname, '..', '..', 'skill', 'agents', `${agent}.md`);
+			this.agentPrompts.set(agent, readFileSync(agentPromptPath, 'utf-8'));
+		}
+		return [this.agentPrompts.get(agent)!, brief].join('\n')
 	}
 
 	// need an oauth token to use with --bare
 	// https://github.com/anthropics/claude-code/issues/38022
 
 	private getAuthToken() {
-		const creds = execSync(
-			'security find-generic-password -s "Claude Code-credentials" -w',
-			{ encoding: 'utf-8' }
-		).trim();
-		const parsed = JSON.parse(creds);
-		return parsed.claudeAiOauth.accessToken;
+		if (!this.authToken) {
+			const creds = execSync(
+				'security find-generic-password -s "Claude Code-credentials" -w',
+				{ encoding: 'utf-8' }
+			).trim();
+			const parsed = JSON.parse(creds);
+			this.authToken = parsed.claudeAiOauth.accessToken;
+		}
+		return this.authToken;
 	}
 
 	// run the agent (using claude -p one shots)
