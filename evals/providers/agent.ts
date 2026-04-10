@@ -27,6 +27,13 @@ interface InspectResult {
 	modified: FileChange[];
 }
 
+interface ProviderOptions {
+	id?: string;
+	config?: {
+		timeoutMs?: number;
+	}
+}
+
 interface CallApiContext {
 	vars: {
 		agent: string;
@@ -49,6 +56,11 @@ export default class AgentProvider {
 	// cached across test cases within a single eval run
 	private authToken: string | null = null;
 	private agentPrompts = new Map<string, string>();
+	private timeoutMs: number;
+
+	constructor(options: ProviderOptions) {
+		this.timeoutMs = options.config?.timeoutMs ?? 120_000;
+	}
 
 	id () {
 		return "agent";
@@ -191,12 +203,12 @@ export default class AgentProvider {
 				});
 			});
 
-			// timeout
+			// timeout — configurable via provider config, defaults to 120s
 			const timer = setTimeout(() => {
 				proc.kill('SIGTERM');
 				setTimeout(() => { try { proc.kill('SIGKILL'); } catch {} }, 2000);
-				settle(() => reject(new Error(`Agent timed out after 120s. stderr: ${stderr}`)));
-			}, 120000);
+				settle(() => reject(new Error(`Agent timed out after ${this.timeoutMs / 1000}s. stderr: ${stderr}`)));
+			}, this.timeoutMs);
 		});
 	}
 
