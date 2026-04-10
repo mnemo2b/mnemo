@@ -1,0 +1,24 @@
+# update — did the agent modify an existing note instead of creating a new one?
+
+- description: "update existing — carbonara variation overlaps pasta-carbonara.md"
+  vars:
+    brief: >
+      Made carbonara tonight and used a mix of pecorino romano and
+      parmesan instead of pure pecorino. The texture was creamier and
+      less salty. Worth noting as a variation.
+    context: >
+      The user was sharing a cooking experience that relates to an
+      existing note about pasta carbonara.
+    user_said: "mnemo save this to my notes"
+    destination_hint: "cooking"
+
+  assert:
+    - type: javascript
+      value: "['SAVED', 'PROPOSAL'].includes(output.status)"
+      metric: status_correct
+    - type: javascript
+      value: "output.files_modified.some(f => f.path === 'cooking/pasta-carbonara.md')"
+      metric: update_target_correct
+    - type: javascript
+      value: "output.files_created.filter(f => f.path.startsWith('cooking/')).length === 0"
+      metric: no_duplicate_creation

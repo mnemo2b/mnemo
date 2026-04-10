@@ -1,0 +1,19 @@
+# routing — did the agent choose the right confidence status?
+
+- description: "no matching area — travel tips don't fit cooking or programming"
+  vars:
+    brief: >
+      Packing light for a week-long trip: one carry-on, roll clothes
+      instead of folding, wear the bulkiest shoes on the plane, and
+      always pack a spare ziplock bag.
+    context: >
+      The user was sharing travel tips from a recent trip.
+    user_said: "mnemo save this to my notes"
+
+  assert:
+    - type: javascript
+      value: "['PROPOSAL', 'NEEDS_CONTEXT'].includes(output.status)"
+      metric: status_correct
+    - type: javascript
+      value: "output.status !== 'SAVED'"
+      metric: no_auto_save
