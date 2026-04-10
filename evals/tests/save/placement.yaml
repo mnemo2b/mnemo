@@ -1,0 +1,52 @@
+# placement — did the agent save to the right directory?
+
+- description: "clear destination — cooking area"
+  vars:
+    brief: >
+      Risotto requires patience. The key is adding warm stock one ladle
+      at a time, stirring constantly. The starch releases slowly and builds
+      the creamy texture. Never rush it.
+    context: >
+      The user was discussing Italian cooking techniques.
+    user_said: "mnemo save this to my notes"
+    destination_hint: "cooking"
+
+  assert:
+    - type: javascript
+      value: "output.status === 'SAVED'"
+      metric: status_correct
+    - type: javascript
+      value: "output.files_created.some(f => f.path.startsWith('cooking/'))"
+      metric: placement_correct
+    - type: javascript
+      value: >
+        output.files_created.some(f => /^[a-z0-9-]+\.md$/.test(f.path.split('/').pop()))
+      metric: filename_format
+
+- description: "clear destination — programming area"
+  vars:
+    brief: >
+      The observer pattern decouples event producers from consumers.
+      Instead of an object calling its dependencies directly, it maintains
+      a list of subscribers and notifies them when state changes. This keeps
+      components independent — the producer doesn't need to know what reacts
+      to its events.
+    context: >
+      The user was learning about software design patterns.
+    user_said: "mnemo save this to my notes"
+    destination_hint: "programming"
+
+  assert:
+    - type: javascript
+      value: "['SAVED', 'PROPOSAL'].includes(output.status)"
+      metric: status_correct
+    - type: javascript
+      value: "output.files_created.some(f => f.path.startsWith('programming/'))"
+      metric: placement_correct
+    - type: javascript
+      value: >
+        output.files_created.some(f => /^[a-z0-9-]+\.md$/.test(f.path.split('/').pop()))
+      metric: filename_format
+    - type: javascript
+      value: "output.files_modified.length === 0"
+      metric: no_unintended_modifications
