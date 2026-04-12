@@ -29,7 +29,6 @@ interface ProviderOptions {
 interface CallApiContext {
 	vars: {
 		fixture: string;
-		message: string;
 		prime?: boolean;
 		model?: string;
 	};
@@ -210,13 +209,13 @@ export default class DispatchProvider {
 
 	// orchestrates one eval run
 
-	async callApi(_prompt: string, context: CallApiContext): Promise<ProviderResponse> {
-		const { fixture, message, prime = true, model } = context.vars;
+	async callApi(prompt: string, context: CallApiContext): Promise<ProviderResponse> {
+		const { fixture, prime = true, model } = context.vars;
 		const { fixtureDir, configDir, mnemoConfig } = this.setup(fixture);
 
 		try {
 			const settings = this.buildSettings(prime);
-			const state = await this.execute(fixtureDir, configDir, mnemoConfig, settings, message, model);
+			const state = await this.execute(fixtureDir, configDir, mnemoConfig, settings, prompt, model);
 
 			const resolvedModel = state.modelUsage ? Object.keys(state.modelUsage)[0] : 'unknown';
 			const usage = state.usage;

@@ -5,10 +5,9 @@ import DispatchProvider from './dispatch.ts';
 
 const provider = new DispatchProvider({});
 
-const result = await provider.callApi('', {
+const result = await provider.callApi('What knowledge bases do I have? Use mnemo.', {
 	vars: {
 		fixture: 'minimal',
-		message: 'What knowledge bases do I have? Use mnemo.',
 		prime: true,
 	},
 });
