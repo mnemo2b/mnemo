@@ -19,28 +19,38 @@ interface TreeNode {
   children: TreeNode[];
 }
 
-/** Recursively build a nested tree of directories and markdown files */
-function buildTree(dir: string): TreeNode[] {
+interface BuildTreeOptions {
+  maxDepth?: number;
+  skipTokens?: boolean;
+}
+
+/** Recursively build a nested tree of directories and markdown files.
+ *  maxDepth limits how many levels deep to show (undefined = unlimited).
+ *  always recurses fully for accurate token counts — depth only controls display.
+ *  skipTokens skips file reads entirely for fast structure-only output. */
+function buildTree(dir: string, options: BuildTreeOptions = {}, currentDepth = 0): TreeNode[] {
+  const { maxDepth, skipTokens } = options;
   const { dirs, files } = scanDirectory(dir);
   const nodes: TreeNode[] = [];
+  const atLimit = maxDepth !== undefined && currentDepth >= maxDepth;
 
   for (const d of dirs) {
     const fullPath = join(dir, d.name);
-    const children = buildTree(fullPath);
-    const tokens = children.reduce((sum, child) => sum + child.tokens, 0);
+    // always recurse for token counts; only keep children for display when within limit
+    const fullChildren = buildTree(fullPath, options, currentDepth + 1);
+    const tokens = fullChildren.reduce((sum, child) => sum + child.tokens, 0);
     nodes.push({
       name: d.name,
       type: "directory",
       absolutePath: fullPath,
       tokens,
-      children,
+      children: atLimit ? [] : fullChildren,
     });
   }
 
   for (const f of files) {
     const fullPath = join(dir, f.name);
-    const raw = readFileSync(fullPath, "utf-8");
-    const tokens = estimateTokens(raw);
+    const tokens = skipTokens ? 0 : estimateTokens(readFileSync(fullPath, "utf-8"));
     nodes.push({
       name: f.name,
       type: "file",
@@ -151,12 +161,13 @@ function printTree(
   console.log(rootLabel);
   printLines(lines);
 
-  // summary line with total tokens
+  // summary line
   const { dirs, files } = countTree(nodes);
   const totalTokens = nodes.reduce((sum, node) => sum + node.tokens, 0);
+  const tokenSuffix = totalTokens > 0 ? ` ${DIM}(${formatTokens(totalTokens)} tokens)${RESET}` : "";
   console.log("");
   console.log(
-    `${dirs} directories, ${files} files ${DIM}(${formatTokens(totalTokens)} tokens)${RESET}`,
+    `${dirs} directories, ${files} files${tokenSuffix}`,
   );
 }
 
@@ -165,7 +176,27 @@ function printTree(
 
 export function runList(args: string[]): void {
   const { bases } = loadConfig();
-  const inputPath = args[0];
+
+  // parse flags
+  let maxDepth: number | undefined;
+  let skipTokens = false;
+  const filteredArgs: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--depth' && i + 1 < args.length) {
+      maxDepth = parseInt(args[i + 1], 10);
+      if (isNaN(maxDepth) || maxDepth < 0) {
+        throw new CLIError('--depth must be a non-negative integer');
+      }
+      i++; // skip the value
+    } else if (args[i] === '--no-tokens') {
+      skipTokens = true;
+    } else {
+      filteredArgs.push(args[i]);
+    }
+  }
+
+  const inputPath = filteredArgs[0];
+  const treeOptions: BuildTreeOptions = { maxDepth, skipTokens };
 
   if (Object.keys(bases).length === 0) {
     throw new CLIError('no bases configured — run "mnemo base add <name> <path>"');
@@ -175,7 +206,7 @@ export function runList(args: string[]): void {
     // no path — show all bases as top-level tree nodes
     const allNodes: TreeNode[] = [];
     for (const [name, root] of Object.entries(bases)) {
-      const children = buildTree(root);
+      const children = buildTree(root, treeOptions);
       const tokens = children.reduce((sum, child) => sum + child.tokens, 0);
       allNodes.push({
         name,
@@ -212,10 +243,10 @@ export function runList(args: string[]): void {
     // show the parent directory tree with this file marked
     const parentDir = dirname(targetPath);
     const parentName = basename(parentDir);
-    const nodes = buildTree(parentDir);
+    const nodes = buildTree(parentDir, treeOptions);
     printTree(parentName, nodes, targetPath);
   } else {
-    const nodes = buildTree(targetPath);
+    const nodes = buildTree(targetPath, treeOptions);
 
     if (nodes.length === 0) {
       throw new CLIError(`no notes found in: ${inputPath}`);
