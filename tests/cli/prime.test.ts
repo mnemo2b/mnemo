@@ -20,22 +20,29 @@ describe("prime command", () => {
     cleanupTempDir(home);
   });
 
-  test("bases without sets shows bases and usage tips", async () => {
+  test("bases without sets shows directive, bases, and structure", async () => {
     const home = makeTempHome();
     seedConfig(home, { bases: { notes: FIXTURES_DIR } });
 
     const { stdout, exitCode } = await runCli(["prime"], { home, cwd: home });
 
     expect(exitCode).toBe(0);
+    // directive
+    expect(stdout).toContain("[mnemo]");
+    // bases section
     expect(stdout).toContain("bases:");
-    expect(stdout).toContain("notes");
-    // uses real base name in example
-    expect(stdout).toContain("mnemo list notes");
+    expect(stdout).toContain("notes:");
+    // no sets section
+    expect(stdout).not.toContain("sets:");
+    // structure section
+    expect(stdout).toContain("structure:");
+    expect(stdout).toContain("topic-a/");
+    expect(stdout).toContain("topic-b/");
 
     cleanupTempDir(home);
   });
 
-  test("shows numbered list with note counts and token sizes", async () => {
+  test("with sets shows sets and their paths", async () => {
     const home = makeTempHome();
     seedConfig(home, {
       bases: { notes: FIXTURES_DIR },
@@ -48,18 +55,17 @@ describe("prime command", () => {
     const { stdout, exitCode } = await runCli(["prime"], { home, cwd: home });
 
     expect(exitCode).toBe(0);
-    // numbered entries
-    expect(stdout).toContain("1.");
-    expect(stdout).toContain("2.");
-    // set names present
+    // sets section
+    expect(stdout).toContain("sets:");
     expect(stdout).toContain("reading");
     expect(stdout).toContain("reference");
-    // note counts
-    expect(stdout).toMatch(/\d+ notes?/);
-    // token counts
-    expect(stdout).toMatch(/\d+\s+tokens/);
+    // paths visible
+    expect(stdout).toContain("notes/topic-a");
+    expect(stdout).toContain("notes/standalone");
     // source labels
     expect(stdout).toContain("[global]");
+    // structure still present
+    expect(stdout).toContain("structure:");
 
     cleanupTempDir(home);
   });
