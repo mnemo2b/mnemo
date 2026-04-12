@@ -1,0 +1,23 @@
+description: "mnemo prime — dispatcher orientation evals"
+
+prompts:
+  - "{{message}}"
+
+providers:
+  - id: "file://../providers/dispatch.ts"
+
+defaultTest:
+  vars:
+    fixture: "minimal"
+  assert:
+    - type: cost
+      threshold: 0.15
+      metric: cost_guardrail
+      weight: 0.5
+    - type: latency
+      threshold: 60000
+      metric: latency_guardrail
+      weight: 0.5
+
+tests:
+  - file://../tests/prime/orientation.yaml
