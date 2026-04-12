@@ -11,7 +11,7 @@ import { DIM, RESET, formatTokens } from "./format";
 // ---------------------------------------------------------------------------
 // tree structure
 
-interface TreeNode {
+export interface TreeNode {
   name: string;
   type: "directory" | "file";
   absolutePath: string;
@@ -19,7 +19,7 @@ interface TreeNode {
   children: TreeNode[];
 }
 
-interface BuildTreeOptions {
+export interface BuildTreeOptions {
   maxDepth?: number;
   skipTokens?: boolean;
 }
@@ -28,7 +28,7 @@ interface BuildTreeOptions {
  *  maxDepth limits how many levels deep to show (undefined = unlimited).
  *  always recurses fully for accurate token counts — depth only controls display.
  *  skipTokens skips file reads entirely for fast structure-only output. */
-function buildTree(dir: string, options: BuildTreeOptions = {}, currentDepth = 0): TreeNode[] {
+export function buildTree(dir: string, options: BuildTreeOptions = {}, currentDepth = 0): TreeNode[] {
   const { maxDepth, skipTokens } = options;
   const { dirs, files } = scanDirectory(dir);
   const nodes: TreeNode[] = [];
