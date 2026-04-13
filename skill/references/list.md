@@ -31,4 +31,7 @@ features
 0 directories, 4 files (1.8k tokens)
 ```
 
-**Selection:** After showing results, wait for the user to respond with numbers or paths. Selecting a file loads it. Selecting a directory loads all files inside it. Accept space-separated (`2 4`), comma-separated (`2, 4`), or combined (`2,4`).
+**Flags:**
+
+- `--depth N` — limit display to N levels deep (token counts stay accurate regardless)
+- `--no-tokens` — skip token counts for faster output
