@@ -21,3 +21,5 @@ defaultTest:
 
 tests:
   - file://../tests/prime/orientation.yaml
+  - file://../tests/prime/routing.yaml
+  - file://../tests/prime/recovery.yaml

@@ -1,48 +1,40 @@
-# orientation — does the dispatcher use prime context to discover knowledge?
+# orientation — basic knowledge discovery
 #
-# each logical case appears twice: primed and unprimed.
-# primed cases assert effective tool use; unprimed cases assert graceful behavior.
-
-# --- knowledge discovery ---
+# both primed and unprimed should succeed here.
+# the delta is efficiency: primed should need fewer turns.
 
 - description: "knowledge discovery — primed"
   vars:
     message: "What notes do I have?"
     prime: true
   assert:
-    # floor: skill must be invoked
     - type: javascript
       value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
       metric: skill_invoked
       weight: 2
-    # prime-dependent: should run mnemo CLI to list/explore
     - type: javascript
       value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command?.includes('mnemo'))"
       metric: mnemo_cli_used
       weight: 1
-    # prime-dependent: result should reference actual fixture topics
     - type: javascript
       value: >
         output.result.toLowerCase().includes('cooking')
         && output.result.toLowerCase().includes('programming')
       metric: content_awareness
-      weight: 1
+      weight: 2
 
 - description: "knowledge discovery — unprimed"
   vars:
     message: "What notes do I have?"
     prime: false
   assert:
-    # degradation: should not fabricate specific content it hasn't seen
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
+      metric: skill_invoked
+      weight: 2
     - type: javascript
       value: >
-        !output.result.toLowerCase().includes('carbonara')
-        && !output.result.toLowerCase().includes('rebasing')
-        && !output.result.toLowerCase().includes('generics')
-      metric: no_hallucinated_content
+        output.result.toLowerCase().includes('cooking')
+        && output.result.toLowerCase().includes('programming')
+      metric: content_awareness
       weight: 2
-    # degradation: should not invent file paths
-    - type: javascript
-      value: "!output.result.includes('.md')"
-      metric: no_hallucinated_paths
-      weight: 1

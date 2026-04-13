@@ -1,0 +1,40 @@
+# recovery — can the agent correct bad paths using the structural map?
+#
+# prime gives the agent enough context to fix typos and near-misses
+# without a failed round trip. without prime, these likely fail or require exploration.
+
+- description: "misspelled path — primed"
+  vars:
+    message: "Load eval/cookin"
+    prime: true
+  assert:
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
+      metric: skill_invoked
+      weight: 1
+    # should correct to eval/cooking
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo') && c.input.command.includes('cooking'))"
+      metric: path_corrected
+      weight: 2
+    # should not attempt the misspelled path as-is
+    - type: javascript
+      value: "!output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('cookin') && !c.input.command.includes('cooking'))"
+      metric: no_bad_path_attempt
+      weight: 1
+
+- description: "misspelled path — unprimed"
+  vars:
+    message: "Load eval/cookin"
+    prime: false
+  assert:
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
+      metric: skill_invoked
+      weight: 1
+    # may or may not recover — we're measuring, not gating
+    # but should not silently fail
+    - type: javascript
+      value: "output.result.toLowerCase().includes('cooking') || output.result.toLowerCase().includes('not found') || output.result.toLowerCase().includes('did you mean')"
+      metric: graceful_response
+      weight: 2
