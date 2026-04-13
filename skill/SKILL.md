@@ -7,9 +7,12 @@ description: Personal knowledge base powered by mnemo. Use when the user mention
 
 Uses the `mnemo` CLI (globally installed) for path resolution and the Read tool for file content. Never use `npx`.
 
+## Prime context
+
+You may already have mnemo context from the SessionStart hook (`mnemo prime`). If you see a `[mnemo]` system reminder with bases, sets, and a structure tree — use it. Route requests directly using that context. Paths always start with a base name (`eval/cooking`, not `cooking`). If a path fails, run `mnemo list --depth 2` to reorient.
+
 ## Reference files
 
-- `references/start.md` — how the session start hook works
 - `references/list.md` — browsing the knowledge base tree
 - `references/load.md` — loading notes into context
 - `references/save.md` — saving notes to the knowledge base
