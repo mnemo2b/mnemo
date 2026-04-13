@@ -22,7 +22,7 @@ describe("setup command", () => {
     const refsDir = join(home, ".claude", "skills", "mnemo", "references");
     expect(existsSync(join(refsDir, "list.md"))).toBe(true);
     expect(existsSync(join(refsDir, "load.md"))).toBe(true);
-    expect(existsSync(join(refsDir, "start.md"))).toBe(true);
+    expect(existsSync(join(refsDir, "save.md"))).toBe(true);
 
     cleanupTempDir(home);
   });
