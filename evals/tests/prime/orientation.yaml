@@ -1,25 +1,21 @@
 # orientation — basic knowledge discovery
 #
 # both primed and unprimed should succeed here.
-# the delta is efficiency: primed should need fewer turns.
+# primed agent may skip the Skill tool and act directly — that's ideal.
 
 - description: "knowledge discovery — primed"
   vars:
     message: "What notes do I have?"
     prime: true
   assert:
+    # must use mnemo CLI (via Skill or directly)
     - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
-      metric: skill_invoked
-      weight: 2
-    - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command?.includes('mnemo'))"
+      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo'))"
       metric: mnemo_cli_used
-      weight: 1
+      weight: 2
+    # result should reference actual fixture topics
     - type: javascript
-      value: >
-        output.result.toLowerCase().includes('cooking')
-        && output.result.toLowerCase().includes('programming')
+      value: "output.result.toLowerCase().includes('cooking') && output.result.toLowerCase().includes('programming')"
       metric: content_awareness
       weight: 2
 
@@ -28,13 +24,13 @@
     message: "What notes do I have?"
     prime: false
   assert:
+    # without prime, agent needs Skill to learn how to use mnemo
     - type: javascript
       value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
       metric: skill_invoked
-      weight: 2
+      weight: 1
+    # should still find content
     - type: javascript
-      value: >
-        output.result.toLowerCase().includes('cooking')
-        && output.result.toLowerCase().includes('programming')
+      value: "output.result.toLowerCase().includes('cooking') && output.result.toLowerCase().includes('programming')"
       metric: content_awareness
       weight: 2
