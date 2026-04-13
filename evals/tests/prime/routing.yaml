@@ -1,0 +1,59 @@
+# routing — does the agent resolve vague references to correct paths?
+#
+# prime gives the agent a structural map so it can route "my cooking notes"
+# to eval/cooking without exploring first. without prime, it has to guess or explore.
+
+- description: "vague topic reference — primed"
+  vars:
+    message: "What do I have about cooking?"
+    prime: true
+  assert:
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
+      metric: skill_invoked
+      weight: 1
+    # should route to the cooking directory
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo') && c.input.command.includes('cooking'))"
+      metric: correct_route
+      weight: 2
+    # result should mention actual cooking content
+    - type: javascript
+      value: "output.result.toLowerCase().includes('knife') || output.result.toLowerCase().includes('carbonara') || output.result.toLowerCase().includes('pasta')"
+      metric: content_awareness
+      weight: 1
+
+- description: "vague topic reference — unprimed"
+  vars:
+    message: "What do I have about cooking?"
+    prime: false
+  assert:
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
+      metric: skill_invoked
+      weight: 1
+    # should still find cooking content (may take more turns)
+    - type: javascript
+      value: "output.result.toLowerCase().includes('knife') || output.result.toLowerCase().includes('carbonara') || output.result.toLowerCase().includes('pasta')"
+      metric: content_awareness
+      weight: 2
+
+- description: "direct load request — primed"
+  vars:
+    message: "Load my programming notes."
+    prime: true
+  assert:
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
+      metric: skill_invoked
+      weight: 1
+    # should run mnemo load with the correct path
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo load') && c.input.command.includes('programming'))"
+      metric: correct_load
+      weight: 2
+    # result should contain actual programming content
+    - type: javascript
+      value: "output.result.toLowerCase().includes('rebasing') || output.result.toLowerCase().includes('generics') || output.result.toLowerCase().includes('typescript')"
+      metric: content_loaded
+      weight: 1
