@@ -36,9 +36,19 @@ export function runPrime(): void {
     "[mnemo] The user's knowledge base. " +
     "All notes, knowledge, and markdown references live here. " +
     "Route any request for notes, knowledge, or context through mnemo. " +
-    "Use `mnemo list <path>` to browse and `mnemo load <path>` to load content. " +
     "If a path fails, use `mnemo list --depth 2` to reorient.",
   );
+  console.log("");
+
+  // commands — how to use mnemo (agent needs this before the skill is invoked)
+  console.log("commands:");
+  console.log("  mnemo list — show everything across all bases");
+  console.log("  mnemo list <base/path> — show a specific directory (e.g. eval/cooking)");
+  console.log("  mnemo list --depth N — limit tree depth (useful for reorienting)");
+  console.log("  mnemo load <base/path> — returns file paths, then Read each file");
+  console.log("  mnemo load :<set-name> — load a named set");
+  console.log("  paths always start with a base name: eval/cooking, not cooking");
+  console.log("  .md extension is optional: eval/cooking/pasta-carbonara works");
   console.log("");
 
   // bases
