@@ -10,7 +10,7 @@ interface ScanResult {
 /** Scan a directory and return sorted dirs and markdown files, skipping hidden entries */
 export function scanDirectory(dir: string): ScanResult {
   const entries = readdirSync(dir, { withFileTypes: true })
-    .filter((e) => !e.name.startsWith("."));
+    .filter((e) => !e.name.startsWith(".") && e.name !== "AGENTS.md");
 
   const dirs = entries
     .filter((e) => e.isDirectory())
