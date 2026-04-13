@@ -1,18 +1,14 @@
 # routing — does the agent resolve vague references to correct paths?
 #
 # prime gives the agent a structural map so it can route "my cooking notes"
-# to eval/cooking without exploring first. without prime, it has to guess or explore.
+# to eval/cooking without exploring first. primed agent should act directly.
 
 - description: "vague topic reference — primed"
   vars:
     message: "What do I have about cooking?"
     prime: true
   assert:
-    - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
-      metric: skill_invoked
-      weight: 1
-    # should route to the cooking directory
+    # should route to the cooking directory with correct base prefix
     - type: javascript
       value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo') && c.input.command.includes('cooking'))"
       metric: correct_route
@@ -28,11 +24,12 @@
     message: "What do I have about cooking?"
     prime: false
   assert:
+    # without prime, needs Skill to discover mnemo
     - type: javascript
       value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
       metric: skill_invoked
       weight: 1
-    # should still find cooking content (may take more turns)
+    # should still find cooking content
     - type: javascript
       value: "output.result.toLowerCase().includes('knife') || output.result.toLowerCase().includes('carbonara') || output.result.toLowerCase().includes('pasta')"
       metric: content_awareness
@@ -43,11 +40,7 @@
     message: "Load my programming notes."
     prime: true
   assert:
-    - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
-      metric: skill_invoked
-      weight: 1
-    # should run mnemo load with the correct path
+    # should run mnemo load directly with correct base prefix — no Skill needed
     - type: javascript
       value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo load') && c.input.command.includes('programming'))"
       metric: correct_load
@@ -56,4 +49,4 @@
     - type: javascript
       value: "output.result.toLowerCase().includes('rebasing') || output.result.toLowerCase().includes('generics') || output.result.toLowerCase().includes('typescript')"
       metric: content_loaded
-      weight: 1
+      weight: 2
