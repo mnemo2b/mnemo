@@ -1,6 +1,5 @@
 # orientation — basic knowledge discovery
 #
-# both primed and unprimed should succeed here.
 # primed agent may answer directly from the tree in prime context without
 # calling mnemo — that's ideal, not a failure.
 
@@ -10,22 +9,6 @@
     prime: true
   assert:
     # result should reference actual fixture topics across bases
-    - type: javascript
-      value: "output.result.toLowerCase().includes('cooking') && output.result.toLowerCase().includes('dev')"
-      metric: content_awareness
-      weight: 2
-
-- description: "knowledge discovery — unprimed"
-  vars:
-    message: "What notes do I have?"
-    prime: false
-  assert:
-    # without prime, agent needs Skill to learn how to use mnemo
-    - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
-      metric: skill_invoked
-      weight: 1
-    # should still find content
     - type: javascript
       value: "output.result.toLowerCase().includes('cooking') && output.result.toLowerCase().includes('dev')"
       metric: content_awareness

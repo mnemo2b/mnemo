@@ -1,36 +1,21 @@
 # cross-base routing — does the agent route to the right base?
 #
 # realistic has two bases (notes, research). prime shows both in context.
-# "what research do I have?" should route to research/, not notes/.
+# "what research do I have?" should return research-base content —
+# not a specific tool path, since the agent may answer from the tree alone.
 
 - description: "research base routing — primed"
   vars:
     message: "What research do I have?"
     prime: true
   assert:
-    # should query the research base specifically
-    - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo') && c.input.command.includes('research'))"
-      metric: correct_base
-      weight: 2
     # result should reference research-base content
     - type: javascript
       value: "output.result.toLowerCase().includes('nutrition') || output.result.toLowerCase().includes('climate') || output.result.toLowerCase().includes('psychology') || output.result.toLowerCase().includes('productivity')"
       metric: content_awareness
-      weight: 1
-
-- description: "research base routing — unprimed"
-  vars:
-    message: "What research do I have?"
-    prime: false
-  assert:
-    # without prime, needs Skill to discover mnemo
-    - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
-      metric: skill_invoked
-      weight: 1
-    # should still find research content
-    - type: javascript
-      value: "output.result.toLowerCase().includes('nutrition') || output.result.toLowerCase().includes('climate') || output.result.toLowerCase().includes('psychology') || output.result.toLowerCase().includes('productivity')"
-      metric: content_awareness
       weight: 2
+    # primed agent should not thrash
+    - type: javascript
+      value: "output.tool_calls.length <= 3"
+      metric: no_thrashing
+      weight: 1

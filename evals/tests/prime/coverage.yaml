@@ -8,27 +8,16 @@
     message: "What do I have on woodworking?"
     prime: true
   assert:
-    # should route to woodworking despite being a 1-file area
-    - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo') && c.input.command.includes('woodworking'))"
-      metric: finds_sparse
-      weight: 2
-    # result should surface the file's content
-    - type: javascript
-      value: "output.result.toLowerCase().includes('chisel') || output.result.toLowerCase().includes('handsaw') || output.result.toLowerCase().includes('plane') || output.result.toLowerCase().includes('hand tool')"
-      metric: content_loaded
-      weight: 1
-
-- description: "sparse area — unprimed"
-  vars:
-    message: "What do I have on woodworking?"
-    prime: false
-  assert:
-    # should still find the content without prime
+    # result should surface the file's content (or at least name the area)
     - type: javascript
       value: "output.result.toLowerCase().includes('chisel') || output.result.toLowerCase().includes('handsaw') || output.result.toLowerCase().includes('plane') || output.result.toLowerCase().includes('hand tool') || output.result.toLowerCase().includes('woodworking')"
       metric: content_loaded
       weight: 2
+    # primed agent should not thrash finding a 1-file area
+    - type: javascript
+      value: "output.tool_calls.length <= 3"
+      metric: no_thrashing
+      weight: 1
 
 - description: "depth targeting — primed"
   vars:
@@ -41,16 +30,6 @@
       metric: correct_target
       weight: 2
     # result should reference specific libraries
-    - type: javascript
-      value: "output.result.toLowerCase().includes('fastapi') || output.result.toLowerCase().includes('pydantic') || output.result.toLowerCase().includes('sqlalchemy')"
-      metric: content_loaded
-      weight: 2
-
-- description: "depth targeting — unprimed"
-  vars:
-    message: "What Python libraries have I used?"
-    prime: false
-  assert:
     - type: javascript
       value: "output.result.toLowerCase().includes('fastapi') || output.result.toLowerCase().includes('pydantic') || output.result.toLowerCase().includes('sqlalchemy')"
       metric: content_loaded

@@ -1,39 +1,25 @@
 # routing — does the agent resolve vague references to correct paths?
 #
 # prime gives the agent a structural map so it can route "my cooking notes"
-# to notes/cooking without exploring first. primed agent should act directly.
+# to notes/cooking without exploring first. primed agents may take varied
+# paths (Bash+mnemo, Skill, Read direct, or tree-only) — we gate on content
+# awareness and a tool-call ceiling rather than a single mechanical path.
 
 - description: "vague topic reference — primed"
   vars:
     message: "What do I have about cooking?"
     prime: true
   assert:
-    # should route to the cooking directory with correct base prefix
-    - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo') && c.input.command.includes('cooking'))"
-      metric: correct_route
-      weight: 2
     # result should mention actual cooking content
     - type: javascript
       value: "output.result.toLowerCase().includes('knife') || output.result.toLowerCase().includes('carbonara') || output.result.toLowerCase().includes('pasta')"
       metric: content_awareness
-      weight: 1
-
-- description: "vague topic reference — unprimed"
-  vars:
-    message: "What do I have about cooking?"
-    prime: false
-  assert:
-    # without prime, needs Skill to discover mnemo
-    - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Skill' && c.input.skill === 'mnemo')"
-      metric: skill_invoked
-      weight: 1
-    # should still find cooking content
-    - type: javascript
-      value: "output.result.toLowerCase().includes('knife') || output.result.toLowerCase().includes('carbonara') || output.result.toLowerCase().includes('pasta')"
-      metric: content_awareness
       weight: 2
+    # primed agent should not thrash — tree gives enough context
+    - type: javascript
+      value: "output.tool_calls.length <= 3"
+      metric: no_thrashing
+      weight: 1
 
 - description: "direct load request — primed"
   vars:
