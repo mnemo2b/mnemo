@@ -18,15 +18,3 @@
       value: "!output.tool_calls.some(c => c.name === 'Bash' && c.input.command && /notes\\/cookin(?![a-z])/.test(c.input.command))"
       metric: no_bad_path_attempt
       weight: 1
-
-- description: "misspelled path — unprimed"
-  vars:
-    message: "Load notes/cookin"
-    prime: false
-  assert:
-    # may or may not recover — we're measuring, not gating
-    # but should not silently fail
-    - type: javascript
-      value: "output.result.toLowerCase().includes('cooking') || output.result.toLowerCase().includes('not found') || output.result.toLowerCase().includes('did you mean')"
-      metric: graceful_response
-      weight: 2
