@@ -19,18 +19,6 @@ personal
 3 directories, 6 files (7.9k tokens)
 ```
 
-**File target** — shows the parent directory tree with the targeted file marked with `→`:
-
-```
-features
-├── list.md              500
-├── load.md              300
-├── → skill.md           500
-└── sqlite.md            500
-
-0 directories, 4 files (1.8k tokens)
-```
-
 **Flags:**
 
 - `--depth N` — limit display to N levels deep (token counts stay accurate regardless)

@@ -80,6 +80,17 @@ describe("list command", () => {
     expect(stderr).toContain("nothing found");
   });
 
+  test("file target errors with hint to use load", async () => {
+    const { stderr, exitCode } = await runCli(
+      ["list", "notes/standalone.md"],
+      { home },
+    );
+
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain("is a file");
+    expect(stderr).toContain("mnemo load notes/standalone.md");
+  });
+
   test("--depth 0 shows directories without children", async () => {
     const { stdout, exitCode } = await runCli(
       ["list", "--depth", "0"],
