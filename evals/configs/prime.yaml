@@ -23,3 +23,6 @@ tests:
   - file://../tests/prime/orientation.yaml
   - file://../tests/prime/routing.yaml
   - file://../tests/prime/recovery.yaml
+  - file://../tests/prime/cross_base.yaml
+  - file://../tests/prime/disambiguation.yaml
+  - file://../tests/prime/coverage.yaml
