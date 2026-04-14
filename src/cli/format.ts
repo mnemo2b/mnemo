@@ -2,6 +2,8 @@
 const isTTY = process.stdout.isTTY ?? false;
 export const DIM = isTTY ? "\x1b[2m" : "";
 export const RESET = isTTY ? "\x1b[0m" : "";
+export const GREEN = isTTY ? "\x1b[32m" : "";
+export const RED = isTTY ? "\x1b[31m" : "";
 
 /** Format a token count for display with tiered rounding */
 export function formatTokens(tokens: number): string {

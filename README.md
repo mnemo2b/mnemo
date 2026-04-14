@@ -180,6 +180,7 @@ mnemo base <add|remove|move|rename|list>
 mnemo set <add|remove|rename|show|list>
 mnemo setup                         install skill + session hook
 mnemo teardown                      remove skill + session hook + config
+mnemo doctor                        check install state and KB wiring
 ```
 
 ## Configuration
