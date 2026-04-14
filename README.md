@@ -81,13 +81,9 @@ Connect a directory of markdown notes:
 mnemo base add notes ~/notes
 ```
 
-Wire it into Claude Code:
+That's it. Your first `mnemo base add` automatically wires Claude Code — installing a SessionStart hook that primes every session with a map of your knowledge base, plus a skill that teaches Claude the `mnemo list` and `mnemo load` commands. The hook is the important one. Without it, the agent doesn't know your KB exists when it interprets a question — ask "what do I have on Svelte?" cold and it might grep your filesystem instead of loading `notes/code/svelte`.
 
-```sh
-mnemo setup
-```
-
-This installs two things: a SessionStart hook that primes every session with a map of your knowledge base, and a skill that teaches Claude the `mnemo list` and `mnemo load` commands. The hook is the important one. Without it, the agent doesn't know your KB exists when it interprets a question — ask "what do I have on Svelte?" cold and it might grep your filesystem instead of loading `notes/code/svelte`.
+If you ever need to reinstall the skill or hook (say you removed them by hand), run `mnemo setup` to put them back.
 
 ## Bases
 
