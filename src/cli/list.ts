@@ -1,5 +1,5 @@
 import { readFileSync, statSync, existsSync } from "fs";
-import { join, dirname, basename } from "path";
+import { join } from "path";
 import { loadConfig } from "../core/config";
 import { CLIError } from "../core/errors";
 import { parseBasePath, formatBasesHint } from "../core/base";
@@ -74,11 +74,7 @@ interface TreeLine {
 }
 
 /** Render tree lines with box-drawing connectors and token counts */
-function renderTree(
-  nodes: TreeNode[],
-  prefix: string,
-  matchedPath: string | null,
-): TreeLine[] {
+function renderTree(nodes: TreeNode[], prefix: string): TreeLine[] {
   const lines: TreeLine[] = [];
 
   nodes.forEach((node, index) => {
@@ -86,20 +82,17 @@ function renderTree(
     const connector = isLast ? "└── " : "├── ";
     const childPrefix = prefix + (isLast ? "    " : "│   ");
 
-    // mark matched file with →
-    const isMatch = matchedPath && node.absolutePath === matchedPath;
-    const name = isMatch ? `→ ${node.name}` : node.name;
     const tokens = node.tokens > 0 ? formatTokens(node.tokens) : "";
 
     lines.push({
       structure: `${prefix}${connector}`,
-      name,
+      name: node.name,
       tokens,
       isDirectory: node.type === "directory",
     });
 
     if (node.children.length > 0) {
-      lines.push(...renderTree(node.children, childPrefix, matchedPath));
+      lines.push(...renderTree(node.children, childPrefix));
     }
   });
 
@@ -150,12 +143,8 @@ function countTree(nodes: TreeNode[]): { dirs: number; files: number } {
   return { dirs, files };
 }
 
-function printTree(
-  rootLabel: string,
-  nodes: TreeNode[],
-  matchedPath: string | null,
-): void {
-  const lines = renderTree(nodes, "", matchedPath);
+function printTree(rootLabel: string, nodes: TreeNode[]): void {
+  const lines = renderTree(nodes, "");
 
   console.log("");
   console.log(rootLabel);
@@ -217,7 +206,7 @@ export function runList(args: string[]): void {
       });
     }
 
-    printTree("mnemo", allNodes, null);
+    printTree("mnemo", allNodes);
     return;
   }
 
@@ -240,18 +229,14 @@ export function runList(args: string[]): void {
   const stat = statSync(targetPath);
 
   if (stat.isFile()) {
-    // show the parent directory tree with this file marked
-    const parentDir = dirname(targetPath);
-    const parentName = basename(parentDir);
-    const nodes = buildTree(parentDir, treeOptions);
-    printTree(parentName, nodes, targetPath);
-  } else {
-    const nodes = buildTree(targetPath, treeOptions);
-
-    if (nodes.length === 0) {
-      throw new CLIError(`no notes found in: ${inputPath}`);
-    }
-
-    printTree(inputPath, nodes, null);
+    throw new CLIError(`"${inputPath}" is a file — use \`mnemo load ${inputPath}\` to read it`);
   }
+
+  const nodes = buildTree(targetPath, treeOptions);
+
+  if (nodes.length === 0) {
+    throw new CLIError(`no notes found in: ${inputPath}`);
+  }
+
+  printTree(inputPath, nodes);
 }
