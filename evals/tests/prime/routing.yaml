@@ -1,7 +1,7 @@
 # routing — does the agent resolve vague references to correct paths?
 #
 # prime gives the agent a structural map so it can route "my cooking notes"
-# to eval/cooking without exploring first. primed agent should act directly.
+# to notes/cooking without exploring first. primed agent should act directly.
 
 - description: "vague topic reference — primed"
   vars:
@@ -37,16 +37,16 @@
 
 - description: "direct load request — primed"
   vars:
-    message: "Load my programming notes."
+    message: "Load my dev notes."
     prime: true
   assert:
     # should run mnemo load directly with correct base prefix — no Skill needed
     - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo load') && c.input.command.includes('programming'))"
+      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo load') && c.input.command.includes('dev'))"
       metric: correct_load
       weight: 2
-    # result should contain actual programming content
+    # result should contain actual dev content
     - type: javascript
-      value: "output.result.toLowerCase().includes('rebasing') || output.result.toLowerCase().includes('generics') || output.result.toLowerCase().includes('typescript')"
+      value: "output.result.toLowerCase().includes('rebasing') || output.result.toLowerCase().includes('docker') || output.result.toLowerCase().includes('hooks') || output.result.toLowerCase().includes('python') || output.result.toLowerCase().includes('javascript')"
       metric: content_loaded
       weight: 2

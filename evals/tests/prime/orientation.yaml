@@ -13,9 +13,9 @@
       value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo'))"
       metric: mnemo_cli_used
       weight: 2
-    # result should reference actual fixture topics
+    # result should reference actual fixture topics across bases
     - type: javascript
-      value: "output.result.toLowerCase().includes('cooking') && output.result.toLowerCase().includes('programming')"
+      value: "output.result.toLowerCase().includes('cooking') && output.result.toLowerCase().includes('dev')"
       metric: content_awareness
       weight: 2
 
@@ -31,6 +31,6 @@
       weight: 1
     # should still find content
     - type: javascript
-      value: "output.result.toLowerCase().includes('cooking') && output.result.toLowerCase().includes('programming')"
+      value: "output.result.toLowerCase().includes('cooking') && output.result.toLowerCase().includes('dev')"
       metric: content_awareness
       weight: 2

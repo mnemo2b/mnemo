@@ -8,7 +8,7 @@ providers:
 
 defaultTest:
   vars:
-    fixture: "minimal"
+    fixture: "realistic"
   assert:
     - type: cost
       threshold: 0.15

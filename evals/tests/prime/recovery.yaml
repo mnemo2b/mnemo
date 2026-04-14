@@ -5,23 +5,23 @@
 
 - description: "misspelled path — primed"
   vars:
-    message: "Load eval/cookin"
+    message: "Load notes/cookin"
     prime: true
   assert:
-    # should correct to eval/cooking
+    # should correct to notes/cooking
     - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo') && c.input.command.includes('cooking'))"
+      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo') && c.input.command.includes('notes/cooking'))"
       metric: path_corrected
       weight: 2
-    # should not attempt the misspelled path as-is
+    # should not attempt the misspelled path as-is (cookin not followed by g)
     - type: javascript
-      value: "!output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('cookin') && !c.input.command.includes('cooking'))"
+      value: "!output.tool_calls.some(c => c.name === 'Bash' && c.input.command && /notes\\/cookin(?![a-z])/.test(c.input.command))"
       metric: no_bad_path_attempt
       weight: 1
 
 - description: "misspelled path — unprimed"
   vars:
-    message: "Load eval/cookin"
+    message: "Load notes/cookin"
     prime: false
   assert:
     # may or may not recover — we're measuring, not gating
