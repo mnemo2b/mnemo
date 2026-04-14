@@ -81,13 +81,13 @@ Connect a directory of markdown notes:
 mnemo base add notes ~/notes
 ```
 
-If you use Claude Code, install the skill:
+Wire it into Claude Code:
 
 ```sh
 mnemo setup
 ```
 
-Next time you start a session, you can browse your notes with `mnemo list` and load them with `mnemo load`. Once you create sets, a menu will appear at session start and you can load one by picking a number.
+This installs two things: a SessionStart hook that primes every session with a map of your knowledge base, and a skill that teaches Claude the `mnemo list` and `mnemo load` commands. The hook is the important one. Without it, the agent doesn't know your KB exists when it interprets a question — ask "what do I have on Svelte?" cold and it might grep your filesystem instead of loading `notes/code/svelte`.
 
 ## Bases
 
@@ -155,10 +155,12 @@ Start a Claude Code session from that directory and the set is available automat
 
 `mnemo setup` installs two things:
 
-- A **skill** that teaches Claude the `mnemo list` and `mnemo load` commands
-- A **session hook** that shows your available sets when you start a session
+- A **SessionStart hook** that runs `mnemo prime` — injects your bases, sets, and a shallow tree into the session at startup. This is what lets the agent route "my cooking notes" to the right path without exploring first.
+- A **skill** that teaches Claude the `mnemo list` and `mnemo load` commands. Activates when you use those keywords explicitly.
 
-The session menu shows set names, file counts, and token costs so you know what you're loading before you load it. Pick a number or keep working. The menu is there when you want it.
+Of the two, the hook does the heavy lifting. Mnemo is an interpretation layer — it shapes what the agent thinks you mean. That has to happen before the agent reads your question, which is why it lives in SessionStart and not in a Skill trigger.
+
+When you have sets, the prime output includes a numbered menu with file counts and token costs. Pick a number to load one, or ignore it and keep working.
 
 ## Organizing your notes
 
