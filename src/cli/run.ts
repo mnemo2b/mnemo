@@ -5,6 +5,7 @@ import { runSet } from "./set";
 import { runPrime } from "./prime";
 import { runSetup } from "./setup";
 import { runTeardown } from "./teardown";
+import { runDoctor } from "./doctor";
 import { CLIError } from "../core/errors";
 
 /** Dispatch a command to the appropriate handler */
@@ -23,6 +24,8 @@ export function runCommand(command: string, args: string[]): void {
     runSetup();
   } else if (command === "teardown") {
     runTeardown();
+  } else if (command === "doctor") {
+    runDoctor();
   } else {
     throw new CLIError(`unknown command: ${command}`);
   }

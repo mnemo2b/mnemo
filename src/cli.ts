@@ -6,7 +6,7 @@ const command = args[0];
 
 // help text — shown when no command or --help
 if (!command || command === "--help") {
-  console.log("usage: mnemo <list|load|base|set|setup|teardown> [options]");
+  console.log("usage: mnemo <list|load|base|set|setup|teardown|doctor> [options]");
   console.log("");
   console.log("commands:");
   console.log("  list [path]               browse the knowledge base");
@@ -24,6 +24,7 @@ if (!command || command === "--help") {
   console.log("  set list                  show all sets");
   console.log("  setup                     install skill + session hook");
   console.log("  teardown                  remove skill + session hook + config");
+  console.log("  doctor                    check install state and KB wiring");
   process.exit(0);
 }
 
