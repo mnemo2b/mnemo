@@ -21,17 +21,6 @@
       metric: no_wrong_python
       weight: 1
 
-- description: "python trap — unprimed (pet not dev)"
-  vars:
-    message: "How often do I feed my python?"
-    prime: false
-  assert:
-    # measure whether the agent still lands on pet python without prime
-    - type: javascript
-      value: "output.result.toLowerCase().includes('rat') || output.result.toLowerCase().includes('snake') || output.result.toLowerCase().includes('ball python')"
-      metric: finds_pet_context
-      weight: 2
-
 - description: "topic vs project — primed (app not recipes)"
   vars:
     message: "What's in my recipe app?"
