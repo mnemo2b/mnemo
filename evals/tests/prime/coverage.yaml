@@ -1,0 +1,57 @@
+# coverage — does the agent handle sparse and deep areas equally well?
+#
+# sparse: woodworking has 1 file. agent should still find it.
+# depth:  dev/python has libraries/ specifically — agent should target it.
+
+- description: "sparse area — primed"
+  vars:
+    message: "What do I have on woodworking?"
+    prime: true
+  assert:
+    # should route to woodworking despite being a 1-file area
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('mnemo') && c.input.command.includes('woodworking'))"
+      metric: finds_sparse
+      weight: 2
+    # result should surface the file's content
+    - type: javascript
+      value: "output.result.toLowerCase().includes('chisel') || output.result.toLowerCase().includes('handsaw') || output.result.toLowerCase().includes('plane') || output.result.toLowerCase().includes('hand tool')"
+      metric: content_loaded
+      weight: 1
+
+- description: "sparse area — unprimed"
+  vars:
+    message: "What do I have on woodworking?"
+    prime: false
+  assert:
+    # should still find the content without prime
+    - type: javascript
+      value: "output.result.toLowerCase().includes('chisel') || output.result.toLowerCase().includes('handsaw') || output.result.toLowerCase().includes('plane') || output.result.toLowerCase().includes('hand tool') || output.result.toLowerCase().includes('woodworking')"
+      metric: content_loaded
+      weight: 2
+
+- description: "depth targeting — primed"
+  vars:
+    message: "What Python libraries have I used?"
+    prime: true
+  assert:
+    # should target dev/python (libraries subdirectory lives here)
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('dev/python'))"
+      metric: correct_target
+      weight: 2
+    # result should reference specific libraries
+    - type: javascript
+      value: "output.result.toLowerCase().includes('fastapi') || output.result.toLowerCase().includes('pydantic') || output.result.toLowerCase().includes('sqlalchemy')"
+      metric: content_loaded
+      weight: 2
+
+- description: "depth targeting — unprimed"
+  vars:
+    message: "What Python libraries have I used?"
+    prime: false
+  assert:
+    - type: javascript
+      value: "output.result.toLowerCase().includes('fastapi') || output.result.toLowerCase().includes('pydantic') || output.result.toLowerCase().includes('sqlalchemy')"
+      metric: content_loaded
+      weight: 2

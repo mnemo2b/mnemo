@@ -1,0 +1,60 @@
+# disambiguation — does the agent pick the right "python" / "recipe"?
+#
+# realistic has overlapping names:
+#   - dev/python vs pets/python vs research/nutrition/python-snake-diet
+#   - cooking/recipes vs projects/recipe-app
+# prime's tree should let the agent pick based on intent.
+
+- description: "python trap — primed (pet not dev)"
+  vars:
+    message: "How often do I feed my python?"
+    prime: true
+  assert:
+    # should route to pets/python — feeding implies the snake
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('pets/python'))"
+      metric: correct_python
+      weight: 2
+    # should not mistake it for dev python
+    - type: javascript
+      value: "!output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('dev/python'))"
+      metric: no_wrong_python
+      weight: 1
+
+- description: "python trap — unprimed (pet not dev)"
+  vars:
+    message: "How often do I feed my python?"
+    prime: false
+  assert:
+    # measure whether the agent still lands on pet python without prime
+    - type: javascript
+      value: "output.result.toLowerCase().includes('rat') || output.result.toLowerCase().includes('snake') || output.result.toLowerCase().includes('ball python')"
+      metric: finds_pet_context
+      weight: 2
+
+- description: "topic vs project — primed (app not recipes)"
+  vars:
+    message: "What's in my recipe app?"
+    prime: true
+  assert:
+    # should load the project, not the cooking recipes
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('projects/recipe-app'))"
+      metric: correct_target
+      weight: 2
+    # should not pull from cooking/recipes
+    - type: javascript
+      value: "!output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('cooking/recipes'))"
+      metric: no_wrong_target
+      weight: 1
+
+- description: "topic vs project — unprimed (app not recipes)"
+  vars:
+    message: "What's in my recipe app?"
+    prime: false
+  assert:
+    # measure whether the agent finds the project without prime
+    - type: javascript
+      value: "output.result.toLowerCase().includes('sqlite') || output.result.toLowerCase().includes('svelte') || output.result.toLowerCase().includes('rust') || output.result.toLowerCase().includes('architecture')"
+      metric: finds_app_context
+      weight: 2
