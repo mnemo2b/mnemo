@@ -1,4 +1,4 @@
-import { mkdtempSync, cpSync, writeFileSync, rmSync } from "fs";
+import { mkdtempSync, cpSync, writeFileSync, rmSync, existsSync, readdirSync } from "fs";
 import { spawn } from "child_process";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -60,15 +60,37 @@ export default class DispatchProvider {
   // CLAUDE_CONFIG_DIR (isolated user-scope config with the mnemo skill staged).
   // keeping them separate makes each dir's purpose obvious when debugging.
 
+  // detects fixture layout and returns the bases to register.
+  // single-base: fixtures with an AGENTS.md at the root use the whole dir as `eval`.
+  // multi-base: fixtures without a root AGENTS.md treat each top-level directory as a base.
+
+  private detectBases(fixtureDir: string): Record<string, string> {
+    if (existsSync(join(fixtureDir, "AGENTS.md"))) {
+      return { eval: fixtureDir };
+    }
+
+    const bases: Record<string, string> = {};
+    for (const entry of readdirSync(fixtureDir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        bases[entry.name] = join(fixtureDir, entry.name);
+      }
+    }
+    return bases;
+  }
+
   private setup(fixtureName: string) {
     // copy the fixture kb to a temp directory
     const fixtureSource = join(__dirname, "..", "fixtures", fixtureName);
     const fixtureDir = mkdtempSync(join(tmpdir(), "mnemo-dispatch-fixture-"));
     cpSync(fixtureSource, fixtureDir, { recursive: true });
 
-    // add a mnemo config that adds the fixture kb as a base (eval)
+    // register bases in a mnemo config
+    const bases = this.detectBases(fixtureDir);
+    const basesYaml = Object.entries(bases)
+      .map(([name, path]) => `  ${name}: ${path}`)
+      .join("\n");
     const mnemoConfig = join(fixtureDir, ".mnemo-config.yml");
-    writeFileSync(mnemoConfig, `bases:\n  eval: ${fixtureDir}\n`);
+    writeFileSync(mnemoConfig, `bases:\n${basesYaml}\n`);
 
     // isolate CLAUDE_CONFIG_DIR so nothing from ~/.claude leaks in
     const configDir = mkdtempSync(join(tmpdir(), "mnemo-dispatch-config-"));
