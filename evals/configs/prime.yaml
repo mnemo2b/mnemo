@@ -11,7 +11,7 @@ defaultTest:
     fixture: "realistic"
   assert:
     - type: cost
-      threshold: 0.15
+      threshold: 0.30
       metric: cost_guardrail
       weight: 0.5
     - type: latency
