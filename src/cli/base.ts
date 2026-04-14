@@ -6,6 +6,12 @@ import { CLIError } from "../core/errors";
 import { formatBasesHint } from "../core/base";
 import { isValidName } from "../core/validate-name";
 import { DIM, RESET } from "./format";
+import {
+  isSkillInstalled,
+  isHookInstalled,
+  installSkill,
+  installHook,
+} from "./install";
 
 function baseList(): void {
   const { bases } = loadConfig();
@@ -51,6 +57,30 @@ function baseAdd(name: string | undefined, rawPath: string | undefined): void {
   bases[name] = absolutePath;
   saveConfig({ bases });
   console.log(`added base "${name}" → ${shortenPath(absolutePath)}`);
+
+  // auto-wire claude code if setup hasn't run yet. registering a base is
+  // the strongest signal that the user intends to use mnemo, so it's the
+  // right moment to put the skill and hook in place.
+  maybeWireClaudeCode();
+}
+
+/**
+ * If the skill or hook is missing, install both and tell the user what
+ * happened. No-op when everything is already wired.
+ */
+function maybeWireClaudeCode(): void {
+  if (isSkillInstalled() && isHookInstalled()) return;
+
+  installSkill();
+  installHook();
+
+  console.log("");
+  console.log("wiring up Claude Code:");
+  console.log("  skill    ~/.claude/skills/mnemo/");
+  console.log("  hook     ~/.claude/settings.json");
+  console.log("");
+  console.log("your next Claude Code session will start with your knowledge");
+  console.log("base in context. run `mnemo setup` again if these get removed.");
 }
 
 function baseRemove(name: string | undefined): void {

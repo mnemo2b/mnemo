@@ -1,4 +1,6 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
 import { runCli } from "../helpers/run-cli";
 import {
   makeTempHome,
@@ -106,6 +108,55 @@ describe("base commands", () => {
 
     expect(exitCode).toBe(1);
     expect(stderr).toContain("usage:");
+  });
+});
+
+describe("base add auto-wires Claude Code", () => {
+  test("first base add installs skill and hook with wiring message", async () => {
+    const home = makeTempHome();
+
+    const { stdout, exitCode } = await runCli(
+      ["base", "add", "notes", FIXTURES_DIR],
+      { home },
+    );
+
+    expect(exitCode).toBe(0);
+    // base add output still present
+    expect(stdout).toContain('added base "notes"');
+    // wiring message informs the user what's happening
+    expect(stdout).toContain("wiring up Claude Code");
+    expect(stdout).toContain("skill");
+    expect(stdout).toContain("hook");
+
+    // skill files landed
+    expect(existsSync(join(home, ".claude", "skills", "mnemo", "SKILL.md"))).toBe(true);
+
+    // hook landed
+    const settings = JSON.parse(
+      readFileSync(join(home, ".claude", "settings.json"), "utf-8"),
+    );
+    expect(settings.hooks.SessionStart[0].hooks[0].command).toBe("mnemo prime");
+
+    cleanupTempDir(home);
+  });
+
+  test("second base add stays quiet when already wired", async () => {
+    const home = makeTempHome();
+
+    // first base add wires things up
+    await runCli(["base", "add", "notes", FIXTURES_DIR], { home });
+
+    // second base add should not re-print the wiring message
+    const { stdout, exitCode } = await runCli(
+      ["base", "add", "more", FIXTURES_DIR],
+      { home },
+    );
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain('added base "more"');
+    expect(stdout).not.toContain("wiring up Claude Code");
+
+    cleanupTempDir(home);
   });
 });
 
