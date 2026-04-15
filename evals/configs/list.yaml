@@ -1,0 +1,25 @@
+description: "mnemo list — path resolution and recovery evals"
+
+prompts:
+  - "{{message}}"
+
+providers:
+  - id: "file://../providers/dispatch.ts"
+
+defaultTest:
+  vars:
+    fixture: "realistic"
+  assert:
+    - type: cost
+      threshold: 0.30
+      metric: cost_guardrail
+      weight: 0.5
+    - type: latency
+      threshold: 60000
+      metric: latency_guardrail
+      weight: 0.5
+
+tests:
+  - file://../tests/list/targeting.yaml
+  - file://../tests/list/browse.yaml
+  - file://../tests/list/recovery.yaml

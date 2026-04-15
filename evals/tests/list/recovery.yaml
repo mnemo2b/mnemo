@@ -1,0 +1,25 @@
+# recovery — does the agent handle a miss gracefully?
+#
+# user asks for something the KB doesn't contain. the agent should not fabricate
+# a path, should check (via list or the tree), and should tell the user it's
+# missing — ideally pointing at what IS there.
+
+- description: "missing path — primed"
+  vars:
+    message: "Show me my sailing notes."
+    prime: true
+  assert:
+    # result should communicate that sailing doesn't exist in the KB
+    - type: javascript
+      value: "output.result.toLowerCase().includes(\"don't\") || output.result.toLowerCase().includes('no ') || output.result.toLowerCase().includes('not find') || output.result.toLowerCase().includes(\"don't have\") || output.result.toLowerCase().includes('nothing')"
+      metric: honest_about_miss
+      weight: 2
+    # should not invent a load against a nonexistent path
+    - type: javascript
+      value: "!output.tool_calls.some(c => c.name === 'Bash' && c.input.command && /mnemo load.*sailing/.test(c.input.command))"
+      metric: no_fabrication
+      weight: 2
+    - type: javascript
+      value: "output.tool_calls.length <= 3"
+      metric: no_thrashing
+      weight: 1

@@ -1,0 +1,45 @@
+# targeting — does the agent route user references to the right list path?
+#
+# primed agents know the structure. they should call `mnemo list` with a
+# correct base-prefixed path, without exploring first. we assert the list
+# call happens, the target is right, and the response surfaces real content.
+
+- description: "exact path — primed"
+  vars:
+    message: "List my cooking notes."
+    prime: true
+  assert:
+    # should call mnemo list against the cooking directory
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && /mnemo list.*notes\\/cooking/.test(c.input.command))"
+      metric: correct_list_target
+      weight: 2
+    # result should surface actual cooking subdirs (recipes, techniques, etc.)
+    - type: javascript
+      value: "output.result.toLowerCase().includes('recipes') || output.result.toLowerCase().includes('techniques') || output.result.toLowerCase().includes('gear')"
+      metric: content_awareness
+      weight: 2
+    - type: javascript
+      value: "output.tool_calls.length <= 3"
+      metric: no_thrashing
+      weight: 1
+
+- description: "vague reference resolves to list — primed"
+  vars:
+    message: "What woodworking notes do I have?"
+    prime: true
+  assert:
+    # should reach for mnemo list, not jump to load or glob
+    - type: javascript
+      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && /mnemo list.*woodworking/.test(c.input.command))"
+      metric: chose_list
+      weight: 2
+    # woodworking has a single basics.md — result should reference it
+    - type: javascript
+      value: "output.result.toLowerCase().includes('basics') || output.result.toLowerCase().includes('just started') || output.result.toLowerCase().includes('one note')"
+      metric: content_awareness
+      weight: 2
+    - type: javascript
+      value: "output.tool_calls.length <= 3"
+      metric: no_thrashing
+      weight: 1
