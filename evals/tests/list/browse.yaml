@@ -1,0 +1,37 @@
+# browse — cold-start and overview queries where the user has no target.
+#
+# prime's tree already surfaces structure, so primed agents may answer without
+# running a tool at all. we gate on content awareness — did they surface the
+# actual bases/areas that exist? — and cap tool calls so the assertion also
+# covers agents that do reach for `mnemo list` to confirm.
+
+- description: "browse from cold — primed"
+  vars:
+    message: "What's in my knowledge base?"
+    prime: true
+  assert:
+    # result should name real top-level areas from the realistic fixture
+    - type: javascript
+      value: "output.result.toLowerCase().includes('notes') && output.result.toLowerCase().includes('research')"
+      metric: surfaces_bases
+      weight: 2
+    # primed agent has the tree — at most one confirming list call
+    - type: javascript
+      value: "output.tool_calls.length <= 1"
+      metric: prime_is_enough
+      weight: 1
+
+- description: "quick overview — primed"
+  vars:
+    message: "Give me a quick overview of my notes."
+    prime: true
+  assert:
+    # result should surface multiple top-level areas, not a single file dump
+    - type: javascript
+      value: "['cooking', 'dev', 'woodworking', 'ai', 'photography', 'music'].filter(k => output.result.toLowerCase().includes(k)).length >= 3"
+      metric: breadth_awareness
+      weight: 2
+    - type: javascript
+      value: "output.tool_calls.length <= 2"
+      metric: no_thrashing
+      weight: 1
