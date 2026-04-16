@@ -27,11 +27,22 @@ interface ProviderOptions {
   };
 }
 
+interface TestAssertion {
+  type?: string;
+  value?: string;
+  metric?: string;
+  weight?: number;
+}
+
 interface CallApiContext {
   vars: {
     fixture: string;
     prime?: boolean;
     model?: string;
+  };
+  test?: {
+    description?: string;
+    assert?: TestAssertion[];
   };
 }
 
@@ -92,11 +103,23 @@ export default class DispatchProvider {
   // writes the raw stream-json lines to a trajectory file so each run
   // can be inspected outside of promptfoo
 
-  private writeTrajectory(index: number, prompt: string, rawLines: string[]) {
+  private writeTrajectory(
+    index: number,
+    prompt: string,
+    rawLines: string[],
+    test?: CallApiContext["test"],
+  ) {
     if (rawLines.length === 0) return;
     const slug = prompt.slice(0, 50).replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
     const filename = `${index}-${slug}.jsonl`;
-    const meta = JSON.stringify({ type: "meta", prompt, index, timestamp: new Date().toISOString() });
+    const meta = JSON.stringify({
+      type: "meta",
+      prompt,
+      index,
+      timestamp: new Date().toISOString(),
+      description: test?.description,
+      assertions: test?.assert,
+    });
     writeFileSync(join(this.runDir, filename), meta + "\n" + rawLines.join("\n") + "\n");
   }
 
@@ -358,7 +381,7 @@ export default class DispatchProvider {
         error: String(error),
       };
     } finally {
-      this.writeTrajectory(callIndex, prompt, rawLines);
+      this.writeTrajectory(callIndex, prompt, rawLines, context.test);
       this.teardown(fixtureDir, configDir);
     }
   }

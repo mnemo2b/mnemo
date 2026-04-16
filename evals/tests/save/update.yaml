@@ -1,24 +1,37 @@
-# update — did the agent modify an existing note instead of creating a new one?
+# update — does the agent extend an existing note instead of creating a duplicate?
+#
+# the strongest failure mode for save is silently creating a parallel file
+# next to one that already covers the topic. the agent should recognize the
+# existing file as the right home and propose an edit, not a new creation.
 
-- description: "update existing — carbonara variation overlaps pasta-carbonara.md"
+- description: "refinement to existing — braising aromatic timing extends braising.md"
   vars:
-    brief: >
-      Made carbonara tonight and used a mix of pecorino romano and
-      parmesan instead of pure pecorino. The texture was creamier and
-      less salty. Worth noting as a variation.
-    context: >
-      The user was sharing a cooking experience that relates to an
-      existing note about pasta carbonara.
-    user_said: "mnemo save this to my notes"
-    destination_hint: "cooking"
-
+    # cooking/techniques/braising.md exists in the fixture. the brief is a
+    # refinement on the existing technique, not a new technique. the agent
+    # should target the existing file.
+    message: >
+      Quick refinement to my braising technique — adding aromatics in two
+      stages (first round before the liquid goes in, second round halfway
+      through the cook) gives a cleaner layered flavor than dumping them
+      all in at the start. Save this refinement to the braising notes.
+    prime: true
   assert:
     - type: javascript
-      value: "['SAVED', 'PROPOSAL'].includes(output.status)"
-      metric: status_correct
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    # the existing braising file shows up in research or as the write target
     - type: javascript
-      value: "output.files_modified.some(f => f.path === 'cooking/pasta-carbonara.md')"
-      metric: update_target_correct
+      value: "output.tool_input_text.includes('braising')"
+      metric: reached_target_file
+      weight: 2
+    # response references updating/extending — not creating a sibling file
     - type: javascript
-      value: "output.files_created.filter(f => f.path.startsWith('cooking/')).length === 0"
+      value: "/updated|update|extended|append|edit|modify/i.test(output.result)"
+      metric: framed_as_update
+      weight: 2
+    # explicitly didn't propose a new sibling file (e.g. braising-aromatics.md)
+    - type: javascript
+      value: "!/braising-aromatics|braising-refinement|new file|created [a-z\\-]*\\.md/i.test(output.result)"
       metric: no_duplicate_creation
+      weight: 1

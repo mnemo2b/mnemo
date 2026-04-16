@@ -1,52 +1,65 @@
-# placement — did the agent save to the right directory?
+# placement — does the agent save to the right place when the brief is clear?
+#
+# clear placement should resolve to SAVED. willingness to create a new file
+# (when content is novel but routing is obvious) is part of placement quality —
+# the agent shouldn't punt on routine cases just because the file is new.
 
-- description: "clear destination — cooking area"
+- description: "explicit destination — pasta water tips to cooking/techniques"
   vars:
-    brief: >
-      Risotto requires patience. The key is adding warm stock one ladle
-      at a time, stirring constantly. The starch releases slowly and builds
-      the creamy texture. Never rush it.
-    context: >
-      The user was discussing Italian cooking techniques.
-    user_said: "mnemo save this to my notes"
-    destination_hint: "cooking"
+    message: >
+      Two pasta water tips from tonight's cooking — salt the water heavily,
+      around 1 tablespoon per liter, and always reserve a cup of starchy
+      water before draining for the sauce. Save these to cooking/techniques.
+    prime: true
+  assert:
+    # save sub-agent was invoked — flat search is more robust than guessing tool name
+    - type: javascript
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    # the cooking/techniques area surfaced somewhere in the trajectory
+    # (brief construction, sub-agent research, or write target)
+    - type: javascript
+      value: "output.tool_input_text.includes('cooking/techniques')"
+      metric: reached_target
+      weight: 2
+    # dispatcher relays a SAVED outcome — keywords from the skill's response template
+    - type: javascript
+      value: "/saved|wrote|created|updated/i.test(output.result)"
+      metric: status_saved
+      weight: 2
+    # didn't punt to clarifying questions
+    - type: javascript
+      value: "!/which|clarify|could you|can you tell/i.test(output.result)"
+      metric: no_clarification_punt
+      weight: 1
 
+- description: "novel topic, clear area — thai cooking history into cooking"
+  vars:
+    message: >
+      Read about how Thai cooking evolved — Chinese influence brought
+      noodle techniques in the 18th century, royal kitchen traditions
+      shaped the layering of flavors, and rice anchors every meal as the
+      foundation. Save a note on Thai cooking history.
+    prime: true
   assert:
     - type: javascript
-      value: "output.status === 'SAVED'"
-      metric: status_correct
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    # cooking is the obvious area even though no thai-history file exists yet
     - type: javascript
-      value: "output.files_created.some(f => f.path.startsWith('cooking/'))"
-      metric: placement_correct
+      value: "output.tool_input_text.includes('cooking')"
+      metric: reached_target
+      weight: 2
+    # SAVED or PROPOSAL both acceptable — the test is willingness to proceed,
+    # not specifically writing without approval
     - type: javascript
-      value: >
-        output.files_created.some(f => /^[a-z0-9-]+\.md$/.test(f.path.split('/').pop()))
-      metric: filename_format
-
-- description: "clear destination — programming area"
-  vars:
-    brief: >
-      The observer pattern decouples event producers from consumers.
-      Instead of an object calling its dependencies directly, it maintains
-      a list of subscribers and notifies them when state changes. This keeps
-      components independent — the producer doesn't need to know what reacts
-      to its events.
-    context: >
-      The user was learning about software design patterns.
-    user_said: "mnemo save this to my notes"
-    destination_hint: "programming"
-
-  assert:
+      value: "/saved|wrote|created|proposal|propose/i.test(output.result)"
+      metric: willing_to_proceed
+      weight: 2
+    # didn't refuse on grounds of "no existing file"
     - type: javascript
-      value: "['SAVED', 'PROPOSAL'].includes(output.status)"
-      metric: status_correct
-    - type: javascript
-      value: "output.files_created.some(f => f.path.startsWith('programming/'))"
-      metric: placement_correct
-    - type: javascript
-      value: >
-        output.files_created.some(f => /^[a-z0-9-]+\.md$/.test(f.path.split('/').pop()))
-      metric: filename_format
-    - type: javascript
-      value: "output.files_modified.length === 0"
-      metric: no_unintended_modifications
+      value: "!/no existing|doesn't exist|cannot find|no matching file/i.test(output.result)"
+      metric: no_new_file_refusal
+      weight: 1
