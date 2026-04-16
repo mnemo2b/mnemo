@@ -1,8 +1,9 @@
-import { installSkill, installHook } from "./install";
+import { installSkill, installAgents, installHook } from "./install";
 
 /** Install skill files and session hook */
 export function runSetup(): void {
   installSkill();
+  installAgents();
   const hookExisted = installHook();
 
   const hookNote = hookExisted ? " (already configured)" : "";
@@ -10,6 +11,7 @@ export function runSetup(): void {
   console.log("mnemo is ready.");
   console.log("");
   console.log("  skill    ~/.claude/skills/mnemo/");
+  console.log("  agents   ~/.claude/agents/mnemo-*.md");
   console.log(`  hook     ~/.claude/settings.json${hookNote}`);
   console.log("");
   console.log("next, add a knowledge base:");

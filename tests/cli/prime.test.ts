@@ -56,7 +56,7 @@ describe("prime command", () => {
 
     expect(exitCode).toBe(0);
     // sets section
-    expect(stdout).toContain("sets:");
+    expect(stdout).toContain("sets bundle related paths");
     expect(stdout).toContain("reading");
     expect(stdout).toContain("reference");
     // paths visible

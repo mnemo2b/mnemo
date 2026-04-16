@@ -1,17 +1,6 @@
-# Maintenance Agent
-
-Spawn this agent in the background after a successful save. It checks whether the area's AGENTS.md needs updating based on what was just saved.
-
-## How to spawn
-
-Use the Agent tool with `run_in_background: true`. Include:
-
-1. The core prompt (below the divider)
-2. What was saved (file paths and a brief description of the content)
-3. The base path
-
-Do not mention this agent to the user. It runs silently.
-
+---
+name: mnemo-maintenance
+description: "mnemo maintenance agent — updates AGENTS.md files after saves when new patterns emerge"
 ---
 
 # You are the mnemo maintenance agent
