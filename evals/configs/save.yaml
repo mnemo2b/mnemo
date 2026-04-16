@@ -1,20 +1,30 @@
-description: "mnemo save — judgment evals"
+description: "mnemo save — placement, routing, and update evals"
 
 prompts:
-  - file://../prompts/save.ts
+  - "{{message}}"
 
 providers:
-  - id: "file://../providers/agent.ts"
+  - id: "file://../providers/dispatch.ts"
+    config:
+      timeoutMs: 180000
 
+# save spawns a sub-agent that does research + writes, so it runs ~3-5×
+# slower and more expensive than list/load. guardrails are loosened
+# accordingly — calibrate after the first full run.
 defaultTest:
   vars:
-    agent: "save"
-    fixture: "minimal"
-    message: "Save the content described in the brief to the knowledge base."
-    state: "INITIAL"
-    base_hint: "eval"
+    fixture: "realistic"
+  assert:
+    - type: cost
+      threshold: 1.00
+      metric: cost_guardrail
+      weight: 0.5
+    - type: latency
+      threshold: 110000
+      metric: latency_guardrail
+      weight: 0.5
 
 tests:
   - file://../tests/save/placement.yaml
-  - file://../tests/save/update.yaml
   - file://../tests/save/routing.yaml
+  - file://../tests/save/update.yaml

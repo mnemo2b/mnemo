@@ -1,19 +1,66 @@
-# routing — did the agent choose the right confidence status?
+# routing — does the agent pick the right confidence level when placement is unclear?
+#
+# ambiguity comes in two flavors: multiple plausible destinations (PROPOSAL),
+# or not enough information to decide (NEEDS_CONTEXT). conflating these is a
+# routing failure even if the final placement is reasonable.
 
-- description: "no matching area — travel tips don't fit cooking or programming"
+- description: "ambiguous area — prompt engineering fits notes/ai or research/ai"
   vars:
-    brief: >
-      Packing light for a week-long trip: one carry-on, roll clothes
-      instead of folding, wear the bulkiest shoes on the plane, and
-      always pack a spare ziplock bag.
-    context: >
-      The user was sharing travel tips from a recent trip.
-    user_said: "mnemo save this to my notes"
-
+    # both notes/ai/prompting-patterns.md and research/ai/prompt-injection.md
+    # exist — chain-of-thought content could plausibly extend either or warrant
+    # a new file in either area. proper response is a proposal, not a silent pick.
+    message: >
+      Insight from a prompt engineering reading session — chain-of-thought
+      works because it surfaces intermediate reasoning that the model would
+      otherwise compress. Asking the model to "think step by step" is
+      essentially a request for that hidden reasoning, made explicit. Save
+      this note about prompt engineering.
+    prime: true
   assert:
     - type: javascript
-      value: "['PROPOSAL', 'NEEDS_CONTEXT'].includes(output.status)"
-      metric: status_correct
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    # both plausible areas should surface in the trajectory
     - type: javascript
-      value: "output.status !== 'SAVED'"
-      metric: no_auto_save
+      value: "output.tool_input_text.includes('notes/ai') && output.tool_input_text.includes('research/ai')"
+      metric: explored_both_areas
+      weight: 2
+    # dispatcher relays a proposal — keywords from the skill's PROPOSAL template
+    - type: javascript
+      value: "/proposal|propose|options?|could go|either|which (one|location|area)/i.test(output.result)"
+      metric: status_proposal
+      weight: 2
+    # didn't silently commit a single placement
+    - type: javascript
+      value: "!/^.*saved.*$/im.test(output.result) || /proposal|propose/i.test(output.result)"
+      metric: no_silent_save
+      weight: 1
+
+- description: "vague brief — 'python' fits multiple unrelated areas"
+  vars:
+    # 'python' could mean ball pythons (notes/pets/python), the language
+    # (notes/dev/python), python research (research/ai or research/nutrition's
+    # python-snake-diet). with no content, the agent must ask before doing anything.
+    message: "Save what we discussed about python."
+    prime: true
+  assert:
+    - type: javascript
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    # the response should be a question, not a placement decision
+    - type: javascript
+      value: "output.result.includes('?')"
+      metric: asked_clarifying_question
+      weight: 2
+    # signals from NEEDS_CONTEXT response template — questions, options, "which"
+    - type: javascript
+      value: "/which|clarify|could you|can you (tell|share|provide)|need more|need_context|needs_context/i.test(output.result)"
+      metric: status_needs_context
+      weight: 2
+    # didn't fabricate content or claim to have saved nothing meaningful
+    - type: javascript
+      value: "!/i(\\.|'ve| have) saved|file (was|has been) (created|written)/i.test(output.result)"
+      metric: no_phantom_save
+      weight: 1
