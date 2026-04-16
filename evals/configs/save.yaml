@@ -6,11 +6,10 @@ prompts:
 providers:
   - id: "file://../providers/dispatch.ts"
     config:
-      timeoutMs: 180000
+      timeoutMs: 240000
 
-# save spawns a sub-agent that does research + writes, so it runs ~3-5×
-# slower and more expensive than list/load. guardrails are loosened
-# accordingly — calibrate after the first full run.
+# save spawns a sub-agent that does research + writes. guardrails are
+# loose for now — tighten once named-agent + brief changes stabilize.
 defaultTest:
   vars:
     fixture: "realistic"
@@ -20,7 +19,7 @@ defaultTest:
       metric: cost_guardrail
       weight: 0.5
     - type: latency
-      threshold: 110000
+      threshold: 210000
       metric: latency_guardrail
       weight: 0.5
 

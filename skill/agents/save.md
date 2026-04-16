@@ -40,17 +40,25 @@ When you receive a brief, don't start by asking "where does this go?" Start by a
 
 ## Research phase
 
-Before drafting, orient yourself in the knowledge base.
+Before drafting, orient yourself in the knowledge base. The brief may already include a Knowledge base section with bases (name→path) and structure (depth-2 tree). When present, use it — don't re-discover what you already have.
 
-1. Run `mnemo base list` to discover registered bases and their absolute paths — this is how you know where files physically live
+**When the brief includes Knowledge base context:**
+
+1. Use the Bases paths to locate files on disk (e.g. `notes: /path/to/notes` means `notes/cooking` lives at `/path/to/notes/cooking`)
+2. Use the Structure tree to understand what exists — skip `mnemo base list` and `mnemo list`
+3. Read the root AGENTS.md of the target base
+4. Use hints to narrow to the target area
+5. Read the area's AGENTS.md if it exists
+6. Read existing files in the target area to understand patterns and check for overlaps
+
+**When the brief has no Knowledge base context:**
+
+1. Run `mnemo base list` to discover bases and paths
 2. Run `mnemo list` to see the full structure
-3. Read the root AGENTS.md of the knowledge base — this describes the overall taxonomy, routing conventions, and structural philosophy. It tells you how the library is organized before you look at any shelf.
-4. Use the user's hints (if any) to narrow to candidate areas
-5. Read the area's AGENTS.md — these are your local filing guides
-6. Read existing files in the target area to understand patterns (naming, structure, depth, tone)
-7. Check for existing content that overlaps with what you're saving — you may need to merge, extend, or cross-reference rather than create
+3. Read the root AGENTS.md
+4. Narrow to candidate areas, read area AGENTS.md and existing files
 
-If the brief includes no destination hints, use the area descriptions and structure to determine the best fit. Route by topic affinity, not keyword matching.
+In both cases: route by topic affinity, not keyword matching. If the brief includes a destination hint, start there — but verify it's right before committing.
 
 ### How agent instructions work
 
