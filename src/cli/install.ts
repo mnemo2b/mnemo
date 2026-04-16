@@ -2,6 +2,7 @@ import {
   cpSync,
   existsSync,
   readFileSync,
+  readdirSync,
   writeFileSync,
   mkdirSync,
   rmSync,
@@ -10,9 +11,10 @@ import {
 import { join, dirname } from "path";
 import { homedir } from "os";
 
-// paths where the skill and hook live. kept in one place so install.ts
-// and any health-check code agree on what "installed" means.
+// paths where the skill, agents, and hook live. kept in one place so
+// install.ts and any health-check code agree on what "installed" means.
 const SKILL_TARGET = () => join(homedir(), ".claude", "skills", "mnemo");
+const AGENTS_TARGET = () => join(homedir(), ".claude", "agents");
 const SETTINGS_PATH = () => join(homedir(), ".claude", "settings.json");
 
 /** Walk up from the CLI entry point to find the package root containing skill/ */
@@ -64,6 +66,21 @@ export function installSkill(): void {
   rmSync(target, { recursive: true, force: true });
   mkdirSync(target, { recursive: true });
   cpSync(source, target, { recursive: true });
+}
+
+/** Stage agents from skill/agents/ to ~/.claude/agents/ for named discovery */
+export function installAgents(): void {
+  const source = join(findSkillSource(), "agents");
+  if (!existsSync(source)) return;
+
+  const target = AGENTS_TARGET();
+  mkdirSync(target, { recursive: true });
+
+  for (const file of readdirSync(source)) {
+    if (!file.endsWith(".md")) continue;
+    const name = `mnemo-${file.replace(/\.md$/, "")}.md`;
+    cpSync(join(source, file), join(target, name));
+  }
 }
 
 /**

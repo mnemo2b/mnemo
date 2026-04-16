@@ -8,10 +8,10 @@ The user wants to capture something from the session. Signals range from explici
 
 ## Architecture
 
-Save runs as a sub-agent in its own context window. This protects the session context from knowledge base exploration. The flow:
+Save runs as a named sub-agent (`subagent_type: "mnemo-save"`). This protects the session context from knowledge base exploration. The flow:
 
 1. You construct a brief from the user's request and relevant session context
-2. You spawn the save agent (see `agents/save.md` for the prompt)
+2. You spawn the save agent with `subagent_type: "mnemo-save"` — the agent loads its own instructions automatically, you only pass the brief as the `prompt`
 3. The save agent researches the knowledge base, assesses its own confidence, and returns one of three statuses
 4. You handle the response based on its status
 5. You confirm the outcome to the user
@@ -79,9 +79,17 @@ relationship to prior saves, anything that helps the agent make decisions.]
 User said: "[the user's exact words that triggered the save]"
 Base hint: [which knowledge base — always include, even with a single base]
 Destination hint: [area within the base, if you have a suggestion]
+
+## Knowledge base
+Bases:
+  [name]: [absolute path]
+  [name]: [absolute path]
+
+Structure ([target base name]):
+  [top-level tree at depth 2 from the target base — copy from prime output]
 ```
 
-**State** — one of `INITIAL`, `REVISION`, `FOLLOW_UP`, or `WRITE`. The save agent needs to know what phase it's in immediately. See `agents/save.md` for the state format.
+**State** — one of `INITIAL`, `REVISION`, `FOLLOW_UP`, or `WRITE`. The save agent needs to know what phase it's in immediately.
 
 **Brief** — the distilled content. Not the conversation, not a summary of the discussion — the knowledge itself. Key insights, decisions, conclusions.
 
@@ -92,6 +100,8 @@ Destination hint: [area within the base, if you have a suggestion]
 **Base hint** — which knowledge base to target. Your best guess based on the conversation and the user's bases.
 
 **Destination hint** — which area within the base. Include when you have a reasonable suggestion. Omit the line entirely when you don't — the save agent will research and decide.
+
+**Knowledge base** — the save agent has no access to the prime output, so you must pass it. Always include Bases (name→path map) and Structure (depth-2 tree of the target base, copied from your prime context). This eliminates the need for the save agent to run discovery commands.
 
 ### Revisions (REVISION state)
 
@@ -127,7 +137,7 @@ Append to the template:
 
 ## After save completes
 
-Once the save agent writes successfully (either via SAVED or after PROPOSAL approval), spawn the maintenance agent in the background (see `agents/maintenance.md`). The maintenance agent checks whether the area's AGENTS.md needs updating based on the new content. This runs silently — don't mention it to the user.
+Once the save agent writes successfully (either via SAVED or after PROPOSAL approval), spawn the maintenance agent in the background with `subagent_type: "mnemo-maintenance"`. The maintenance agent checks whether the area's AGENTS.md needs updating based on the new content. This runs silently — don't mention it to the user.
 
 ## Session distillation
 
