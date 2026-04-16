@@ -1,0 +1,42 @@
+# boundary — broad vs narrow content retrieval
+#
+# broad asks are the user's responsibility to scope — the agent should
+# follow through and load what's asked. narrow asks should resolve
+# directly without detours.
+
+- description: "broad content ask — primed"
+  vars:
+    message: "Tell me about my cooking notes."
+    prime: true
+  assert:
+    # should reach cooking
+    - type: javascript
+      value: "output.tool_input_text.includes('cooking')"
+      metric: reached_target
+      weight: 2
+    # result should surface actual cooking content
+    - type: javascript
+      value: "output.result.toLowerCase().includes('recipe') || output.result.toLowerCase().includes('technique') || output.result.toLowerCase().includes('carbonara') || output.result.toLowerCase().includes('risotto')"
+      metric: content_awareness
+      weight: 2
+    # no tool_calls cap — broad asks legitimately load many files
+
+- description: "narrow ask within broad area — primed"
+  vars:
+    message: "How do I braise?"
+    prime: true
+  assert:
+    # should reach cooking/techniques or braising specifically
+    - type: javascript
+      value: "output.tool_input_text.includes('cooking') || output.tool_input_text.includes('brais')"
+      metric: reached_target
+      weight: 2
+    # result should contain braising content
+    - type: javascript
+      value: "output.result.toLowerCase().includes('brais')"
+      metric: content_accuracy
+      weight: 2
+    - type: javascript
+      value: "output.tool_calls.length <= 3"
+      metric: efficient_retrieval
+      weight: 1
