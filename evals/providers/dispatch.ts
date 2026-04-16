@@ -1,4 +1,5 @@
-import { mkdtempSync, cpSync, writeFileSync, rmSync, existsSync, readdirSync } from "fs";
+import { mkdtempSync, mkdirSync, cpSync, writeFileSync, rmSync, existsSync, readdirSync } from "fs";
+import { execSync } from "child_process";
 import { spawn } from "child_process";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -42,18 +43,61 @@ const __dirname = dirname(__filename);
 // project root resolution — evals/providers/dispatch.ts → ../../
 const PROJECT_ROOT = join(__dirname, "..", "..");
 const SKILL_SOURCE = join(PROJECT_ROOT, "skill");
+const RUNS_DIR = join(PROJECT_ROOT, "evals", "runs");
 
 //-----------------------------------------------------------------------------
 
 export default class DispatchProvider {
   private timeoutMs: number;
+  private runDir: string;
+  private callIndex = 0;
 
   constructor(options: ProviderOptions) {
     this.timeoutMs = options.config?.timeoutMs ?? 120_000;
+
+    const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    this.runDir = join(RUNS_DIR, ts);
+    mkdirSync(this.runDir, { recursive: true });
   }
 
   id() {
     return "dispatch";
+  }
+
+  // checks for common env issues that produce cryptic failures.
+  // runs once on the first callApi invocation.
+
+  private preflightDone = false;
+
+  private preflight() {
+    if (this.preflightDone) return;
+    this.preflightDone = true;
+
+    const missing: string[] = [];
+    try { execSync("which claude", { stdio: "ignore" }); } catch { missing.push("claude"); }
+    try { execSync("which mnemo", { stdio: "ignore" }); } catch { missing.push("mnemo"); }
+
+    if (missing.length > 0) {
+      throw new Error(`[dispatch] required binaries not on PATH: ${missing.join(", ")}`);
+    }
+
+    const hasAuth = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_CODE_OAUTH_TOKEN;
+    if (!hasAuth) {
+      console.warn(
+        "[dispatch] ⚠ no auth found — isolated CLAUDE_CONFIG_DIR requires ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN"
+      );
+    }
+  }
+
+  // writes the raw stream-json lines to a trajectory file so each run
+  // can be inspected outside of promptfoo
+
+  private writeTrajectory(index: number, prompt: string, rawLines: string[]) {
+    if (rawLines.length === 0) return;
+    const slug = prompt.slice(0, 50).replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
+    const filename = `${index}-${slug}.jsonl`;
+    const meta = JSON.stringify({ type: "meta", prompt, index, timestamp: new Date().toISOString() });
+    writeFileSync(join(this.runDir, filename), meta + "\n" + rawLines.join("\n") + "\n");
   }
 
   // sets up two temp dirs: one for the fixture KB (becomes cwd), one for
@@ -140,6 +184,7 @@ export default class DispatchProvider {
     mnemoConfig: string,
     settings: string | null,
     message: string,
+    rawLines: string[],
     model?: string,
   ): Promise<ExecuteResult> {
     return new Promise<ExecuteResult>((resolve, reject) => {
@@ -162,6 +207,7 @@ export default class DispatchProvider {
         lineBuffer = lines.pop() ?? "";
         for (const line of lines) {
           if (!line.trim()) continue;
+          rawLines.push(line);
           try {
             accumulator.processEvent(JSON.parse(line));
           } catch {
@@ -210,6 +256,7 @@ export default class DispatchProvider {
         settle(() => {
           // flush any remaining line in the buffer
           if (lineBuffer.trim()) {
+            rawLines.push(lineBuffer);
             try {
               accumulator.processEvent(JSON.parse(lineBuffer));
             } catch {}
@@ -217,7 +264,9 @@ export default class DispatchProvider {
           }
 
           if (code !== 0) {
-            reject(new Error(`claude exited with code ${code}: ${stderr}`));
+            const partial = accumulator.finalize();
+            const detail = partial.result || stderr || "(no output)";
+            reject(new Error(`claude exited with code ${code}: ${detail}`));
             return;
           }
 
@@ -250,8 +299,12 @@ export default class DispatchProvider {
     prompt: string,
     context: CallApiContext,
   ): Promise<ProviderResponse> {
+    this.preflight();
+
     const { fixture, prime = true, model } = context.vars;
     const { fixtureDir, configDir, mnemoConfig } = this.setup(fixture);
+    const rawLines: string[] = [];
+    const callIndex = this.callIndex++;
 
     try {
       const settings = this.buildSettings(prime);
@@ -261,6 +314,7 @@ export default class DispatchProvider {
         mnemoConfig,
         settings,
         prompt,
+        rawLines,
         model,
       );
 
@@ -304,6 +358,7 @@ export default class DispatchProvider {
         error: String(error),
       };
     } finally {
+      this.writeTrajectory(callIndex, prompt, rawLines);
       this.teardown(fixtureDir, configDir);
     }
   }
