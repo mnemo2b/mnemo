@@ -1,17 +1,16 @@
-# targeting — does the agent route user references to the right list path?
+# targeting — does the agent route user references to the right path?
 #
-# primed agents know the structure. they should call `mnemo list` with a
-# correct base-prefixed path, without exploring first. we assert the list
-# call happens, the target is right, and the response surfaces real content.
+# explicit "list" keyword asserts on list; vague discovery phrasing asserts
+# only on reaching the target (agent may adaptively load a sparse dir).
 
 - description: "exact path — primed"
   vars:
     message: "List my cooking notes."
     prime: true
   assert:
-    # should call mnemo list against the cooking directory
+    # user said "list" — agent should list, not load
     - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && /mnemo list.*notes\\/cooking/.test(c.input.command))"
+      value: "output.tool_input_text.includes('list notes/cooking')"
       metric: correct_list_target
       weight: 2
     # result should surface actual cooking subdirs (recipes, techniques, etc.)
@@ -24,15 +23,15 @@
       metric: no_thrashing
       weight: 1
 
-- description: "vague reference resolves to list — primed"
+- description: "vague reference resolves to target — primed"
   vars:
     message: "What woodworking notes do I have?"
     prime: true
   assert:
-    # should reach for mnemo list, not jump to load or glob
+    # agent may list OR adaptively load; assert only that it reached woodworking
     - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && /mnemo list.*woodworking/.test(c.input.command))"
-      metric: chose_list
+      value: "output.tool_input_text.includes('woodworking')"
+      metric: reached_target
       weight: 2
     # woodworking has a single basics.md — result should reference it
     - type: javascript
