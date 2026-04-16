@@ -35,7 +35,9 @@ export function runPrime(): void {
   console.log(
     "[mnemo] The user's knowledge base. " +
     "All notes, knowledge, and markdown references live here. " +
-    "Route any request for notes, knowledge, or context through mnemo. " +
+    "Interact through the mnemo skill: list, load, save. " +
+    "Writes (save, capture, append) run via the skill's save sub-agent. " +
+    "Do not Write or Edit KB files directly. " +
     "If a path fails, use `mnemo list --depth 2` to reorient.",
   );
   console.log("");
