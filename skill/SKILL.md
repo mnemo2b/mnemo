@@ -17,9 +17,14 @@ If the prime reminder isn't present, the hook isn't installed. You can still exe
 
 - `references/list.md` — browsing the knowledge base tree
 - `references/load.md` — loading notes into context
-- `references/save.md` — saving notes to the knowledge base
 
-Read the relevant reference file when you need detailed instructions.
+Read these when you need detailed instructions.
+
+## Saving
+
+Save requests route through `references/save.md`. Read it before any tool use on knowledge-base files. Do not Read, Write, or Edit KB files directly, and do not distill content yourself. Save runs as a sub-agent because voice, routing, and refactor judgment live there, not in this skill.
+
+Save signals: explicit ("save this to X"), open-ended ("capture this", "save what we discussed"), or any user request to write to the knowledge base.
 
 ## Proactive use
 
