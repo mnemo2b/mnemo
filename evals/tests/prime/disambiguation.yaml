@@ -12,12 +12,12 @@
   assert:
     # should route to pets/python — feeding implies the snake
     - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('pets/python'))"
+      value: "output.tool_input_text.includes('pets/python')"
       metric: correct_python
       weight: 2
     # should not mistake it for dev python
     - type: javascript
-      value: "!output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('dev/python'))"
+      value: "!output.tool_input_text.includes('dev/python')"
       metric: no_wrong_python
       weight: 1
 
@@ -28,12 +28,12 @@
   assert:
     # should load the project, not the cooking recipes
     - type: javascript
-      value: "output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('projects/recipe-app'))"
+      value: "output.tool_input_text.includes('projects/recipe-app')"
       metric: correct_target
       weight: 2
     # should not pull from cooking/recipes
     - type: javascript
-      value: "!output.tool_calls.some(c => c.name === 'Bash' && c.input.command && c.input.command.includes('cooking/recipes'))"
+      value: "!output.tool_input_text.includes('cooking/recipes')"
       metric: no_wrong_target
       weight: 1
 

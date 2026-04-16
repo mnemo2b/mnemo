@@ -269,9 +269,18 @@ export default class DispatchProvider {
         : "unknown";
       const usage = state.usage;
 
+      // flatten tool inputs into a searchable blob so assertions can grep
+      // "did agent touch X" without caring which tool (Bash/Skill/Read) was
+      // used. the blob preserves verb+target substrings like "list notes/cooking"
+      // or "load notes/pets/python", so regexes can still distinguish operations.
+      const toolInputText = state.toolCalls
+        .map((c) => JSON.stringify(c.input ?? {}))
+        .join("\n");
+
       return {
         output: {
           tool_calls: state.toolCalls,
+          tool_input_text: toolInputText,
           result: state.result,
           session_id: state.sessionId,
           duration_ms: state.durationMs,

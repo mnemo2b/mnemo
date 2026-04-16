@@ -16,7 +16,7 @@
       weight: 2
     # should not invent a load against a nonexistent path
     - type: javascript
-      value: "!output.tool_calls.some(c => c.name === 'Bash' && c.input.command && /mnemo load.*sailing/.test(c.input.command))"
+      value: "!/load[^\"]*sailing/.test(output.tool_input_text)"
       metric: no_fabrication
       weight: 2
     - type: javascript
