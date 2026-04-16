@@ -1,0 +1,44 @@
+# targeting — does the agent load the right content?
+#
+# specific requests should reach the right files via load.
+# prime provides a depth-2 tree so the agent knows where things live.
+
+- description: "specific file content — primed"
+  vars:
+    message: "What's my recipe app architecture?"
+    prime: true
+  assert:
+    # should reach the recipe-app project
+    - type: javascript
+      value: "output.tool_input_text.includes('recipe-app')"
+      metric: reached_target
+      weight: 2
+    # result should surface actual architecture content
+    - type: javascript
+      value: "output.result.toLowerCase().includes('svelte') || output.result.toLowerCase().includes('rust') || output.result.toLowerCase().includes('sqlite')"
+      metric: content_accuracy
+      weight: 2
+    - type: javascript
+      value: "output.tool_calls.length <= 3"
+      metric: no_thrashing
+      weight: 1
+
+- description: "scoped within broad directory — primed"
+  vars:
+    message: "What Python web frameworks have I explored?"
+    prime: true
+  assert:
+    # should reach dev/python
+    - type: javascript
+      value: "output.tool_input_text.includes('python')"
+      metric: reached_target
+      weight: 2
+    # result should mention fastapi — the web framework in the fixture
+    - type: javascript
+      value: "output.result.toLowerCase().includes('fastapi')"
+      metric: content_accuracy
+      weight: 2
+    - type: javascript
+      value: "output.tool_calls.length <= 4"
+      metric: no_thrashing
+      weight: 1

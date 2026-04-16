@@ -1,0 +1,49 @@
+# sets — does the agent discover and use named sets?
+#
+# realistic fixture defines two project-level sets:
+#   ai-deep-dive: notes/ai + research/ai
+#   recipe-app: notes/projects/recipe-app + notes/cooking/recipes
+# prime surfaces these in the session context. the agent should
+# use the set syntax (:set-name) or at minimum reach both paths.
+
+- description: "cross-base set — primed"
+  vars:
+    message: "Load all my AI notes and research together."
+    prime: true
+  assert:
+    # should reach both bases — via set or individual loads
+    - type: javascript
+      value: "(output.tool_input_text.includes('notes/ai') && output.tool_input_text.includes('research/ai')) || output.tool_input_text.includes('ai-deep-dive')"
+      metric: cross_base_reach
+      weight: 2
+    # result should reflect content from both sources
+    - type: javascript
+      value: "output.result.toLowerCase().includes('agent') || output.result.toLowerCase().includes('prompt')"
+      metric: content_awareness
+      weight: 2
+    # bonus: discovered the named set
+    - type: javascript
+      value: "output.tool_input_text.includes('ai-deep-dive')"
+      metric: uses_set
+      weight: 1
+
+- description: "topic+project bundle — primed"
+  vars:
+    message: "I need everything about my recipe app — the project and the recipes I'm tracking."
+    prime: true
+  assert:
+    # should reach both paths — via set or individual loads
+    - type: javascript
+      value: "(output.tool_input_text.includes('projects/recipe-app') && output.tool_input_text.includes('cooking/recipes')) || output.tool_input_text.includes(':recipe-app')"
+      metric: bundle_reach
+      weight: 2
+    # result should reference both architecture and actual recipes
+    - type: javascript
+      value: "(output.result.toLowerCase().includes('svelte') || output.result.toLowerCase().includes('sqlite')) && (output.result.toLowerCase().includes('carbonara') || output.result.toLowerCase().includes('risotto') || output.result.toLowerCase().includes('recipe'))"
+      metric: content_breadth
+      weight: 2
+    # bonus: discovered the named set
+    - type: javascript
+      value: "output.tool_input_text.includes(':recipe-app')"
+      metric: uses_set
+      weight: 1
