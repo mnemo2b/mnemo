@@ -42,10 +42,10 @@ export function runPrime(): void {
 
   // commands — how to use mnemo (agent needs this before the skill is invoked)
   console.log("commands:");
-  console.log("  mnemo list — show everything across all bases");
+  console.log("  mnemo list — show structure");
   console.log("  mnemo list <base/path> — show a specific directory (e.g. eval/cooking)");
-  console.log("  mnemo list --depth N — limit tree depth (useful for reorienting)");
-  console.log("  mnemo load <base/path> — returns file paths, then Read each file");
+  console.log("  mnemo list --depth N — cap tree depth for large bases");
+  console.log("  mnemo load <base/path> — read contents");
   console.log("  mnemo load :<set-name> — load a named set");
   console.log("  paths always start with a base name: eval/cooking, not cooking");
   console.log("  .md extension is optional: eval/cooking/pasta-carbonara works");
@@ -60,7 +60,7 @@ export function runPrime(): void {
   // sets
   if (hasSets) {
     console.log("");
-    console.log("sets:");
+    console.log("sets bundle related paths under a name so you can load them together:");
     const names = Object.keys(allSets).sort();
     for (const name of names) {
       const source = name in projectSets ? "project" : "global";
