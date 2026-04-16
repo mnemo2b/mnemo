@@ -68,13 +68,30 @@ function renderFile(path: string) {
     catch { return null; }
   }).filter(Boolean);
 
+  let t0: number | null = null;
+  let lastT: number | null = null;
+
   for (const event of events) {
-    renderEvent(event);
+    const t = event.__t as number | undefined;
+    if (t && t0 === null) t0 = t;
+
+    renderEvent(event, t0, lastT);
+
+    if (t) lastT = t;
   }
 }
 
-function renderEvent(event: Record<string, unknown>) {
+// formats elapsed + delta for display on event lines
+function timing(t: number | undefined, t0: number | null, lastT: number | null): string {
+  if (!t || !t0) return "";
+  const elapsed = ((t - t0) / 1000).toFixed(1);
+  const delta = lastT ? `+${((t - lastT) / 1000).toFixed(1)}s` : "start";
+  return ` [${delta}, ${elapsed}s]`;
+}
+
+function renderEvent(event: Record<string, unknown>, t0: number | null, lastT: number | null) {
   const type = event.type as string;
+  const t = event.__t as number | undefined;
 
   if (type === "meta") {
     console.log(`── request ${DIVIDER}`);
@@ -105,9 +122,8 @@ function renderEvent(event: Record<string, unknown>) {
     const name = (event.hook_name as string) ?? "hook";
     const exit = event.exit_code as number;
     const label = exit === 0 ? "ok" : `exit ${exit}`;
-    console.log(`── hook: ${name} (${label}) ${DIVIDER}`);
+    console.log(`── hook: ${name} (${label})${timing(t, t0, lastT)} ${DIVIDER}`);
 
-    // show a brief excerpt of the output, not the full tree
     const output = (event.output as string) ?? "";
     const firstLines = output.split("\n").slice(0, 3).join("\n");
     console.log(firstLines);
@@ -121,18 +137,18 @@ function renderEvent(event: Record<string, unknown>) {
   if (type === "assistant") {
     const msg = event.message as Record<string, unknown>;
     const content = (msg?.content as Array<Record<string, unknown>>) ?? [];
+    const tag = timing(t, t0, lastT);
 
     for (const block of content) {
       if (block.type === "thinking") {
-        console.log(`── thinking ${DIVIDER}`);
+        console.log(`── thinking${tag} ${DIVIDER}`);
         console.log(block.thinking as string);
         console.log();
       }
 
       if (block.type === "tool_use") {
-        console.log(`── tool: ${block.name} ${DIVIDER}`);
+        console.log(`── tool: ${block.name}${tag} ${DIVIDER}`);
         const input = block.input as Record<string, unknown>;
-        // show compact input
         for (const [key, val] of Object.entries(input)) {
           const valStr = typeof val === "string" ? val : JSON.stringify(val);
           console.log(`  ${key}: ${valStr}`);
@@ -141,7 +157,7 @@ function renderEvent(event: Record<string, unknown>) {
       }
 
       if (block.type === "text") {
-        console.log(`── response ${DIVIDER}`);
+        console.log(`── response${tag} ${DIVIDER}`);
         console.log(block.text as string);
         console.log();
       }
@@ -159,7 +175,7 @@ function renderEvent(event: Record<string, unknown>) {
         const isError = block.is_error as boolean;
         const prefix = isError ? "✗" : "→";
 
-        console.log(`  ${prefix} result:`);
+        console.log(`  ${prefix} result${timing(t, t0, lastT)}:`);
         const lines = output.split("\n");
         if (lines.length <= 15) {
           console.log(output);

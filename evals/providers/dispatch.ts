@@ -166,6 +166,15 @@ export default class DispatchProvider {
     const skillDest = join(configDir, "skills", "mnemo");
     cpSync(SKILL_SOURCE, skillDest, { recursive: true });
 
+    // stage agents to the discovery path so Claude Code resolves named agents
+    const agentsSource = join(SKILL_SOURCE, "agents");
+    const agentsDest = join(configDir, "agents");
+    mkdirSync(agentsDest, { recursive: true });
+    for (const file of readdirSync(agentsSource)) {
+      if (!file.endsWith(".md")) continue;
+      cpSync(join(agentsSource, file), join(agentsDest, `mnemo-${file}`));
+    }
+
     return { fixtureDir, configDir, mnemoConfig };
   }
 
@@ -224,17 +233,20 @@ export default class DispatchProvider {
       };
 
       // parses complete lines from the rolling buffer and feeds them to the
-      // accumulator; leaves any partial tail for the next chunk
+      // accumulator; stamps each event with __t (arrival ms) for phase timing
       const drainLines = () => {
         const lines = lineBuffer.split("\n");
         lineBuffer = lines.pop() ?? "";
+        const now = Date.now();
         for (const line of lines) {
           if (!line.trim()) continue;
-          rawLines.push(line);
           try {
-            accumulator.processEvent(JSON.parse(line));
+            const event = JSON.parse(line);
+            event.__t = now;
+            rawLines.push(JSON.stringify(event));
+            accumulator.processEvent(event);
           } catch {
-            // malformed line — skip, keep going
+            rawLines.push(line);
           }
         }
       };
@@ -279,10 +291,14 @@ export default class DispatchProvider {
         settle(() => {
           // flush any remaining line in the buffer
           if (lineBuffer.trim()) {
-            rawLines.push(lineBuffer);
             try {
-              accumulator.processEvent(JSON.parse(lineBuffer));
-            } catch {}
+              const event = JSON.parse(lineBuffer);
+              event.__t = Date.now();
+              rawLines.push(JSON.stringify(event));
+              accumulator.processEvent(event);
+            } catch {
+              rawLines.push(lineBuffer);
+            }
             lineBuffer = "";
           }
 
