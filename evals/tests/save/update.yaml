@@ -38,17 +38,17 @@
       metric: no_duplicate_creation
       weight: 2
     # qualitative — dispatcher's reply framed the save as an update, not a
-    # new file. disabled until we have a grader that works with OAuth
-    # (custom claude -p provider, coming next). restore when ready.
-    # - type: llm-rubric
-    #   value: |
-    #     The reply clearly communicates that the save extended or updated an
-    #     existing note rather than creating a new file. Acceptable signals
-    #     include phrases like "saved to [existing file]", "integrated into",
-    #     "added to", "extended", "updated", "merged into". Unacceptable:
-    #     announcing a newly created sibling file (e.g. braising-aromatics.md),
-    #     or language that implies the refinement lives in a fresh note.
-    #     Ignore any text about AGENTS.md or maintenance work — that is a
-    #     separate concern and should not affect this judgment.
-    #   metric: framed_as_update
-    #   weight: 2
+    # new file. tolerant of any valid phrasing (extended, integrated,
+    # added to, merged, etc.) — that's why it's a rubric, not a regex.
+    - type: llm-rubric
+      value: |
+        The reply clearly communicates that the save extended or updated an
+        existing note rather than creating a new file. Acceptable signals
+        include phrases like "saved to [existing file]", "integrated into",
+        "added to", "extended", "updated", "merged into". Unacceptable:
+        announcing a newly created sibling file (e.g. braising-aromatics.md),
+        or language that implies the refinement lives in a fresh note.
+        Ignore any text about AGENTS.md or maintenance work — that is a
+        separate concern and should not affect this judgment.
+      metric: framed_as_update
+      weight: 2

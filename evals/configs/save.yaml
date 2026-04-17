@@ -13,11 +13,15 @@ providers:
 defaultTest:
   vars:
     fixture: "realistic"
-  # grader for llm-rubric assertions — sonnet 4.6 is cheap enough for
-  # qualitative checks (framing, proposal vs. silent pick) at ~$0.002/call.
-  # override per-assertion if a specific rubric needs opus nuance.
+  # grader for llm-rubric assertions — custom provider shells out to claude -p
+  # so we reuse the oauth path instead of needing ANTHROPIC_API_KEY. default
+  # model is sonnet (cheap, good enough for framing/proposal judgments).
   options:
-    provider: anthropic:messages:claude-sonnet-4-6
+    provider:
+      id: "file://../providers/grader.ts"
+      config:
+        model: sonnet
+        timeoutMs: 60000
   assert:
     - type: cost
       threshold: 1.00
