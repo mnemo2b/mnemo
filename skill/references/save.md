@@ -25,7 +25,8 @@ The save agent determines its own confidence after researching the knowledge bas
 The save agent committed directly. It had a clear best guess for the destination — sometimes unambiguous, sometimes with alternatives weighed but one candidate clearly winning. The user can redirect cheaply if the agent got it wrong, so SAVED is the preferred outcome whenever the agent has a confident read.
 
 - Present what was saved: file paths and a brief summary
-- **Relay the `Alternatives considered` section verbatim if present.** When the agent weighed multiple candidates before committing, naming the alternative inline is how the user gets a one-word redirect ("Saved to notes/ai/prompting-patterns.md. Considered research/ but ruled it out as raw-source territory — say the word if you'd rather have it there."). Don't strip or summarize this section — it's the escape route that makes confident commits safe.
+- **Relay the signal path and alternatives verbatim.** The save agent's response names which signal drove the call — "saved as specified," "confirmed the suggestion," or "picked from the candidates." That phrasing is the user's receipt for how the call was made. Relay it intact, along with any `Alternatives considered` section. Example: "Saved to notes/ai/prompting-patterns.md — picked from the candidates. Considered notes/ai/agent-design.md; the content fits the prompting-technique framing better. Say the word if you'd rather have it in agent-design."
+- Don't flatten the signal-echo into procedural summary ("agent selected X") — that strips the reasoning the user needs to trust or redirect
 - No approval needed — the agent already wrote
 - Spawn the maintenance agent in the background
 
@@ -63,7 +64,7 @@ The save agent needs to understand *why* something is worth saving, not just *wh
 
 A brief that says "save our discussion about save architecture" forces the save agent to guess what mattered. A brief that says "save these three architectural decisions about sub-agent boundaries, with the user's framing: 'the agent is the author, the user is the editor'" gives the save agent everything it needs.
 
-**Don't pre-commit to a destination.** Routing is the save agent's job, not yours. When the user's request is topical ("save this note about prompt engineering") rather than locational ("save this to notes/ai"), resist the urge to pick a destination from prime context. The agent may be juggling a `notes/` area and a `research/` area with overlapping topics — you can't tell which fits better from the skill layer. Your role is to hand over the full picture (every base, full structure) and let the agent propose. Pre-committing looks decisive but produces silent misplacements when a cross-base option would have been a better fit.
+**Don't pre-commit to a destination when the user didn't.** Routing is the save agent's job, not yours. When the user's request is topical ("save this note about prompt engineering") rather than locational ("save this to notes/ai"), resist the urge to pick a destination from prime context and label it `Suggested`. The agent may be juggling a `notes/` area and a `research/` area with overlapping topics — you can't tell which fits better from the skill layer. If you see multiple plausible homes, use `Candidates` and let the save agent pick from them. Save `Suggested` for cases where the content genuinely fits one place on content terms, and `Specified` for cases where the user named the path themselves. Pre-committing `Suggested` on ambiguous content looks decisive but produces silent misplacements when a cross-base option would have been a better fit.
 
 ### Brief template
 
@@ -81,8 +82,13 @@ include the user's own phrasing where it was distinctive.]
 relationship to prior saves, anything that helps the agent make decisions.]
 
 User said: "[the user's exact words that triggered the save]"
-Base hint: [only include when one base clearly fits — omit on multi-base ambiguity]
-Destination hint: [only include when the user pointed at a location or exactly one area fits — omit otherwise]
+
+[Destination signal — include at most ONE of the three lines below, or omit entirely
+if you have no destination information. The label communicates authority — pick the
+label that matches how you derived the destination. See "Destination signals" below.]
+Specified: [path or base the user explicitly named]
+Suggested: [path you inferred with high confidence — content clearly fits one place]
+Candidates: [path], [path][, [path]]
 
 ## Knowledge base
 Bases:
@@ -101,9 +107,15 @@ Structure:
 
 **User said** — the exact trigger phrase. Not paraphrased, not cleaned up.
 
-**Base hint** — which knowledge base to target. Only include when the user named a base, or when exactly one base plausibly fits. If the topic could fit across bases (e.g. `notes/ai/` and `research/ai/` both have prompt-engineering content), omit the line — let the save agent surface the options.
+**Destination signals** — include at most one of the three labels below, matching how you derived the destination. Each label carries different authority, and the save agent behaves differently based on which one you choose:
 
-**Destination hint** — which area within the base. Only include when the user explicitly pointed at a location, or when exactly one area in exactly one base is a clean fit. If multiple areas or bases could plausibly hold this content, omit the line entirely. A destination hint is an instruction, not a suggestion — the save agent treats it as the target, so a wrong hint produces a silent misplacement.
+- **Specified** — the user explicitly named a path or base in their words. Instruction-strength. The save agent honors it unless the content radically doesn't fit — in which case it surfaces the mismatch rather than overriding silently.
+- **Suggested** — the content clearly fits one place on content terms; the dispatcher is confident. Soft prior. The save agent weighs it against its own read of the file and may override when the read disagrees — but its response names what drove the call so the user can trust it.
+- **Candidates** — multiple plausible destinations and you have not picked one. The save agent reads each candidate, picks the best fit, and names the alternatives in its response.
+
+Choosing a label is a judgment about your own confidence, not the content. If you catch yourself about to write `Suggested` on content where two files have a real claim, use `Candidates` instead — pre-committing on ambiguous content hides alternatives the save agent would otherwise surface.
+
+Omit all three lines when you have no destination information (e.g., brief is topical, the structure spans multiple bases with matching areas). The save agent will route from the Brief, Context, and Knowledge base sections.
 
 **Knowledge base** — the save agent has no access to the prime output, so you must pass it. Always include Bases (name→path map) and the full Structure tree covering every base (copy the whole prime output structure verbatim). Passing every base is how the save agent recognizes cross-base options; pruning to the "target" base hides alternatives and forces the agent to commit to your guess.
 
@@ -136,7 +148,7 @@ Append to the template:
 ### Do not include
 
 - Raw session transcript — the save agent needs the distilled context, not the full conversation
-- Your own opinions about where the note should go — the hints are suggestions, not instructions
+- A `Suggested` signal on content that could plausibly fit multiple bases or areas — use `Candidates` or omit
 - Writing style instructions — the save agent has its own conventions
 
 ## After save completes

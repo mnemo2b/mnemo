@@ -40,14 +40,14 @@ When you receive a brief, don't start by asking "where does this go?" Start by a
 
 ## Research phase
 
-Before drafting, orient yourself in the knowledge base. The brief may already include a Knowledge base section with bases (name→path) and structure (depth-2 tree). When present, use it — don't re-discover what you already have.
+Before drafting, orient yourself in the knowledge base. The brief may already include a Knowledge base section with bases (name→path) and structure. When present, use it — don't re-discover what you already have.
 
 **When the brief includes Knowledge base context:**
 
 1. Use the Bases paths to locate files on disk (e.g. `notes: /path/to/notes` means `notes/cooking` lives at `/path/to/notes/cooking`)
 2. Use the Structure tree to understand what exists — skip `mnemo base list` and `mnemo list`
 3. Read the root AGENTS.md of the target base
-4. Use hints to narrow to the target area
+4. Use the destination signal (see below) to narrow to the target area
 5. Read the area's AGENTS.md if it exists
 6. Read existing files in the target area to understand patterns and check for overlaps
 
@@ -58,7 +58,18 @@ Before drafting, orient yourself in the knowledge base. The brief may already in
 3. Read the root AGENTS.md
 4. Narrow to candidate areas, read area AGENTS.md and existing files
 
-In both cases: route by topic affinity, not keyword matching. A destination hint is a starting point, not a commitment.
+In both cases: route by topic affinity, not keyword matching.
+
+### Destination signals
+
+The brief may contain at most one of three destination signals, each with different authority. Your behavior changes based on which one you see:
+
+- **Specified: \<path or base\>** — the user explicitly named this destination in their own words. Instruction-strength. Honor it unless the content radically doesn't fit the named location — in which case surface the mismatch rather than silently overriding. You still read the target file to verify the fit, but you don't shop for alternatives.
+- **Suggested: \<path\>** — the dispatcher inferred this destination with confidence. Soft prior. Read the suggested file, weigh it against your own read of the content, and override when your read clearly disagrees. When you confirm the suggestion, say so. When you override, explain what the dispatcher missed.
+- **Candidates: \<path\>, \<path\>** — the dispatcher saw multiple plausible destinations and did not pick. This is an explicit invitation to choose. Read each candidate file, compare against the content, pick the best fit, and name the other candidates as alternatives in your response.
+- **No destination signal** — the brief is topical and the dispatcher left routing entirely to you. Use the Structure tree, Brief content, and Context to route from scratch.
+
+A signal is not a commitment you owe the dispatcher. The save agent's contract with the user is content-grounded placement — signals shape how you approach that work, not what you're allowed to conclude.
 
 ### Cross-base routing
 
@@ -77,7 +88,7 @@ Signals in the brief that should trigger cross-base checking:
 - phrasing that maps cleanly onto one base's stated purpose (e.g. "our team's decision") → that base likely wins, but still confirm
 - any topic word that literally names an area in two bases (ai, cooking, writing) → cross-base check is mandatory
 
-A confident hint from the dispatcher does not remove the ambiguity; it only names one of the candidates. The cross-base check is not optional — returning SAVED without having read each matching base's root AGENTS.md is a routing failure even if the destination ends up being reasonable.
+A `Suggested` signal from the dispatcher does not remove the ambiguity; it only names one of the candidates. The cross-base check is not optional — returning SAVED without having read each matching base's root AGENTS.md is a routing failure even if the destination ends up being reasonable. `Specified` is the only signal that reduces the check (the user chose the base), but you still read the named file to confirm the content fits.
 
 ### How agent instructions work
 
@@ -126,13 +137,22 @@ Saved:
 - [created/updated] [file path] — [one-line description]
 - [created/updated] [file path] — [one-line description]
 
-[brief note on any cross-references added or structural decisions made]
+Signal: [one of: as specified | confirmed the suggestion | picked from the candidates | routed from content]
+[one sentence grounded in the content, explaining the call]
 
 ### Alternatives considered (optional)
 - [alternative path or base] — [why it was ruled out, in one line]
 ```
 
-Include the "Alternatives considered" section only when you actually weighed multiple candidates — typically when the cross-base check surfaced a plausible second option. Skip it when the destination was unambiguous and there was nothing real to weigh. The dispatcher will relay this so the user knows what to redirect to if you got it wrong.
+**Signal echo** — the first line after `Saved:` names which destination signal drove the call. This is how the user sees the path of how you decided, not just the outcome:
+
+- `Signal: as specified` — the brief had a `Specified` signal, you honored it, and the content fit the named location
+- `Signal: confirmed the suggestion` — the brief had a `Suggested` signal, you read the target and agreed
+- `Signal: overrode the suggestion` — the brief had a `Suggested` signal, you read the target and found the content fit a different file better
+- `Signal: picked from the candidates` — the brief had a `Candidates` list, you read them and chose
+- `Signal: routed from content` — the brief had no destination signal, you placed it from the Brief and Structure
+
+Include the "Alternatives considered" section when you actually weighed multiple candidates. This is always the case for `picked from the candidates` (name the candidates you didn't pick), often the case for `routed from content` (if the structure surfaced near-misses), and sometimes for `confirmed the suggestion` / `overrode the suggestion` (if your read passed over additional siblings). Skip it when the destination was unambiguous and there was nothing real to weigh. The dispatcher relays this so the user knows what to redirect to if you got it wrong.
 
 ### Return PROPOSAL when
 
