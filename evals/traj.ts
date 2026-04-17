@@ -6,7 +6,7 @@ import { readFileSync, readdirSync, statSync } from "fs";
 import { join } from "path";
 
 const RUNS_DIR = join(import.meta.dirname!, "runs");
-const DIVIDER = "─".repeat(50);
+const RULE = "─".repeat(72);
 
 // ------------------------------------------------------------------
 
@@ -62,23 +62,41 @@ function resolve(): string {
 // ------------------------------------------------------------------
 
 function renderFile(path: string) {
+  console.log();
   const lines = readFileSync(path, "utf-8").trim().split("\n");
   const events = lines.map((l) => {
     try { return JSON.parse(l); }
     catch { return null; }
   }).filter(Boolean);
 
+  // separate meta (our test metadata) from stream events so hooks
+  // render first — matching the real session order
+  const meta = events.find((e) => e.type === "meta");
+  const hooks: typeof events = [];
+  const rest: typeof events = [];
+  for (const e of events) {
+    if (e.type === "meta") continue;
+    if (e.type === "system" && String(e.subtype ?? "").startsWith("hook")) {
+      hooks.push(e);
+    } else {
+      rest.push(e);
+    }
+  }
+
   let t0: number | null = null;
   let lastT: number | null = null;
 
-  for (const event of events) {
+  const advance = (event: Record<string, unknown>) => {
     const t = event.__t as number | undefined;
     if (t && t0 === null) t0 = t;
-
     renderEvent(event, t0, lastT);
-
     if (t) lastT = t;
-  }
+  };
+
+  // realistic order: hooks → request/test → assistant responses
+  for (const h of hooks) advance(h);
+  if (meta) renderEvent(meta, t0, lastT);
+  for (const e of rest) advance(e);
 }
 
 // formats elapsed + delta for display on event lines
@@ -94,15 +112,17 @@ function renderEvent(event: Record<string, unknown>, t0: number | null, lastT: n
   const t = event.__t as number | undefined;
 
   if (type === "meta") {
-    console.log(`── request ${DIVIDER}`);
+    console.log(RULE);
+    console.log("request\n");
     console.log(event.prompt as string);
-    console.log();
+    console.log("\n");
 
     const description = event.description as string | undefined;
     const assertions = event.assertions as Array<Record<string, unknown>> | undefined;
 
     if (description || (assertions && assertions.length > 0)) {
-      console.log(`── test${description ? `: ${description}` : ""} ${DIVIDER}`);
+      console.log(RULE);
+      console.log(`test${description ? `: ${description}` : ""}\n`);
       if (assertions && assertions.length > 0) {
         for (const a of assertions) {
           const metric = (a.metric as string) ?? "(unnamed)";
@@ -113,7 +133,7 @@ function renderEvent(event: Record<string, unknown>, t0: number | null, lastT: n
           if (value) console.log(`    ${value}`);
         }
       }
-      console.log();
+      console.log("\n");
     }
     return;
   }
@@ -122,7 +142,8 @@ function renderEvent(event: Record<string, unknown>, t0: number | null, lastT: n
     const name = (event.hook_name as string) ?? "hook";
     const exit = event.exit_code as number;
     const label = exit === 0 ? "ok" : `exit ${exit}`;
-    console.log(`── hook: ${name} (${label})${timing(t, t0, lastT)} ${DIVIDER}`);
+    console.log(RULE);
+    console.log(`hook: ${name} (${label})${timing(t, t0, lastT)}\n`);
 
     const output = (event.output as string) ?? "";
     const firstLines = output.split("\n").slice(0, 3).join("\n");
@@ -130,7 +151,7 @@ function renderEvent(event: Record<string, unknown>, t0: number | null, lastT: n
     if (output.split("\n").length > 3) {
       console.log(`  ... (${output.split("\n").length} lines)`);
     }
-    console.log();
+    console.log("\n");
     return;
   }
 
@@ -141,25 +162,28 @@ function renderEvent(event: Record<string, unknown>, t0: number | null, lastT: n
 
     for (const block of content) {
       if (block.type === "thinking") {
-        console.log(`── thinking${tag} ${DIVIDER}`);
+        console.log(RULE);
+        console.log(`thinking${tag}\n`);
         console.log(block.thinking as string);
-        console.log();
+        console.log("\n");
       }
 
       if (block.type === "tool_use") {
-        console.log(`── tool: ${block.name}${tag} ${DIVIDER}`);
+        console.log(RULE);
+        console.log(`tool: ${block.name}${tag}\n`);
         const input = block.input as Record<string, unknown>;
         for (const [key, val] of Object.entries(input)) {
           const valStr = typeof val === "string" ? val : JSON.stringify(val);
           console.log(`  ${key}: ${valStr}`);
         }
-        console.log();
+        console.log("\n");
       }
 
       if (block.type === "text") {
-        console.log(`── response${tag} ${DIVIDER}`);
+        console.log(RULE);
+        console.log(`response${tag}\n`);
         console.log(block.text as string);
-        console.log();
+        console.log("\n");
       }
     }
     return;
@@ -183,7 +207,7 @@ function renderEvent(event: Record<string, unknown>, t0: number | null, lastT: n
           console.log(lines.slice(0, 10).join("\n"));
           console.log(`  ... (${lines.length} lines)`);
         }
-        console.log();
+        console.log("\n");
       }
     }
     return;
@@ -195,7 +219,8 @@ function renderEvent(event: Record<string, unknown>, t0: number | null, lastT: n
     const cost = event.total_cost_usd as number ?? 0;
     const stop = event.stop_reason as string ?? "";
 
-    console.log(`── summary ${DIVIDER}`);
+    console.log(RULE);
+    console.log("summary\n");
     console.log(`${turns} turns · ${(duration / 1000).toFixed(1)}s · $${cost.toFixed(4)} · ${stop}`);
     return;
   }
