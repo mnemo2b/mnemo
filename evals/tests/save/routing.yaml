@@ -1,14 +1,32 @@
-# routing — does the agent pick the right confidence level when placement is unclear?
+# routing — does the agent reason well about destination when the area is ambiguous?
 #
-# ambiguity comes in two flavors: multiple plausible destinations (PROPOSAL),
-# or not enough information to decide (NEEDS_CONTEXT). conflating these is a
-# routing failure even if the final placement is reasonable.
+# the question this file asks is NOT "did the agent pick the same verb every
+# time" (SAVED vs PROPOSAL). it's "did the agent reason well about where the
+# content belongs". placement and confidence are graded separately:
+#
+#   - placement: deterministic. the right destination is the right destination
+#     regardless of whether the agent committed (SAVED) or proposed (PROPOSAL).
+#   - confidence: qualitative. either verb passes if the rationale holds up.
+#     SAVED is sound when the agent rules out alternatives explicitly. PROPOSAL
+#     is sound when the agent surfaces ambiguity and defers to the user.
+#
+# variance across runs is informative, not a failure mode — the agent is
+# exercising judgment under genuine ambiguity. consistency is tracked via
+# `--repeat N --no-cache` as data, not as a pass/fail gate.
+#
+# the second case (vague brief) is structurally different — content is missing,
+# so NEEDS_CONTEXT is the only sound response. it's not a placement test.
 
-- description: "ambiguous area — prompt engineering fits notes/ai or research/ai"
+- description: "ambiguous area — prompt engineering reading session insight"
   vars:
-    # both notes/ai/prompting-patterns.md and research/ai/prompt-injection.md
-    # exist — chain-of-thought content could plausibly extend either or warrant
-    # a new file in either area. proper response is a proposal, not a silent pick.
+    # the user's framing has two competing signals:
+    #   1. content classification — "insight" + already-articulated reasoning →
+    #      synthesized, fits notes/ over research/
+    #   2. framing trigger — "reading session" → research/ ambiguity signal
+    # both notes/ai/prompting-patterns.md (with a bare CoT bullet) and
+    # research/ai/ exist. the right destination is notes/ai/prompting-patterns.md
+    # — the existing CoT bullet has a clear gap this insight fills.
+    # the agent may SAVE confidently or PROPOSE cautiously; both are sound.
     message: >
       Insight from a prompt engineering reading session — chain-of-thought
       works because it surfaces intermediate reasoning that the model would
@@ -22,29 +40,76 @@
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
-    # mechanical — both plausible areas should surface in the trajectory
+    # mechanical — agent looked at both bases. checks for either the area
+    # path (research/ai) OR the base AGENTS.md (research/AGENTS.md). reading
+    # the base-level AGENTS.md is sufficient — if its content rules out the
+    # base, drilling into the area is unnecessary.
     - type: javascript
-      value: "output.tool_input_text.includes('notes/ai') && output.tool_input_text.includes('research/ai')"
-      metric: explored_both_areas
+      value: |
+        const sawNotes = output.tool_input_text.includes('notes/ai') || output.tool_input_text.includes('notes/AGENTS.md');
+        const sawResearch = output.tool_input_text.includes('research/ai') || output.tool_input_text.includes('research/AGENTS.md');
+        return sawNotes && sawResearch;
+      metric: explored_both_bases
       weight: 2
-    # filesystem — no content file should have been written (waiting for the
-    # user to pick). AGENTS.md changes are maintenance and don't count.
+    # PLACEMENT — the right destination is notes/ai/prompting-patterns.md.
+    # the agent passes whether it SAVED (file modified) or PROPOSED (path
+    # mentioned in the trajectory as the recommendation).
     - type: javascript
-      value: "[...output.files_created, ...output.files_modified].filter(f => !f.endsWith('AGENTS.md')).length === 0"
-      metric: no_silent_save
+      value: |
+        const target = 'notes/ai/prompting-patterns.md';
+        const modified = output.files_modified.some(f => f.endsWith(target));
+        const referenced = output.tool_input_text.includes(target);
+        return modified || referenced;
+      metric: placement_correct
       weight: 3
-    # qualitative — dispatcher presented placement options rather than picking one
+    # PLACEMENT NEGATIVE — no wrong file was written. AGENTS.md changes are
+    # maintenance and excluded. modifications to the target file are fine.
+    - type: javascript
+      value: |
+        const target = 'notes/ai/prompting-patterns.md';
+        const wrong = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'))
+          .filter(f => !f.endsWith(target));
+        return wrong.length === 0;
+      metric: no_wrong_placement
+      weight: 2
+    # CONFIDENCE — grades reasoning quality, not verb shape. accepts either
+    # SAVED or PROPOSAL when the rationale is coherent. the grader looks at
+    # the full trajectory (tool_calls / tool_input_text), not just the
+    # dispatcher's final text — maintenance announcements often crowd out
+    # the save acknowledgment in the trailing message.
     - type: llm-rubric
       value: |
-        The reply presents multiple plausible destinations and asks the user
-        to choose, or otherwise communicates a proposal. Acceptable signals:
-        listing two or more options, phrases like "could go in X or Y",
-        "either...or", "which would you prefer", "proposal", "options".
-        Unacceptable: announcing a completed save, silently picking one
-        destination, or refusing to engage. Ignore any text about AGENTS.md
-        or maintenance work.
-      metric: status_proposal
-      weight: 2
+        Examine the save sub-agent's reasoning in the trajectory (tool_calls
+        and tool_input_text fields, especially the Status: SAVED or Status:
+        PROPOSAL block returned by the mnemo-save sub-agent). Grade the
+        routing reasoning, not the verb chosen.
+
+        PASS when ALL of the following hold:
+        - The agent considered both notes/ and research/ as candidate bases.
+          this can be shown by EITHER explicit articulation in the status
+          block OR observable behavior in tool_calls (reading both
+          notes/AGENTS.md and research/AGENTS.md, or paths under both bases).
+        - The destination chosen or recommended is notes/ai/prompting-patterns.md
+        - The rationale explains why this destination fits — typically by
+          pointing at the existing chain-of-thought bullet that lacks a
+          mechanism, or by classifying the content as synthesized rather
+          than raw source material. either substantive justification works.
+        - The verb (SAVED or PROPOSAL) is internally consistent with what
+          the agent said. SAVED with confident reasoning is sound. PROPOSAL
+          with surfaced ambiguity is sound. either passes.
+
+        FAIL when:
+        - The agent picked a wrong base or area
+        - The agent took action without any visible cross-base research
+          (didn't read research/ at all, picked notes/ai/ blindly)
+        - The rationale is absent or generic ("seems like a fit")
+        - The agent fabricated content not in the user's brief
+
+        Ignore any text about AGENTS.md or maintenance work — that's a
+        separate concern from save routing.
+      metric: routing_judgment
+      weight: 3
 
 - description: "vague brief — 'python' fits multiple unrelated areas"
   vars:
