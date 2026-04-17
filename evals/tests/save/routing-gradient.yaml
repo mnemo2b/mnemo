@@ -1,0 +1,422 @@
+# routing-gradient — does the agent calibrate confidence to ambiguity?
+#
+# routing.yaml asks "does the agent reason well at the midpoint?". this file
+# asks "does confidence track ambiguity across multiple axes?". we sample
+# three axes — each with a clear case and an ambiguous case — to build a
+# calibration map rather than a calibration curve on a single dimension.
+#
+# axes:
+#   1. cross-base   (notes/ vs research/)         — content classification
+#   2. topic-project (notes/topic vs notes/proj)  — shared vs scoped knowledge
+#   3. cross-area   (notes/ai vs notes/dev)       — within-base routing
+#
+# expectations:
+#   - clear cases → SAVED with confidence, no alternatives needed
+#   - ambiguous cases → SAVED with `Alternatives considered` OR PROPOSAL.
+#     either is sound under the new bias. the rubric checks that the agent
+#     surfaced the alternative one way or the other, didn't silently commit.
+#
+# placement is deterministic (target file). confidence is qualitative
+# (rubric). consistency across runs is data, not a gate.
+
+#=============================================================================
+# axis 1 — cross-base (notes/ vs research/)
+#=============================================================================
+
+- description: "axis-1 clear notes — synthesized principle, no raw-source cue"
+  vars:
+    # already-articulated principle. no "reading", "paper", "saw" framing.
+    # should land confidently in notes/ai/ — research/ has no claim because
+    # there's no raw source being captured.
+    message: >
+      Save this principle I've been working through: agent skills should be
+      hub-and-spoke — stable knowledge in references, stateful trajectories
+      in agents. The agent file is the orchestrator; references are loaded
+      on demand.
+    prime: true
+  assert:
+    - type: javascript
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    # placement — notes/ai/ is correct. specific file is agent-design.md
+    # (existing) or a new file; either is acceptable.
+    - type: javascript
+      value: |
+        const created = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'));
+        const inNotesAi = created.some(f => f.includes('notes/ai/'));
+        const referencedNotesAi = output.tool_input_text.includes('notes/ai/');
+        return inNotesAi || referencedNotesAi;
+      metric: placement_correct
+      weight: 3
+    - type: javascript
+      value: |
+        const wrong = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'))
+          .filter(f => !f.includes('notes/ai/'));
+        return wrong.length === 0;
+      metric: no_wrong_placement
+      weight: 2
+    - type: llm-rubric
+      value: |
+        Examine the save sub-agent's status block (Status: SAVED or
+        Status: PROPOSAL in tool_input_text). This case is a synthesized
+        principle with no raw-source signal — the right call is SAVED to
+        notes/ai/ with confidence.
+
+        PASS when:
+        - Status is SAVED (PROPOSAL is overcautious here — the content
+          clearly fits notes/ai/ and research/ has no claim)
+        - Destination is notes/ai/ (existing file or new file)
+        - The agent did not flag false ambiguity ("could be research/ai/")
+          since there's no raw-source signal to weigh
+
+        FAIL when:
+        - Status is PROPOSAL (overcautious — no genuine ambiguity to defer on)
+        - Destination is outside notes/ai/
+        - Agent fabricated content not in the brief
+
+        Ignore AGENTS.md / maintenance text.
+      metric: calibration_confident
+      weight: 3
+
+- description: "axis-1 clear research — quoted source material with citations"
+  vars:
+    # explicit raw-source framing: "from the paper", quoted claim, citation.
+    # research/ai/ is the right destination — notes/ai/ is for synthesized
+    # takeaways, not source extracts.
+    message: >
+      Save these extracts from the Constitutional AI paper (Bai et al, 2022).
+      They propose a critique-and-revise loop where the model critiques its
+      own output against a constitution, then revises. They report 75%
+      preference for revised outputs in head-to-head with hh-rlhf baselines.
+      Quote: "the model learns to critique its own behavior."
+    prime: true
+  assert:
+    - type: javascript
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    - type: javascript
+      value: |
+        const created = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'));
+        const inResearchAi = created.some(f => f.includes('research/ai/'));
+        const referencedResearchAi = output.tool_input_text.includes('research/ai/');
+        return inResearchAi || referencedResearchAi;
+      metric: placement_correct
+      weight: 3
+    - type: javascript
+      value: |
+        const wrong = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'))
+          .filter(f => !f.includes('research/ai/'));
+        return wrong.length === 0;
+      metric: no_wrong_placement
+      weight: 2
+    - type: llm-rubric
+      value: |
+        This case is raw source material with quoted text and a citation —
+        the clearest signal possible for research/ai/. notes/ai/ is for
+        synthesized takeaways, not source extracts.
+
+        PASS when:
+        - Status is SAVED (PROPOSAL is overcautious here)
+        - Destination is research/ai/
+        - Agent did not waffle about notes/ai/ — the source-extract framing
+          rules it out
+
+        FAIL when:
+        - Status is PROPOSAL (overcautious — clear research-base signal)
+        - Destination is outside research/ai/
+
+        Ignore AGENTS.md / maintenance text.
+      metric: calibration_confident
+      weight: 3
+
+#=============================================================================
+# axis 2 — topic vs project (notes/ topic base vs projects/ project base)
+#=============================================================================
+
+- description: "axis-2 clear topic — pure principle, no project context"
+  vars:
+    # principle stated in general terms. no project named, no
+    # implementation specifics. projects/ base is wrong — no project
+    # named, content is general. belongs in a notes/ topic.
+    message: >
+      Save this principle for local-first apps: treat sync as a derived
+      layer, not a primary store. SQLite (or whatever local store) is the
+      source of truth; the server is a relay for cross-device merge, not
+      the canonical store.
+    prime: true
+  assert:
+    - type: javascript
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    # acceptable topic destinations: notes/dev/ (most likely), notes/ai/
+    # (less likely but defensible). projects/ base is wrong — no project
+    # named, content is general.
+    - type: javascript
+      value: |
+        const created = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'));
+        const inTopic = created.some(f =>
+          f.includes('notes/dev/') || f.includes('notes/ai/'));
+        const referenced = output.tool_input_text.includes('notes/dev/')
+          || output.tool_input_text.includes('notes/ai/');
+        return inTopic || referenced;
+      metric: placement_correct
+      weight: 3
+    - type: javascript
+      value: |
+        const wrong = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'))
+          .filter(f => f.includes('projects/') && !f.includes('notes/'));
+        return wrong.length === 0;
+      metric: no_project_placement
+      weight: 3
+    - type: llm-rubric
+      value: |
+        notes/ is for reusable topic knowledge; projects/ is for
+        project-scoped decisions. This case is a pure principle with no
+        project named — clearly topic territory.
+
+        PASS when:
+        - Status is SAVED with a topic destination (notes/dev/ or notes/ai/)
+        - Agent did not route to projects/* (no named project to scope to)
+
+        FAIL when:
+        - Routed to a project directory
+        - PROPOSAL when there's no genuine topic-vs-project ambiguity
+
+        Ignore AGENTS.md / maintenance text.
+      metric: calibration_confident
+      weight: 3
+
+- description: "axis-2 clear project — recipe-app-specific implementation decision"
+  vars:
+    # named project, specific implementation choice, reasoning tied to
+    # this app's data shape. clearly project-scoped.
+    message: >
+      Save this decision for recipe-app: the ingredient parser uses a
+      regex-first heuristic with LLM fallback, not LLM-first. 90% of
+      ingredient strings fit common shapes ("2 cups flour", "1 tbsp olive
+      oil") and parse deterministically; the LLM is reserved for the long
+      tail of weird formats.
+    prime: true
+  assert:
+    - type: javascript
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    - type: javascript
+      value: |
+        const created = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'));
+        const inRecipeApp = created.some(f => f.includes('projects/recipe-app/'));
+        const referenced = output.tool_input_text.includes('projects/recipe-app/');
+        return inRecipeApp || referenced;
+      metric: placement_correct
+      weight: 3
+    - type: javascript
+      value: |
+        const wrong = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'))
+          .filter(f => !f.includes('projects/recipe-app/'));
+        return wrong.length === 0;
+      metric: no_topic_placement
+      weight: 2
+    - type: llm-rubric
+      value: |
+        Named project (recipe-app), implementation-specific decision,
+        reasoning tied to this app's data. projects/AGENTS.md owns
+        project-scoped decisions; notes/AGENTS.md explicitly excludes them.
+
+        PASS when:
+        - Status is SAVED to projects/recipe-app/
+        - Agent did not route to a topic area (would lose project context)
+
+        FAIL when:
+        - Routed to notes/dev/ or notes/ai/ instead of the project
+        - PROPOSAL when the project scope is unambiguous
+
+        Ignore AGENTS.md / maintenance text.
+      metric: calibration_confident
+      weight: 3
+
+- description: "axis-2 ambiguous — project-context insight that generalizes"
+  vars:
+    # genuinely straddles. starts in a project ("recipe-app build") but
+    # the user explicitly says it generalizes. this is a real cross-base
+    # decision (notes/ topic base vs projects/ project base) — agent
+    # should either SAVED-with-alternatives or PROPOSAL.
+    message: >
+      Save this insight from the recipe-app build: when local-first apps
+      need to import remote content, treat the LLM as a parser, not a
+      knowledge layer. The pattern generalizes beyond recipes — anywhere
+      you're pulling structured data out of unstructured sources.
+    prime: true
+  assert:
+    - type: javascript
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    # both topic and project are acceptable destinations here. agent
+    # should at minimum surface the alternative.
+    - type: javascript
+      value: |
+        const created = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'));
+        const target = created.some(f =>
+          f.includes('notes/dev/') || f.includes('notes/ai/') ||
+          f.includes('projects/recipe-app/'));
+        const referenced = output.tool_input_text.includes('notes/dev/')
+          || output.tool_input_text.includes('notes/ai/')
+          || output.tool_input_text.includes('projects/recipe-app/');
+        return target || referenced;
+      metric: placement_acceptable
+      weight: 3
+    - type: llm-rubric
+      value: |
+        This case genuinely straddles topic and project. The user said it
+        comes from a specific project AND that it generalizes. Either
+        destination is defensible — what matters is that the agent
+        named an alternative so the user can redirect cheaply.
+
+        PASS when ANY of the following hold:
+        - Status is SAVED and the response (status block OR surrounding
+          prose) names a specific alternative file or base the agent
+          considered. The alternative doesn't need to be labeled
+          "Alternatives considered" — prose like "projects/recipe-app/
+          already covers X, so this goes to the topic" counts.
+        - Status is PROPOSAL with both candidates surfaced.
+        - The agent explicitly addresses why it chose topic over project
+          (or vice versa), naming a specific competing path.
+
+        FAIL when:
+        - Status is SAVED with no alternative path named anywhere in the
+          response — silent commit with no escape route
+        - Agent picked one destination without visibly weighing the other
+        - Rationale is generic ("seemed like a fit") without naming a
+          competing candidate
+
+        Ignore AGENTS.md / maintenance text.
+      metric: calibration_surfaces_alternative
+      weight: 3
+
+#=============================================================================
+# axis 3 — cross-area within base (notes/ai sub-files)
+#=============================================================================
+
+- description: "axis-3 clear — fits one existing file's gap unambiguously"
+  vars:
+    # specific prompting pattern with a clear file home —
+    # notes/ai/prompting-patterns.md. notes/ai/evals.md doesn't cover
+    # output formatting, so cross-area ambiguity is minimal here.
+    message: >
+      Save this prompting pattern: XML tags around structured output
+      sections produce better adherence than markdown headers when working
+      with Claude. The model treats XML as a stricter structural signal.
+    prime: true
+  assert:
+    - type: javascript
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    - type: javascript
+      value: |
+        const target = 'notes/ai/prompting-patterns.md';
+        const modified = output.files_modified.some(f => f.endsWith(target));
+        const referenced = output.tool_input_text.includes(target);
+        return modified || referenced;
+      metric: placement_correct
+      weight: 3
+    - type: javascript
+      value: |
+        const target = 'notes/ai/prompting-patterns.md';
+        const wrong = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'))
+          .filter(f => !f.endsWith(target));
+        return wrong.length === 0;
+      metric: no_wrong_placement
+      weight: 2
+    - type: llm-rubric
+      value: |
+        Specific prompting pattern about output formatting. notes/ai/prompting-patterns.md
+        is the obvious home; notes/ai/evals.md doesn't cover this territory.
+
+        PASS when:
+        - Status is SAVED to notes/ai/prompting-patterns.md
+        - Agent did not propose evals.md or other sibling files (no real
+          ambiguity to surface)
+
+        FAIL when:
+        - Wrote to a different file
+        - PROPOSAL when destination is unambiguous
+
+        Ignore AGENTS.md / maintenance text.
+      metric: calibration_confident
+      weight: 3
+
+- description: "axis-3 ambiguous — insight straddles prompting-patterns and evals"
+  vars:
+    # the insight is about prompting *for the purpose of* eval grading.
+    # both notes/ai/prompting-patterns.md and notes/ai/evals.md have valid
+    # claims. agent should surface the alternative.
+    message: >
+      Save this insight: when grading evals with LLM-as-judge, the judge
+      prompt benefits from chain-of-thought before scoring. Accuracy goes
+      up, variance goes down — the judge "thinks through" what it's
+      grading instead of pattern-matching to a number.
+    prime: true
+  assert:
+    - type: javascript
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    # either file is acceptable — what matters is the alternative is named.
+    - type: javascript
+      value: |
+        const targets = ['notes/ai/prompting-patterns.md', 'notes/ai/evals.md'];
+        const modified = output.files_modified.some(f =>
+          targets.some(t => f.endsWith(t)));
+        const referenced = targets.some(t => output.tool_input_text.includes(t));
+        return modified || referenced;
+      metric: placement_acceptable
+      weight: 3
+    - type: javascript
+      value: |
+        const ok = ['notes/ai/prompting-patterns.md', 'notes/ai/evals.md'];
+        const wrong = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'))
+          .filter(f => !ok.some(t => f.endsWith(t)));
+        return wrong.length === 0;
+      metric: no_wrong_placement
+      weight: 2
+    - type: llm-rubric
+      value: |
+        Insight is "use chain-of-thought in eval grading prompts" — a
+        prompting pattern AND an eval-grading practice. Multiple files
+        could hold it (notes/ai/prompting-patterns.md, notes/ai/evals.md,
+        or even research/ai/ if treated as source material).
+
+        PASS when ANY of the following hold:
+        - Status is SAVED and the response (status block OR prose) names
+          a specific alternative path the agent considered. The label
+          "Alternatives considered" is not required — natural-language
+          framing like "considered X but ruled it out because..." counts.
+        - Status is PROPOSAL with multiple candidates surfaced.
+        - The agent explicitly explained why it chose this file over at
+          least one named competing candidate.
+
+        FAIL when:
+        - Status is SAVED with no alternative path named anywhere in the
+          response — silent commit with no escape route
+        - Routed without acknowledging any competing candidate
+        - Rationale is generic without naming an alternative
+
+        Ignore AGENTS.md / maintenance text.
+      metric: calibration_surfaces_alternative
+      weight: 3
