@@ -1,0 +1,375 @@
+# signal-honoring — does the save agent treat each destination signal with
+# the right authority, and echo back which signal drove the call?
+#
+# the brief template supports three mutually-exclusive destination signals,
+# plus no-signal. each carries different authority per skill/agents/save.md:
+#
+#   Specified  — instruction-strength. honor unless content radically doesn't fit.
+#   Suggested  — soft prior. read the target, override when content disagrees.
+#   Candidates — explicit invitation to choose. name the others as alternatives.
+#   (none)     — route from the content alone.
+#
+# the response format requires `Signal: <echo>` on SAVED, so the user sees
+# which path of reasoning drove the call:
+#   Specified          → "as specified"
+#   Suggested match    → "confirmed the suggestion"
+#   Suggested mismatch → "overrode the suggestion"
+#   Candidates         → "picked from the candidates"
+#   no signal          → "routed from content"
+#
+# these cases isolate the agent from the dispatcher. each test supplies a
+# hand-crafted brief via prompts/save.ts, runs the agent in bare mode, and
+# asserts the right Signal echo appears in the response. filesystem effects
+# are secondary confirmations — the primary grade is "did the agent honor
+# the signal's authority as documented?"
+#
+# {FIXTURE_PATH} in the `bases` var is substituted by agent.ts with the
+# runtime temp-dir path.
+
+#=============================================================================
+# shared structure tree (depth-2 view of the realistic fixture)
+#=============================================================================
+# promptfoo yaml supports anchors but not across files; each case below
+# inlines the structure to keep the test readable in isolation.
+
+#=============================================================================
+# Case 1 — Specified: user named a path, content fits
+#=============================================================================
+
+- description: "Specified → as specified: honor named destination when content fits"
+  vars:
+    state: "INITIAL"
+    brief: |
+      Prompting pattern: XML tags around structured output sections produce
+      better adherence than markdown headers when working with Claude. The
+      model treats XML as a stricter structural signal.
+    context: |
+      User is distilling a prompting technique. Synthesized conclusion,
+      not raw source. The user explicitly named the destination.
+    user_said: "save this to notes/ai/prompting-patterns.md"
+    specified: "notes/ai/prompting-patterns.md"
+    bases: |2
+        notes: {FIXTURE_PATH}/notes
+        projects: {FIXTURE_PATH}/projects
+        research: {FIXTURE_PATH}/research
+    structure: |2
+        notes/
+          ai/ (agent-design, claude-code, context-engineering, evals, prompting-patterns)
+          cooking/ (classes, gear, recipes, techniques)
+          dev/ (javascript, python, tools)
+          pets/ (dog, python)
+          reading/ (articles, books)
+        projects/
+          home-dashboard/ photo-organizer/ recipe-app/ writing-portfolio/
+        research/
+          ai/ climate/ design/ javascript/ nutrition/ productivity/ psychology/
+  assert:
+    - type: javascript
+      value: "output.status === 'SAVED'"
+      metric: status_saved
+      weight: 2
+    - type: javascript
+      value: "output.reasoning.includes('Signal: as specified')"
+      metric: signal_echo_correct
+      weight: 3
+    - type: javascript
+      value: "output.files_modified.some(f => f.path.endsWith('notes/ai/prompting-patterns.md'))"
+      metric: wrote_to_specified_file
+      weight: 2
+    - type: llm-rubric
+      value: |
+        Signal-honoring probe: the brief used `Specified: notes/ai/prompting-patterns.md`.
+        Per skill/agents/save.md, Specified is instruction-strength — the
+        agent honors it unless content radically doesn't fit.
+
+        The content is a clear prompting pattern; it fits the named file.
+        Expected agent behavior: write to the specified file and echo
+        `Signal: as specified`.
+
+        PASS when the response echoes `Signal: as specified` and the
+        destination is notes/ai/prompting-patterns.md.
+
+        FAIL when the agent shops for alternatives despite Specified,
+        routes somewhere else without surfacing content mismatch, or
+        uses a different Signal echo.
+      metric: honored_as_instruction
+      weight: 2
+
+#=============================================================================
+# Case 2 — Suggested matching: dispatcher guessed right, agent confirms
+#=============================================================================
+
+- description: "Suggested matching → confirmed the suggestion: content fits dispatcher's guess"
+  vars:
+    state: "INITIAL"
+    brief: |
+      Prompting pattern: XML tags around structured output sections produce
+      better adherence than markdown headers when working with Claude. The
+      model treats XML as a stricter structural signal.
+    context: |
+      Synthesized prompting technique. Dispatcher's read: fits
+      prompting-patterns.md cleanly — no obvious competing home.
+    user_said: "save this prompting pattern"
+    suggested: "notes/ai/prompting-patterns.md"
+    bases: |2
+        notes: {FIXTURE_PATH}/notes
+        projects: {FIXTURE_PATH}/projects
+        research: {FIXTURE_PATH}/research
+    structure: |2
+        notes/
+          ai/ (agent-design, claude-code, context-engineering, evals, prompting-patterns)
+          cooking/ (classes, gear, recipes, techniques)
+          dev/ (javascript, python, tools)
+          pets/ (dog, python)
+          reading/ (articles, books)
+        projects/
+          home-dashboard/ photo-organizer/ recipe-app/ writing-portfolio/
+        research/
+          ai/ climate/ design/ javascript/ nutrition/ productivity/ psychology/
+  assert:
+    - type: javascript
+      value: "output.status === 'SAVED'"
+      metric: status_saved
+      weight: 2
+    - type: javascript
+      value: "output.reasoning.includes('Signal: confirmed the suggestion')"
+      metric: signal_echo_correct
+      weight: 3
+    - type: javascript
+      value: "output.files_modified.some(f => f.path.endsWith('notes/ai/prompting-patterns.md'))"
+      metric: wrote_to_suggested_file
+      weight: 2
+    - type: llm-rubric
+      value: |
+        Signal-honoring probe: the brief used `Suggested: notes/ai/prompting-patterns.md`.
+        Per skill/agents/save.md, Suggested is a soft prior — the agent
+        reads the target, weighs it, and confirms or overrides.
+
+        The content (XML-tags prompting pattern) fits prompting-patterns.md
+        without contest. Expected behavior: write to the suggested file and
+        echo `Signal: confirmed the suggestion`.
+
+        PASS when the Signal echo is "confirmed the suggestion" and the
+        destination matches.
+
+        FAIL when the agent overrides without reason, writes elsewhere, or
+        uses a Signal echo that doesn't describe what happened.
+      metric: confirmed_soft_prior
+      weight: 2
+
+#=============================================================================
+# Case 3 — Suggested misaligned: dispatcher guessed wrong, agent overrides
+#=============================================================================
+
+- description: "Suggested misaligned → overrode the suggestion: content clearly fits elsewhere"
+  vars:
+    state: "INITIAL"
+    brief: |
+      Extracts from the Constitutional AI paper (Bai et al, 2022). They
+      propose a critique-and-revise loop where the model critiques its own
+      output against a constitution, then revises. They report 75%
+      preference for revised outputs in head-to-head with hh-rlhf baselines.
+      Quote: "the model learns to critique its own behavior."
+    context: |
+      User is pulling raw source material — paper citation, quoted claim,
+      reported metric. Dispatcher suggested a notes-side destination, but
+      the raw-research framing is clearly research-side.
+    user_said: "save this"
+    suggested: "notes/ai/prompting-patterns.md"
+    bases: |2
+        notes: {FIXTURE_PATH}/notes
+        projects: {FIXTURE_PATH}/projects
+        research: {FIXTURE_PATH}/research
+    structure: |2
+        notes/
+          ai/ (agent-design, claude-code, context-engineering, evals, prompting-patterns)
+        projects/
+          home-dashboard/ photo-organizer/ recipe-app/ writing-portfolio/
+        research/
+          ai/ climate/ design/ javascript/ nutrition/ productivity/ psychology/
+  assert:
+    - type: javascript
+      value: "output.status === 'SAVED' || output.status === 'PROPOSAL'"
+      metric: status_terminal
+      weight: 1
+    - type: javascript
+      value: "output.reasoning.includes('Signal: overrode the suggestion')"
+      metric: signal_echo_correct
+      weight: 3
+    - type: javascript
+      value: |
+        const written = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.path.endsWith('AGENTS.md'));
+        return written.some(f => f.path.startsWith('research/ai/'));
+      metric: routed_to_research
+      weight: 3
+    - type: javascript
+      value: |
+        const written = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.path.endsWith('AGENTS.md'));
+        return !written.some(f => f.path.endsWith('notes/ai/prompting-patterns.md'));
+      metric: did_not_honor_wrong_suggestion
+      weight: 2
+    - type: llm-rubric
+      value: |
+        Signal-honoring probe: the brief used `Suggested: notes/ai/prompting-patterns.md`
+        on content that is clearly raw source material (paper citation,
+        quoted claim, reported preference metric).
+
+        Per skill/agents/save.md, Suggested is a soft prior and the agent
+        should override when the content clearly disagrees. Expected
+        behavior: route to research/ai/ and echo `Signal: overrode the
+        suggestion` with reasoning grounded in the raw-source framing.
+
+        PASS when the response echoes `Signal: overrode the suggestion`,
+        routes to research/ai/, and explains the override on content
+        terms (citation, quote, preference metric).
+
+        FAIL when the agent honors the wrong suggestion (writes to
+        prompting-patterns.md), uses a different Signal echo, or overrides
+        without explaining why.
+      metric: overrode_misaligned_prior
+      weight: 3
+
+#=============================================================================
+# Case 4 — Candidates: pick from the list and name alternatives
+#=============================================================================
+
+- description: "Candidates → picked from the candidates: pick best fit, name the other"
+  vars:
+    state: "INITIAL"
+    brief: |
+      Adding a self-critique step to agent loops catches confident-wrong
+      actions before they ship. The agent reviews its own plan, flags what
+      could be wrong, then either revises or proceeds. Small cost in
+      latency, meaningful drop in bad actions.
+    context: |
+      Insight straddles two files in notes/ai/ — prompting-patterns.md
+      (self-critique as prompting technique, already listed under Reasoning)
+      and agent-design.md (self-evaluation as loop mitigation, and
+      directly addresses the "confident wrong actions" failure mode).
+      Dispatcher passed both as candidates; the agent picks.
+    user_said: "save this insight about agent loops"
+    candidates: "notes/ai/prompting-patterns.md, notes/ai/agent-design.md"
+    bases: |2
+        notes: {FIXTURE_PATH}/notes
+        projects: {FIXTURE_PATH}/projects
+        research: {FIXTURE_PATH}/research
+    structure: |2
+        notes/
+          ai/ (agent-design, claude-code, context-engineering, evals, prompting-patterns)
+          cooking/ (classes, gear, recipes, techniques)
+          dev/ (javascript, python, tools)
+        projects/
+          home-dashboard/ photo-organizer/ recipe-app/ writing-portfolio/
+        research/
+          ai/ climate/ design/ javascript/ nutrition/ productivity/ psychology/
+  assert:
+    - type: javascript
+      value: "output.status === 'SAVED'"
+      metric: status_saved
+      weight: 2
+    - type: javascript
+      value: "output.reasoning.includes('Signal: picked from the candidates')"
+      metric: signal_echo_correct
+      weight: 3
+    - type: javascript
+      value: |
+        const r = output.reasoning;
+        return r.includes('notes/ai/prompting-patterns.md') && r.includes('notes/ai/agent-design.md');
+      metric: both_candidates_in_response
+      weight: 3
+    - type: javascript
+      value: |
+        const ok = ['notes/ai/prompting-patterns.md', 'notes/ai/agent-design.md'];
+        const written = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.path.endsWith('AGENTS.md'));
+        return written.length > 0 && written.every(f => ok.some(t => f.path.endsWith(t)));
+      metric: wrote_to_one_candidate
+      weight: 2
+    - type: llm-rubric
+      value: |
+        Signal-honoring probe: the brief used `Candidates: notes/ai/prompting-patterns.md,
+        notes/ai/agent-design.md`. Per skill/agents/save.md, Candidates is
+        an explicit invitation to pick — read both, choose the best fit,
+        name the other(s) as alternatives.
+
+        Expected behavior: pick one file as the destination, echo
+        `Signal: picked from the candidates`, and surface the other file
+        as an alternative in the response (either inline rationale or in
+        an `Alternatives considered` section).
+
+        PASS when the Signal echo is "picked from the candidates" AND
+        both files are visible in the response (one as destination, one
+        as addressed alternative).
+
+        FAIL when only one file appears (user can't tell if the other was
+        weighed), when the agent writes to a file outside the candidates
+        list without flagging it, or when the Signal echo doesn't match.
+      metric: named_alternatives
+      weight: 3
+
+#=============================================================================
+# Case 5 — no signal: route from content alone
+#=============================================================================
+
+- description: "no signal → routed from content: topical save with clear home"
+  vars:
+    state: "INITIAL"
+    brief: |
+      Thai cooking traditions: Chinese influence brought noodle techniques
+      in the 18th century, royal kitchen traditions shaped the layering of
+      flavors, and rice anchors every meal as the foundation.
+    context: |
+      User wants a quick note on Thai cooking history. No destination hint
+      from the dispatcher — routing is entirely up to the agent.
+    user_said: "save a note on Thai cooking history"
+    # no specified / suggested / candidates — brief carries no signal
+    bases: |2
+        notes: {FIXTURE_PATH}/notes
+        projects: {FIXTURE_PATH}/projects
+        research: {FIXTURE_PATH}/research
+    structure: |2
+        notes/
+          ai/ (agent-design, claude-code, context-engineering, evals, prompting-patterns)
+          cooking/ (classes, gear, recipes, techniques)
+          dev/ (javascript, python, tools)
+          pets/ (dog, python)
+          reading/ (articles, books)
+        projects/
+          home-dashboard/ photo-organizer/ recipe-app/ writing-portfolio/
+        research/
+          ai/ climate/ design/ javascript/ nutrition/ productivity/ psychology/
+  assert:
+    - type: javascript
+      value: "output.status === 'SAVED'"
+      metric: status_saved
+      weight: 2
+    - type: javascript
+      value: "output.reasoning.includes('Signal: routed from content')"
+      metric: signal_echo_correct
+      weight: 3
+    - type: javascript
+      value: |
+        const written = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.path.endsWith('AGENTS.md'));
+        return written.some(f => f.path.startsWith('notes/cooking/'));
+      metric: routed_to_cooking
+      weight: 2
+    - type: llm-rubric
+      value: |
+        Signal-honoring probe: the brief has no destination signal. Per
+        skill/agents/save.md, the agent routes from Brief + Context +
+        Structure alone.
+
+        The content is clearly cooking-topical. Expected behavior: land
+        somewhere under notes/cooking/ and echo `Signal: routed from
+        content`.
+
+        PASS when the destination is under notes/cooking/ and the Signal
+        echo is "routed from content".
+
+        FAIL when the agent invents a signal that wasn't in the brief,
+        routes outside cooking, or skips the Signal echo entirely.
+      metric: routed_from_content_cleanly
+      weight: 2

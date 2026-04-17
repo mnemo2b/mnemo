@@ -1,0 +1,41 @@
+description: "mnemo save — end-to-end integration (dispatcher + sub-agent + KB)"
+
+# integration mode: full dispatcher-to-sub-agent pipeline via dispatch.ts.
+# what the user actually experiences: skill loads, SessionStart hook fires,
+# dispatcher constructs a brief, sub-agent runs, knowledge base changes.
+#
+# when an integration case fails, the breakpoint could be anywhere in the
+# pipeline — use the dispatch/ and agent/ suites to isolate which layer.
+
+prompts:
+  - "{{message}}"
+
+providers:
+  - id: "file://../../providers/dispatch.ts"
+    config:
+      timeoutMs: 240000
+
+defaultTest:
+  vars:
+    fixture: "realistic"
+  options:
+    provider:
+      id: "file://../../providers/grader.ts"
+      config:
+        model: sonnet
+        timeoutMs: 60000
+  assert:
+    - type: cost
+      threshold: 1.00
+      metric: cost_guardrail
+      weight: 0.5
+    - type: latency
+      threshold: 210000
+      metric: latency_guardrail
+      weight: 0.5
+
+tests:
+  - file://../../tests/save/integration/placement.yaml
+  - file://../../tests/save/integration/routing.yaml
+  - file://../../tests/save/integration/routing-gradient.yaml
+  - file://../../tests/save/integration/update.yaml

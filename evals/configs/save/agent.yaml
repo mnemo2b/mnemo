@@ -1,0 +1,49 @@
+description: "mnemo save — sub-agent isolation (signal honoring in bare mode)"
+
+# agent mode: bare-mode save agent fed a hand-crafted brief. no skill,
+# no dispatcher, no prime hook — just the agent prompt + the brief, run
+# against the fixture KB. isolates the save agent from dispatcher noise
+# so we can probe signal-handling behavior without dispatch variance.
+#
+# the prompt is built from structured vars via prompts/save.ts. each test
+# case supplies (state, brief, context, user_said, + optional destination
+# signal, bases, structure). agent.ts substitutes {FIXTURE_PATH} in the
+# bases section with the runtime temp dir.
+#
+# what agent probes grade: Signal echo in the response matches the signal
+# type in the brief (Specified → "as specified"; Suggested matching →
+# "confirmed the suggestion"; Suggested misaligned → "overrode the
+# suggestion"; Candidates → "picked from the candidates"; no signal →
+# "routed from content").
+
+prompts:
+  - file://../../prompts/save.ts
+
+providers:
+  - id: "file://../../providers/agent.ts"
+    config:
+      timeoutMs: 240000
+
+defaultTest:
+  vars:
+    fixture: "realistic"
+    agent: "save"
+    message: "Process the brief and respond."
+  options:
+    provider:
+      id: "file://../../providers/grader.ts"
+      config:
+        model: sonnet
+        timeoutMs: 60000
+  assert:
+    - type: cost
+      threshold: 1.00
+      metric: cost_guardrail
+      weight: 0.5
+    - type: latency
+      threshold: 210000
+      metric: latency_guardrail
+      weight: 0.5
+
+tests:
+  - file://../../tests/save/agent/signal-honoring.yaml
