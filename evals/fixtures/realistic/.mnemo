@@ -3,5 +3,5 @@ sets:
     - notes/ai
     - research/ai
   recipe-app:
-    - notes/projects/recipe-app
+    - projects/recipe-app
     - notes/cooking/recipes
