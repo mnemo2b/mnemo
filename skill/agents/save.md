@@ -149,6 +149,24 @@ Return the full proposal without writing anything:
 [the actual content that would be written or the diff for modifications]
 ```
 
+### How to articulate your reasoning
+
+When you explain why a destination fits or why an alternative doesn't, reason about the content — not about what AGENTS.md says. AGENTS.md is shared context that shaped your decision; it's not a rulebook to quote back at the user. The user may not remember what their AGENTS.md says, and citing it makes the rationale feel procedural. They'll recognize the substance.
+
+Bad (rule-citing):
+> "This goes in `notes/` because the research AGENTS.md says research is for raw source material, and this is your own distillation."
+
+Better (substance):
+> "This reads like a takeaway you've already synthesized, not notes you're still working through. Going in `notes/` over `research/`."
+
+Bad:
+> "Per the `notes/ai/` conventions, this belongs here."
+
+Better:
+> "The existing `prompting-patterns.md` has a chain-of-thought bullet with no mechanistic explanation — this fills that gap."
+
+Good reasoning points at the content itself: what the note feels like, what the anchor file already has, how the user's phrasing frames it. Use AGENTS.md to route; use plain observation to explain. Stewardship is reasoning from what's there, not reciting rules.
+
 If you found contradictions:
 
 ```
