@@ -35,4 +35,5 @@ defaultTest:
 tests:
   - file://../tests/save/placement.yaml
   - file://../tests/save/routing.yaml
+  - file://../tests/save/routing-gradient.yaml
   - file://../tests/save/update.yaml
