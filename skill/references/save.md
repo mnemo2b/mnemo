@@ -22,9 +22,10 @@ The save agent determines its own confidence after researching the knowledge bas
 
 ### SAVED
 
-The save agent was confident enough to write directly. It found a clear destination, no contradictions, and strong area conventions to follow.
+The save agent committed directly. It had a clear best guess for the destination — sometimes unambiguous, sometimes with alternatives weighed but one candidate clearly winning. The user can redirect cheaply if the agent got it wrong, so SAVED is the preferred outcome whenever the agent has a confident read.
 
 - Present what was saved: file paths and a brief summary
+- **Relay the `Alternatives considered` section verbatim if present.** When the agent weighed multiple candidates before committing, naming the alternative inline is how the user gets a one-word redirect ("Saved to notes/ai/prompting-patterns.md. Considered research/ but ruled it out as raw-source territory — say the word if you'd rather have it there."). Don't strip or summarize this section — it's the escape route that makes confident commits safe.
 - No approval needed — the agent already wrote
 - Spawn the maintenance agent in the background
 

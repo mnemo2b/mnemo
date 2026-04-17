@@ -68,7 +68,7 @@ Required before writing when multiple bases share the topic area:
 
 1. Read the root AGENTS.md of every base that has a matching area. Not just the one the hint points at.
 2. Reconcile the user's content against those base distinctions. A "reading session insight" often fits a research base, not a notes base. A project-specific decision often fits a project base, not a topic base.
-3. If the content plausibly fits more than one base, return PROPOSAL with the options. Even when one candidate looks like a natural fit, list the alternative so the user decides.
+3. If you have a clear best guess after the check, commit (SAVED) and name the alternative inline so the user can redirect cheaply. If the candidates are roughly equal — neither clearly wins on content terms — return PROPOSAL with the options.
 
 Signals in the brief that should trigger cross-base checking:
 
@@ -106,15 +106,16 @@ PROPOSAL feedback → re-spawn with feedback → PROPOSAL | NEEDS_CONTEXT
 
 ### Return SAVED when
 
-All of these must hold. If any one is uncertain, return PROPOSAL instead:
+You have a clear best guess for where the content belongs and the cross-base check supports it. SAVED requires:
 
-- **Destination is unambiguous across bases and areas.** Not just "the file I picked is reasonable" — no other base or area has a plausible claim. When multiple bases share the topic area (both `notes/ai/` and `research/ai/`, both `notes/cooking/` and a `cookbook/` base), unambiguous means you can explain why the alternatives don't fit, not just that your chosen destination works.
-- **No contradictions with existing content.**
-- **The area has agent instructions with conventions you can follow.**
-- **The content fits naturally into existing structure** — appending to a file, adding to a directory with a clear pattern.
-- **The user's phrasing doesn't signal ambiguity.** Words like "reading session", "just read", "learned", "research", "we discussed" are signals that the content might fit a raw base better than a curated base, or vice versa. When the signal conflicts with your chosen destination, return PROPOSAL.
+- **You've done the cross-base research.** Read the root AGENTS.md of every base with a matching area. SAVED without this is a routing failure even when the destination turns out right.
+- **No contradictions with existing content.** If you found one, return PROPOSAL with the resolution.
+- **The content fits naturally into existing structure** — appending to a file, adding to a directory with a clear pattern, or extending a section that has an obvious gap.
+- **You can articulate why this destination over the alternatives.** When you considered other candidates, name them in the status block. The user can redirect with one word — they don't need to spelunk for the path.
 
-Bias toward PROPOSAL. A silent misplacement compounds across future sessions. PROPOSAL with a clear recommendation ("I'd put this in X; Y is also plausible because...") is almost always the better response when there's any doubt.
+You don't need certainty to commit. The user's framing signals (e.g., "reading session" → research base) are inputs to your decision, not automatic vetoes. If your content analysis lands clearly in one base despite a soft framing signal pointing elsewhere, commit and surface the alternative.
+
+Commit when you have a clear best guess. The user trusts you to make calls and can redirect cheaply when you're wrong. Reserve PROPOSAL for cases where committing would be actively wrong — see below.
 
 Write the changes directly using Write or Edit tools. Verify each file exists and content matches after writing. Then return:
 
@@ -126,16 +127,24 @@ Saved:
 - [created/updated] [file path] — [one-line description]
 
 [brief note on any cross-references added or structural decisions made]
+
+### Alternatives considered (optional)
+- [alternative path or base] — [why it was ruled out, in one line]
 ```
+
+Include the "Alternatives considered" section only when you actually weighed multiple candidates — typically when the cross-base check surfaced a plausible second option. Skip it when the destination was unambiguous and there was nothing real to weigh. The dispatcher will relay this so the user knows what to redirect to if you got it wrong.
 
 ### Return PROPOSAL when
 
-- Multiple plausible destinations exist
-- Content needs splitting across files or merging with existing content
-- Contradictions found with existing content
-- The area has weak or no conventions (no agent instructions, inconsistent patterns)
-- The save involves reorganization or cross-referencing
-- You're not sure the user would expect this placement
+PROPOSAL is for cases where committing would be actively wrong, not just uncertain:
+
+- **Candidates are genuinely roughly-equal** — neither destination is clearly better on content terms. Not "I picked X but Y is also plausible" (that's a SAVED with alternatives named) but "I can't tell whether this is X or Y without you telling me."
+- **Content needs splitting** across files, or merging with existing content in a non-obvious way
+- **Contradictions found** with existing content that need user-side resolution
+- **The save involves reorganization** — moving things around, restructuring an area, creating new conventions
+- **The destination would be unexpected enough to surprise the user** — you have a strong reason to go somewhere they didn't ask for
+
+If you'd commit to X but want to flag Y as an alternative, that's a SAVED with `Alternatives considered`, not a PROPOSAL.
 
 Return the full proposal without writing anything:
 
