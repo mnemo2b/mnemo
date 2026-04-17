@@ -16,22 +16,39 @@
       all in at the start. Save this refinement to the braising notes.
     prime: true
   assert:
+    # mechanical — save sub-agent was invoked
     - type: javascript
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
-    # the existing braising file shows up in research or as the write target
+    # mechanical — the braising file surfaced in tool inputs (research or write)
     - type: javascript
       value: "output.tool_input_text.includes('braising')"
       metric: reached_target_file
       weight: 2
-    # response references updating/extending — not creating a sibling file
+    # filesystem — existing braising.md was modified on disk
     - type: javascript
-      value: "/updated|update|extended|append|edit|modify/i.test(output.result)"
-      metric: framed_as_update
-      weight: 2
-    # explicitly didn't propose a new sibling file (e.g. braising-aromatics.md)
+      value: "output.files_modified.includes('notes/cooking/techniques/braising.md')"
+      metric: updated_existing_file
+      weight: 3
+    # filesystem — no sibling technique file was created (AGENTS.md is allowed
+    # since the maintenance agent may bootstrap conventions docs)
     - type: javascript
-      value: "!/braising-aromatics|braising-refinement|new file|created [a-z\\-]*\\.md/i.test(output.result)"
+      value: "output.files_created.filter(f => f.startsWith('notes/cooking/techniques/') && !f.endsWith('AGENTS.md')).length === 0"
       metric: no_duplicate_creation
-      weight: 1
+      weight: 2
+    # qualitative — dispatcher's reply framed the save as an update, not a
+    # new file. disabled until we have a grader that works with OAuth
+    # (custom claude -p provider, coming next). restore when ready.
+    # - type: llm-rubric
+    #   value: |
+    #     The reply clearly communicates that the save extended or updated an
+    #     existing note rather than creating a new file. Acceptable signals
+    #     include phrases like "saved to [existing file]", "integrated into",
+    #     "added to", "extended", "updated", "merged into". Unacceptable:
+    #     announcing a newly created sibling file (e.g. braising-aromatics.md),
+    #     or language that implies the refinement lives in a fresh note.
+    #     Ignore any text about AGENTS.md or maintenance work — that is a
+    #     separate concern and should not affect this judgment.
+    #   metric: framed_as_update
+    #   weight: 2
