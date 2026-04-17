@@ -7,17 +7,19 @@
 #
 # axes:
 #   1. cross-base   (notes/ vs research/)         — content classification
-#   2. topic-project (notes/topic vs notes/proj)  — shared vs scoped knowledge
-#   3. cross-area   (notes/ai vs notes/dev)       — within-base routing
+#   2. topic-project (notes/ vs projects/)        — shared vs scoped knowledge
+#   3. cross-area   (within notes/ai/)            — which file in one area
 #
-# expectations:
-#   - clear cases → SAVED with confidence, no alternatives needed
-#   - ambiguous cases → SAVED with `Alternatives considered` OR PROPOSAL.
-#     either is sound under the new bias. the rubric checks that the agent
-#     surfaced the alternative one way or the other, didn't silently commit.
+# rubrics grade USER OUTCOMES, not agent process. the test is "can the user
+# act on this response — trust the placement, or redirect cheaply?" not
+# "did the agent use the right status verb / section heading / tool order".
+# mechanical assertions (invoked_save, filesystem checks) are kept as
+# low-weight regression sentinels, not correctness claims.
 #
-# placement is deterministic (target file). confidence is qualitative
-# (rubric). consistency across runs is data, not a gate.
+# where we have an opinion about which alternatives should be named on an
+# ambiguous case, the rubric states it per-case. "address the competing
+# file" is not shape-testing — it's specifying what the user needs to see
+# to trust-or-redirect.
 
 #=============================================================================
 # axis 1 — cross-base (notes/ vs research/)
@@ -26,8 +28,7 @@
 - description: "axis-1 clear notes — synthesized principle, no raw-source cue"
   vars:
     # already-articulated principle. no "reading", "paper", "saw" framing.
-    # should land confidently in notes/ai/ — research/ has no claim because
-    # there's no raw source being captured.
+    # one clear destination, no competing alternative to surface.
     message: >
       Save this principle I've been working through: agent skills should be
       hub-and-spoke — stable knowledge in references, stateful trajectories
@@ -35,12 +36,12 @@
       on demand.
     prime: true
   assert:
+    # regression sentinel — save sub-agent was invoked
     - type: javascript
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
-    # placement — notes/ai/ is correct. specific file is agent-design.md
-    # (existing) or a new file; either is acceptable.
+    # outcome — destination under notes/ai/ appears in response or files
     - type: javascript
       value: |
         const created = [...output.files_created, ...output.files_modified]
@@ -50,6 +51,7 @@
         return inNotesAi || referencedNotesAi;
       metric: placement_correct
       weight: 3
+    # outcome — nothing written outside notes/ai/
     - type: javascript
       value: |
         const wrong = [...output.files_created, ...output.files_modified]
@@ -60,32 +62,32 @@
       weight: 2
     - type: llm-rubric
       value: |
-        Examine the save sub-agent's status block (Status: SAVED or
-        Status: PROPOSAL in tool_input_text). This case is a synthesized
-        principle with no raw-source signal — the right call is SAVED to
-        notes/ai/ with confidence.
+        User outcome test: the user sent a synthesized principle with no
+        raw-source cue. Expected experience: "I know where this went,
+        I don't need to make a decision, I can move on."
 
         PASS when:
-        - Status is SAVED (PROPOSAL is overcautious here — the content
-          clearly fits notes/ai/ and research/ has no claim)
-        - Destination is notes/ai/ (existing file or new file)
-        - The agent did not flag false ambiguity ("could be research/ai/")
-          since there's no raw-source signal to weigh
+        - The response tells the user the content went to notes/ai/
+          (existing file or new file, both fine)
+        - The response reads as confident — the user is not asked to
+          pick between options
+        - The rationale (if offered) is grounded in the content (not
+          "seems like a fit")
 
         FAIL when:
-        - Status is PROPOSAL (overcautious — no genuine ambiguity to defer on)
+        - The user is handed a decision ("should this go to notes/ai/
+          or research/ai/?") when the content clearly rules research out
         - Destination is outside notes/ai/
         - Agent fabricated content not in the brief
 
         Ignore AGENTS.md / maintenance text.
-      metric: calibration_confident
+      metric: user_gets_confident_placement
       weight: 3
 
 - description: "axis-1 clear research — quoted source material with citations"
   vars:
     # explicit raw-source framing: "from the paper", quoted claim, citation.
-    # research/ai/ is the right destination — notes/ai/ is for synthesized
-    # takeaways, not source extracts.
+    # one clear destination. no meaningful alternative to surface.
     message: >
       Save these extracts from the Constitutional AI paper (Bai et al, 2022).
       They propose a critique-and-revise loop where the model critiques its
@@ -117,33 +119,35 @@
       weight: 2
     - type: llm-rubric
       value: |
-        This case is raw source material with quoted text and a citation —
-        the clearest signal possible for research/ai/. notes/ai/ is for
-        synthesized takeaways, not source extracts.
+        User outcome test: source extracts with a citation and a quoted
+        claim. The user's expected experience: "this landed where raw
+        source belongs — I know I can find the paper reference later."
 
         PASS when:
-        - Status is SAVED (PROPOSAL is overcautious here)
-        - Destination is research/ai/
-        - Agent did not waffle about notes/ai/ — the source-extract framing
-          rules it out
+        - The response tells the user the content went to research/ai/
+        - The response doesn't hedge about notes/ai/ — the source framing
+          rules it out, and the user doesn't need to weigh in
+        - The rationale (if offered) references the raw-source signal
 
         FAIL when:
-        - Status is PROPOSAL (overcautious — clear research-base signal)
-        - Destination is outside research/ai/
+        - Routed to notes/ai/ (silently turning raw source into synthesized
+          takeaway)
+        - User is handed a research/ vs notes/ decision on clearly raw
+          material
+        - Rationale is absent or generic
 
         Ignore AGENTS.md / maintenance text.
-      metric: calibration_confident
+      metric: user_gets_confident_placement
       weight: 3
 
 #=============================================================================
-# axis 2 — topic vs project (notes/ topic base vs projects/ project base)
+# axis 2 — topic vs project (notes/ vs projects/)
 #=============================================================================
 
 - description: "axis-2 clear topic — pure principle, no project context"
   vars:
-    # principle stated in general terms. no project named, no
-    # implementation specifics. projects/ base is wrong — no project
-    # named, content is general. belongs in a notes/ topic.
+    # principle stated in general terms. no project named. projects/ base
+    # is wrong — no project to scope to. topic area is the right home.
     message: >
       Save this principle for local-first apps: treat sync as a derived
       layer, not a primary store. SQLite (or whatever local store) is the
@@ -155,9 +159,6 @@
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
-    # acceptable topic destinations: notes/dev/ (most likely), notes/ai/
-    # (less likely but defensible). projects/ base is wrong — no project
-    # named, content is general.
     - type: javascript
       value: |
         const created = [...output.files_created, ...output.files_modified]
@@ -179,20 +180,23 @@
       weight: 3
     - type: llm-rubric
       value: |
-        notes/ is for reusable topic knowledge; projects/ is for
-        project-scoped decisions. This case is a pure principle with no
-        project named — clearly topic territory.
+        User outcome test: general principle, no project named. The
+        user's expected experience: "topic note, no decision needed."
 
         PASS when:
-        - Status is SAVED with a topic destination (notes/dev/ or notes/ai/)
-        - Agent did not route to projects/* (no named project to scope to)
+        - The response tells the user the content went to a topic area
+          under notes/ (notes/dev/ most likely, notes/ai/ defensible)
+        - The response doesn't offer projects/ as an option — there's no
+          project named, so that would be spurious
 
         FAIL when:
-        - Routed to a project directory
-        - PROPOSAL when there's no genuine topic-vs-project ambiguity
+        - Routed to projects/*
+        - User is handed a topic-vs-project decision when no project was
+          named
+        - Rationale is generic
 
         Ignore AGENTS.md / maintenance text.
-      metric: calibration_confident
+      metric: user_gets_confident_placement
       weight: 3
 
 - description: "axis-2 clear project — recipe-app-specific implementation decision"
@@ -230,28 +234,31 @@
       weight: 2
     - type: llm-rubric
       value: |
-        Named project (recipe-app), implementation-specific decision,
-        reasoning tied to this app's data. projects/AGENTS.md owns
-        project-scoped decisions; notes/AGENTS.md explicitly excludes them.
+        User outcome test: named project, implementation-specific decision.
+        The user's expected experience: "landed in the project where I'll
+        go looking for it later."
 
         PASS when:
-        - Status is SAVED to projects/recipe-app/
-        - Agent did not route to a topic area (would lose project context)
+        - The response tells the user the content went to
+          projects/recipe-app/
+        - The response doesn't ask whether this belongs in a topic —
+          the project scope is explicit in the brief
 
         FAIL when:
-        - Routed to notes/dev/ or notes/ai/ instead of the project
-        - PROPOSAL when the project scope is unambiguous
+        - Routed to a topic area (losing the project context on a decision
+          that only applies inside recipe-app)
+        - User is handed a topic-vs-project decision when the project is
+          explicitly named
 
         Ignore AGENTS.md / maintenance text.
-      metric: calibration_confident
+      metric: user_gets_confident_placement
       weight: 3
 
 - description: "axis-2 ambiguous — project-context insight that generalizes"
   vars:
-    # genuinely straddles. starts in a project ("recipe-app build") but
-    # the user explicitly says it generalizes. this is a real cross-base
-    # decision (notes/ topic base vs projects/ project base) — agent
-    # should either SAVED-with-alternatives or PROPOSAL.
+    # genuinely straddles. project-originated insight that the user
+    # explicitly says generalizes. the competing bases are notes/ (topic)
+    # and projects/recipe-app/ (scoped). user should see both addressed.
     message: >
       Save this insight from the recipe-app build: when local-first apps
       need to import remote content, treat the LLM as a parser, not a
@@ -263,8 +270,6 @@
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
-    # both topic and project are acceptable destinations here. agent
-    # should at minimum surface the alternative.
     - type: javascript
       value: |
         const created = [...output.files_created, ...output.files_modified]
@@ -280,41 +285,44 @@
       weight: 3
     - type: llm-rubric
       value: |
-        This case genuinely straddles topic and project. The user said it
-        comes from a specific project AND that it generalizes. Either
-        destination is defensible — what matters is that the agent
-        named an alternative so the user can redirect cheaply.
+        User outcome test: this insight has two legitimate homes —
+        a topic under notes/ (for the reusable principle) and
+        projects/recipe-app/ (for the project where it surfaced). The
+        user's brief says both apply. Their expected experience: "I see
+        which one the agent picked AND why the other wasn't — I can
+        redirect with one reply if I disagree."
 
-        PASS when ANY of the following hold:
-        - Status is SAVED and the response (status block OR surrounding
-          prose) names a specific alternative file or base the agent
-          considered. The alternative doesn't need to be labeled
-          "Alternatives considered" — prose like "projects/recipe-app/
-          already covers X, so this goes to the topic" counts.
-        - Status is PROPOSAL with both candidates surfaced.
-        - The agent explicitly addresses why it chose topic over project
-          (or vice versa), naming a specific competing path.
+        PASS when ALL of the following hold:
+        - The response tells the user where the content was saved or
+          proposed
+        - The response names or addresses BOTH competing homes (the
+          topic destination AND projects/recipe-app/). Either destination
+          is a defensible primary — what matters is that the other is
+          visible to the user as an alternative they could redirect to.
+        - The rationale explains the call in terms the user can verify
+          (e.g. "the generalization lives here, the concrete application
+          is already in the project README")
 
         FAIL when:
-        - Status is SAVED with no alternative path named anywhere in the
-          response — silent commit with no escape route
-        - Agent picked one destination without visibly weighing the other
-        - Rationale is generic ("seemed like a fit") without naming a
-          competing candidate
+        - Silent commit — destination given but no mention of the other
+          home. User has to guess whether the alternative was weighed.
+        - Only a generic rationale ("fits better") without naming the
+          competing path
+        - Routed to a third destination (e.g. research/) without
+          addressing the topic/project tension the user set up
 
         Ignore AGENTS.md / maintenance text.
-      metric: calibration_surfaces_alternative
+      metric: user_can_redirect
       weight: 3
 
 #=============================================================================
-# axis 3 — cross-area within base (notes/ai sub-files)
+# axis 3 — cross-area within base (notes/ai/)
 #=============================================================================
 
 - description: "axis-3 clear — fits one existing file's gap unambiguously"
   vars:
     # specific prompting pattern with a clear file home —
-    # notes/ai/prompting-patterns.md. notes/ai/evals.md doesn't cover
-    # output formatting, so cross-area ambiguity is minimal here.
+    # notes/ai/prompting-patterns.md. no meaningful sibling has a claim.
     message: >
       Save this prompting pattern: XML tags around structured output
       sections produce better adherence than markdown headers when working
@@ -344,27 +352,34 @@
       weight: 2
     - type: llm-rubric
       value: |
-        Specific prompting pattern about output formatting. notes/ai/prompting-patterns.md
-        is the obvious home; notes/ai/evals.md doesn't cover this territory.
+        User outcome test: specific prompting pattern. One clear file home
+        (notes/ai/prompting-patterns.md). User's expected experience:
+        "landed in the right file, no options presented."
 
         PASS when:
-        - Status is SAVED to notes/ai/prompting-patterns.md
-        - Agent did not propose evals.md or other sibling files (no real
-          ambiguity to surface)
+        - The response tells the user the content went to
+          notes/ai/prompting-patterns.md
+        - The response doesn't waffle between sibling files — there's no
+          real ambiguity to surface
 
         FAIL when:
-        - Wrote to a different file
-        - PROPOSAL when destination is unambiguous
+        - Routed to a different file (losing the obvious home)
+        - User is handed a decision between sibling files that don't have
+          a claim on this content
 
         Ignore AGENTS.md / maintenance text.
-      metric: calibration_confident
+      metric: user_gets_confident_placement
       weight: 3
 
-- description: "axis-3 ambiguous — insight straddles prompting-patterns and evals"
+- description: "axis-3 ambiguous — CoT for eval grading straddles two files"
   vars:
-    # the insight is about prompting *for the purpose of* eval grading.
-    # both notes/ai/prompting-patterns.md and notes/ai/evals.md have valid
-    # claims. agent should surface the alternative.
+    # the insight is "use CoT in LLM-as-judge prompts". two strong
+    # candidates sit in notes/ai/:
+    #   - prompting-patterns.md (prompting technique family — has a CoT entry)
+    #   - evals.md (eval grading practice — has an LLM-as-judge entry)
+    # we have a clear opinion: user should see both addressed. a response
+    # that names only one (or neither) leaves the user uncertain which
+    # file is the right one to go edit later.
     message: >
       Save this insight: when grading evals with LLM-as-judge, the judge
       prompt benefits from chain-of-thought before scoring. Accuracy goes
@@ -376,7 +391,6 @@
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
-    # either file is acceptable — what matters is the alternative is named.
     - type: javascript
       value: |
         const targets = ['notes/ai/prompting-patterns.md', 'notes/ai/evals.md'];
@@ -397,26 +411,37 @@
       weight: 2
     - type: llm-rubric
       value: |
-        Insight is "use chain-of-thought in eval grading prompts" — a
-        prompting pattern AND an eval-grading practice. Multiple files
-        could hold it (notes/ai/prompting-patterns.md, notes/ai/evals.md,
-        or even research/ai/ if treated as source material).
+        User outcome test: the insight sits squarely at the intersection
+        of two files — notes/ai/prompting-patterns.md (prompting
+        technique) and notes/ai/evals.md (eval grading practice). The
+        user's expected experience: "I see which file the agent picked,
+        AND that the other was considered — I can redirect with one
+        word if I disagree."
 
-        PASS when ANY of the following hold:
-        - Status is SAVED and the response (status block OR prose) names
-          a specific alternative path the agent considered. The label
-          "Alternatives considered" is not required — natural-language
-          framing like "considered X but ruled it out because..." counts.
-        - Status is PROPOSAL with multiple candidates surfaced.
-        - The agent explicitly explained why it chose this file over at
-          least one named competing candidate.
+        This case has a specific claim: BOTH prompting-patterns.md AND
+        evals.md should be visible to the user. One as the destination,
+        the other as an addressed alternative. A response that names
+        only one leaves the user unable to tell whether the second was
+        weighed or missed entirely.
+
+        PASS when:
+        - The response tells the user where the content was saved or
+          proposed
+        - Both notes/ai/prompting-patterns.md and notes/ai/evals.md are
+          visible in the response — one as destination, the other as
+          addressed alternative (named as considered, or explained away)
+        - The rationale justifies the call on content grounds
 
         FAIL when:
-        - Status is SAVED with no alternative path named anywhere in the
-          response — silent commit with no escape route
-        - Routed without acknowledging any competing candidate
-        - Rationale is generic without naming an alternative
+        - Only one of the two files appears in the response (user can't
+          tell whether the other was considered)
+        - Silent commit with generic rationale
+        - Routed to a third file without addressing the two strong
+          candidates
+        - A different alternative is named (e.g. research/ai/) but the
+          other notes/ai/ sibling is never mentioned — the user is left
+          uncertain about the file they'd actually open next
 
         Ignore AGENTS.md / maintenance text.
-      metric: calibration_surfaces_alternative
+      metric: user_can_redirect
       weight: 3

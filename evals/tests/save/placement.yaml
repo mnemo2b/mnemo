@@ -1,8 +1,10 @@
 # placement — does the agent save to the right place when the brief is clear?
 #
-# clear placement should resolve to SAVED. willingness to create a new file
-# (when content is novel but routing is obvious) is part of placement quality —
-# the agent shouldn't punt on routine cases just because the file is new.
+# rubrics grade USER OUTCOMES, not agent process. mechanical assertions stay
+# as low-weight regression sentinels. the question these cases ask is: when
+# the user's request is unambiguous, does the response confirm the save and
+# land it in the right area — including being willing to create a new file
+# when the area is obvious but a matching one doesn't yet exist.
 
 - description: "explicit destination — pasta water tips to cooking/techniques"
   vars:
@@ -12,32 +14,41 @@
       water before draining for the sauce. Save these to cooking/techniques.
     prime: true
   assert:
-    # mechanical — save sub-agent was invoked
+    # regression sentinel — save sub-agent was invoked
     - type: javascript
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
-    # mechanical — the cooking/techniques area surfaced in tool inputs
+    # outcome — destination appears in response (user knows where it went)
     - type: javascript
       value: "output.tool_input_text.includes('cooking/techniques')"
-      metric: reached_target
+      metric: destination_surfaced
       weight: 2
-    # filesystem — a non-AGENTS file under cooking/techniques was written
-    # (either a new pasta-water note or an extension to an existing technique)
+    # outcome — something was actually written under the target area
     - type: javascript
       value: "[...output.files_created, ...output.files_modified].filter(f => f.startsWith('notes/cooking/techniques/') && !f.endsWith('AGENTS.md')).length >= 1"
       metric: wrote_to_target_area
       weight: 3
-    # qualitative — dispatcher confirmed the save rather than asking for clarification
     - type: llm-rubric
       value: |
-        The reply confirms the save completed. Acceptable signals: "saved",
-        "wrote", "created", "added to", "updated", reference to the target
-        file, or narrating what went where. Unacceptable: asking where it
-        should go, listing options for the user to pick, or declining to
-        proceed because the exact file doesn't exist yet. Ignore any text
-        about AGENTS.md or maintenance work.
-      metric: committed_to_save
+        User outcome test: explicit destination in the brief
+        ("cooking/techniques"). User's expected experience: "saved
+        exactly where I told it to go, no questions asked."
+
+        PASS when:
+        - The response tells the user the content was saved (or added
+          to, extended, created) — user knows it completed
+        - The destination named is cooking/techniques (user's requested
+          area)
+
+        FAIL when:
+        - The agent asks where to save (user already said)
+        - The agent offers a list of options for the user to pick
+        - The agent declines because a specific matching file doesn't
+          exist (creating a new one is fine)
+
+        Ignore AGENTS.md / maintenance text.
+      metric: user_gets_save_confirmation
       weight: 2
 
 - description: "novel topic, clear area — thai cooking history into cooking"
@@ -49,33 +60,38 @@
       foundation. Save a note on Thai cooking history.
     prime: true
   assert:
-    # mechanical — save sub-agent was invoked
     - type: javascript
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
-    # mechanical — cooking area surfaced in tool inputs
     - type: javascript
       value: "output.tool_input_text.includes('cooking')"
-      metric: reached_target
+      metric: destination_surfaced
       weight: 2
-    # filesystem — something got written under notes/cooking/ (new file most
-    # likely, but an extension to an existing note is also valid). excludes
-    # AGENTS.md since maintenance may bootstrap conventions docs.
     - type: javascript
       value: "[...output.files_created, ...output.files_modified].filter(f => f.startsWith('notes/cooking/') && !f.endsWith('AGENTS.md')).length >= 1"
       metric: wrote_to_target_area
       weight: 3
-    # qualitative — dispatcher was willing to proceed rather than refusing on
-    # "no existing file" grounds. SAVED or PROPOSAL are both acceptable here
-    # (novel topic can merit either).
     - type: llm-rubric
       value: |
-        The reply shows the dispatcher was willing to proceed — either by
-        confirming a save to a new file, or by proposing one or more
-        plausible destinations. Unacceptable: refusing because no matching
-        file exists, claiming it can't determine where the content belongs
-        when cooking is the obvious area, or returning an error-style
-        response. Ignore any text about AGENTS.md or maintenance work.
-      metric: willing_to_proceed
+        User outcome test: clear topic area (cooking), novel subject
+        (Thai history). User's expected experience: "the agent took the
+        content and landed it under cooking — either a new note or
+        extended an existing one. I didn't have to decide where it went."
+
+        PASS when:
+        - The response confirms the save (or proposes a specific
+          placement) under notes/cooking/
+        - The agent was willing to proceed — either creating a new file
+          for a novel topic, or extending an existing one
+
+        FAIL when:
+        - The agent refused on "no matching file exists" grounds
+        - The agent claimed it couldn't determine where the content
+          belongs (cooking is explicit)
+        - Error-style response that leaves the user with nothing saved
+          and no path forward
+
+        Ignore AGENTS.md / maintenance text.
+      metric: user_gets_progress
       weight: 2

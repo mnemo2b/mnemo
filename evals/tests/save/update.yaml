@@ -1,14 +1,16 @@
 # update — does the agent extend an existing note instead of creating a duplicate?
 #
-# the strongest failure mode for save is silently creating a parallel file
-# next to one that already covers the topic. the agent should recognize the
-# existing file as the right home and propose an edit, not a new creation.
+# the strongest user failure mode is discovering a parallel file sitting
+# next to the one that already covers the topic. rubrics grade USER
+# OUTCOMES — "did the user's existing file get extended?" and "did the
+# response communicate it was an update, not a new note?" — not agent
+# process. mechanical checks stay as regression sentinels.
 
 - description: "refinement to existing — braising aromatic timing extends braising.md"
   vars:
     # cooking/techniques/braising.md exists in the fixture. the brief is a
-    # refinement on the existing technique, not a new technique. the agent
-    # should target the existing file.
+    # refinement on the existing technique, not a new technique. user
+    # expected experience: braising.md grew; no sibling file was created.
     message: >
       Quick refinement to my braising technique — adding aromatics in two
       stages (first round before the liquid goes in, second round halfway
@@ -16,39 +18,50 @@
       all in at the start. Save this refinement to the braising notes.
     prime: true
   assert:
-    # mechanical — save sub-agent was invoked
+    # regression sentinel — save sub-agent was invoked
     - type: javascript
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
-    # mechanical — the braising file surfaced in tool inputs (research or write)
+    # outcome — the target file name surfaced in trajectory (user knows
+    # where the refinement landed)
     - type: javascript
       value: "output.tool_input_text.includes('braising')"
-      metric: reached_target_file
+      metric: destination_surfaced
       weight: 2
-    # filesystem — existing braising.md was modified on disk
+    # outcome — existing braising.md on disk is different after the run
     - type: javascript
       value: "output.files_modified.includes('notes/cooking/techniques/braising.md')"
       metric: updated_existing_file
       weight: 3
-    # filesystem — no sibling technique file was created (AGENTS.md is allowed
-    # since the maintenance agent may bootstrap conventions docs)
+    # outcome — no sibling technique file was created. the worst silent
+    # failure mode is a parallel file ("braising-aromatics.md") the user
+    # won't find later.
     - type: javascript
       value: "output.files_created.filter(f => f.startsWith('notes/cooking/techniques/') && !f.endsWith('AGENTS.md')).length === 0"
       metric: no_duplicate_creation
       weight: 2
-    # qualitative — dispatcher's reply framed the save as an update, not a
-    # new file. tolerant of any valid phrasing (extended, integrated,
-    # added to, merged, etc.) — that's why it's a rubric, not a regex.
     - type: llm-rubric
       value: |
-        The reply clearly communicates that the save extended or updated an
-        existing note rather than creating a new file. Acceptable signals
-        include phrases like "saved to [existing file]", "integrated into",
-        "added to", "extended", "updated", "merged into". Unacceptable:
-        announcing a newly created sibling file (e.g. braising-aromatics.md),
-        or language that implies the refinement lives in a fresh note.
-        Ignore any text about AGENTS.md or maintenance work — that is a
-        separate concern and should not affect this judgment.
-      metric: framed_as_update
+        User outcome test: the user has an existing braising.md and
+        explicitly said "refinement ... to the braising notes". Their
+        expected experience: "my braising note grew — I know exactly
+        where to find this next time I reread it."
+
+        PASS when:
+        - The response communicates that an existing note was extended
+          (acceptable phrasing: "saved to braising.md", "integrated
+          into", "added to", "extended", "updated", "merged into")
+        - The destination name is the existing file, not a new sibling
+
+        FAIL when:
+        - The response announces a newly created file (e.g.
+          braising-aromatics.md) — user now has two files where they
+          expected one
+        - Language implies the refinement lives in a fresh note
+        - The destination is ambiguous — user can't tell whether their
+          existing braising.md was touched
+
+        Ignore AGENTS.md / maintenance text.
+      metric: user_sees_update_not_duplicate
       weight: 2
