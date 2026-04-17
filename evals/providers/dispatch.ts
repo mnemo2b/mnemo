@@ -375,6 +375,7 @@ export default class DispatchProvider {
           tool_calls: state.toolCalls,
           tool_input_text: toolInputText,
           result: state.result,
+          final_text: state.finalText,
           session_id: state.sessionId,
           duration_ms: state.durationMs,
           num_turns: state.numTurns,
