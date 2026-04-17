@@ -58,7 +58,26 @@ Before drafting, orient yourself in the knowledge base. The brief may already in
 3. Read the root AGENTS.md
 4. Narrow to candidate areas, read area AGENTS.md and existing files
 
-In both cases: route by topic affinity, not keyword matching. If the brief includes a destination hint, start there — but verify it's right before committing.
+In both cases: route by topic affinity, not keyword matching. A destination hint is a starting point, not a commitment.
+
+### Cross-base routing
+
+When the structure shows the same or a closely-related topic area in more than one base — both `notes/ai/` and `research/ai/`, both `notes/cooking/` and a `cookbook/` base — you must check each base before committing. The bases exist for a reason. Their root AGENTS.md explains the distinction: curated vs raw, topic vs project, personal vs shared, polished vs working. Skipping this check is how silent misplacements happen.
+
+Required before writing when multiple bases share the topic area:
+
+1. Read the root AGENTS.md of every base that has a matching area. Not just the one the hint points at.
+2. Reconcile the user's content against those base distinctions. A "reading session insight" often fits a research base, not a notes base. A project-specific decision often fits a project base, not a topic base.
+3. If the content plausibly fits more than one base, return PROPOSAL with the options. Even when one candidate looks like a natural fit, list the alternative so the user decides.
+
+Signals in the brief that should trigger cross-base checking:
+
+- "reading", "just read", "learned", "research" → raw-findings base may fit better than a curated-notes base
+- project framing, product context, feature spec → a project base may fit better than a topic base
+- phrasing that maps cleanly onto one base's stated purpose (e.g. "our team's decision") → that base likely wins, but still confirm
+- any topic word that literally names an area in two bases (ai, cooking, writing) → cross-base check is mandatory
+
+A confident hint from the dispatcher does not remove the ambiguity; it only names one of the candidates. The cross-base check is not optional — returning SAVED without having read each matching base's root AGENTS.md is a routing failure even if the destination ends up being reasonable.
 
 ### How agent instructions work
 
@@ -87,10 +106,15 @@ PROPOSAL feedback → re-spawn with feedback → PROPOSAL | NEEDS_CONTEXT
 
 ### Return SAVED when
 
-- Destination is clear and unambiguous
-- No contradictions with existing content
-- The area has agent instructions with conventions you can follow
-- The content fits naturally into existing structure (append to a file, add to a directory with a clear pattern)
+All of these must hold. If any one is uncertain, return PROPOSAL instead:
+
+- **Destination is unambiguous across bases and areas.** Not just "the file I picked is reasonable" — no other base or area has a plausible claim. When multiple bases share the topic area (both `notes/ai/` and `research/ai/`, both `notes/cooking/` and a `cookbook/` base), unambiguous means you can explain why the alternatives don't fit, not just that your chosen destination works.
+- **No contradictions with existing content.**
+- **The area has agent instructions with conventions you can follow.**
+- **The content fits naturally into existing structure** — appending to a file, adding to a directory with a clear pattern.
+- **The user's phrasing doesn't signal ambiguity.** Words like "reading session", "just read", "learned", "research", "we discussed" are signals that the content might fit a raw base better than a curated base, or vice versa. When the signal conflicts with your chosen destination, return PROPOSAL.
+
+Bias toward PROPOSAL. A silent misplacement compounds across future sessions. PROPOSAL with a clear recommendation ("I'd put this in X; Y is also plausible because...") is almost always the better response when there's any doubt.
 
 Write the changes directly using Write or Edit tools. Verify each file exists and content matches after writing. Then return:
 

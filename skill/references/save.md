@@ -61,6 +61,8 @@ The save agent needs to understand *why* something is worth saving, not just *wh
 
 A brief that says "save our discussion about save architecture" forces the save agent to guess what mattered. A brief that says "save these three architectural decisions about sub-agent boundaries, with the user's framing: 'the agent is the author, the user is the editor'" gives the save agent everything it needs.
 
+**Don't pre-commit to a destination.** Routing is the save agent's job, not yours. When the user's request is topical ("save this note about prompt engineering") rather than locational ("save this to notes/ai"), resist the urge to pick a destination from prime context. The agent may be juggling a `notes/` area and a `research/` area with overlapping topics — you can't tell which fits better from the skill layer. Your role is to hand over the full picture (every base, full structure) and let the agent propose. Pre-committing looks decisive but produces silent misplacements when a cross-base option would have been a better fit.
+
 ### Brief template
 
 Every brief follows this structure. The save agent expects this shape — don't improvise the format.
@@ -77,16 +79,16 @@ include the user's own phrasing where it was distinctive.]
 relationship to prior saves, anything that helps the agent make decisions.]
 
 User said: "[the user's exact words that triggered the save]"
-Base hint: [which knowledge base — always include, even with a single base]
-Destination hint: [area within the base, if you have a suggestion]
+Base hint: [only include when one base clearly fits — omit on multi-base ambiguity]
+Destination hint: [only include when the user pointed at a location or exactly one area fits — omit otherwise]
 
 ## Knowledge base
 Bases:
   [name]: [absolute path]
   [name]: [absolute path]
 
-Structure ([target base name]):
-  [top-level tree at depth 2 from the target base — copy from prime output]
+Structure:
+  [full depth-2 tree covering every base — copy from prime output verbatim]
 ```
 
 **State** — one of `INITIAL`, `REVISION`, `FOLLOW_UP`, or `WRITE`. The save agent needs to know what phase it's in immediately.
@@ -97,11 +99,11 @@ Structure ([target base name]):
 
 **User said** — the exact trigger phrase. Not paraphrased, not cleaned up.
 
-**Base hint** — which knowledge base to target. Your best guess based on the conversation and the user's bases.
+**Base hint** — which knowledge base to target. Only include when the user named a base, or when exactly one base plausibly fits. If the topic could fit across bases (e.g. `notes/ai/` and `research/ai/` both have prompt-engineering content), omit the line — let the save agent surface the options.
 
-**Destination hint** — which area within the base. Include when you have a reasonable suggestion. Omit the line entirely when you don't — the save agent will research and decide.
+**Destination hint** — which area within the base. Only include when the user explicitly pointed at a location, or when exactly one area in exactly one base is a clean fit. If multiple areas or bases could plausibly hold this content, omit the line entirely. A destination hint is an instruction, not a suggestion — the save agent treats it as the target, so a wrong hint produces a silent misplacement.
 
-**Knowledge base** — the save agent has no access to the prime output, so you must pass it. Always include Bases (name→path map) and Structure (depth-2 tree of the target base, copied from your prime context). This eliminates the need for the save agent to run discovery commands.
+**Knowledge base** — the save agent has no access to the prime output, so you must pass it. Always include Bases (name→path map) and the full Structure tree covering every base (copy the whole prime output structure verbatim). Passing every base is how the save agent recognizes cross-base options; pruning to the "target" base hides alternatives and forces the agent to commit to your guess.
 
 ### Revisions (REVISION state)
 
