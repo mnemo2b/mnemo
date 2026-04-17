@@ -1,6 +1,7 @@
-import { mkdtempSync, mkdirSync, cpSync, writeFileSync, rmSync, existsSync, readdirSync } from "fs";
+import { mkdtempSync, mkdirSync, cpSync, writeFileSync, rmSync, existsSync, readdirSync, readFileSync } from "fs";
 import { execSync } from "child_process";
 import { spawn } from "child_process";
+import { createHash } from "crypto";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { tmpdir } from "os";
@@ -121,6 +122,54 @@ export default class DispatchProvider {
       assertions: test?.assert,
     });
     writeFileSync(join(this.runDir, filename), meta + "\n" + rawLines.join("\n") + "\n");
+  }
+
+  // walks a directory and returns a map of relative-path → sha256 of content.
+  // used to snapshot the fixture before and after a run so assertions can
+  // check filesystem effects (files_created / files_modified / files_deleted)
+  // without having to regex against tool inputs or the dispatcher's prose.
+
+  private snapshotDir(root: string): Map<string, string> {
+    const snapshot = new Map<string, string>();
+    const walk = (dir: string, prefix: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name);
+        const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+        if (entry.isDirectory()) {
+          walk(full, rel);
+        } else if (entry.isFile()) {
+          const hash = createHash("sha256").update(readFileSync(full)).digest("hex");
+          snapshot.set(rel, hash);
+        }
+      }
+    };
+    walk(root, "");
+    return snapshot;
+  }
+
+  // diffs two snapshots into created / modified / deleted path lists.
+  // paths are relative to the fixture root and sorted for stable output.
+
+  private diffSnapshots(
+    before: Map<string, string>,
+    after: Map<string, string>,
+  ): { created: string[]; modified: string[]; deleted: string[] } {
+    const created: string[] = [];
+    const modified: string[] = [];
+    const deleted: string[] = [];
+    for (const [path, hash] of after) {
+      const prev = before.get(path);
+      if (prev === undefined) created.push(path);
+      else if (prev !== hash) modified.push(path);
+    }
+    for (const path of before.keys()) {
+      if (!after.has(path)) deleted.push(path);
+    }
+    return {
+      created: created.sort(),
+      modified: modified.sort(),
+      deleted: deleted.sort(),
+    };
   }
 
   // sets up two temp dirs: one for the fixture KB (becomes cwd), one for
@@ -345,6 +394,10 @@ export default class DispatchProvider {
     const rawLines: string[] = [];
     const callIndex = this.callIndex++;
 
+    // snapshot the fixture state AFTER setup (so the .mnemo-config.yml
+    // written during setup is in the baseline and won't appear in the diff).
+    const beforeSnapshot = this.snapshotDir(fixtureDir);
+
     try {
       const settings = this.buildSettings(prime);
       const state = await this.execute(
@@ -356,6 +409,9 @@ export default class DispatchProvider {
         rawLines,
         model,
       );
+
+      const afterSnapshot = this.snapshotDir(fixtureDir);
+      const fsDiff = this.diffSnapshots(beforeSnapshot, afterSnapshot);
 
       const resolvedModel = state.modelUsage
         ? Object.keys(state.modelUsage)[0]
@@ -376,6 +432,9 @@ export default class DispatchProvider {
           tool_input_text: toolInputText,
           result: state.result,
           final_text: state.finalText,
+          files_created: fsDiff.created,
+          files_modified: fsDiff.modified,
+          files_deleted: fsDiff.deleted,
           session_id: state.sessionId,
           duration_ms: state.durationMs,
           num_turns: state.numTurns,
