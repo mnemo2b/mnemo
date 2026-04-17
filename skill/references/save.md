@@ -33,6 +33,7 @@ The save agent was confident enough to write directly. It found a clear destinat
 The save agent has a plan but wants approval first. Ambiguous destination, multiple plausible locations, contradictions found, content that needs splitting or merging, or weak area conventions.
 
 - Present the full proposal to the user: drafted text, target locations, reasoning
+- Keep the save agent's plain-language rationale intact. If the agent explained its routing in content terms ("this reads like a takeaway you've already synthesized"), relay that directly. Don't flatten it into procedural summary ("agent selected notes/ai/") or strip the "why not X" alternatives. The rationale is part of the product — it's what lets the user trust or redirect quickly.
 - Surface contradictions prominently if found
 - Wait for the user's response:
   - **Approved** → re-spawn the save agent in WRITE mode with the approved proposal
