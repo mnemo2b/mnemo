@@ -371,20 +371,25 @@
       metric: user_gets_confident_placement
       weight: 3
 
-- description: "axis-3 ambiguous — CoT for eval grading straddles two files"
+- description: "axis-3 ambiguous — self-critique straddles prompting and agent-design"
   vars:
-    # the insight is "use CoT in LLM-as-judge prompts". two strong
-    # candidates sit in notes/ai/:
-    #   - prompting-patterns.md (prompting technique family — has a CoT entry)
-    #   - evals.md (eval grading practice — has an LLM-as-judge entry)
-    # we have a clear opinion: user should see both addressed. a response
-    # that names only one (or neither) leaves the user uncertain which
-    # file is the right one to go edit later.
+    # the insight is "self-critique in agent loops catches confident-wrong
+    # actions". two strong candidates sit in notes/ai/:
+    #   - prompting-patterns.md (Reasoning → "Self-critique" bullet)
+    #   - agent-design.md (Mitigations → "Self-evaluation pass before
+    #     'done'", Failure modes → "Confident wrong actions")
+    # prompting-patterns frames it as a prompt technique; agent-design
+    # frames it as a loop mitigation. a careful reader could land in
+    # either with justification. the user should see both addressed.
+    #
+    # this case also probes within-area discovery: if the agent silent-
+    # commits to one file without mentioning the sibling, it likely
+    # never listed notes/ai/ or read both files before committing.
     message: >
-      Save this insight: when grading evals with LLM-as-judge, the judge
-      prompt benefits from chain-of-thought before scoring. Accuracy goes
-      up, variance goes down — the judge "thinks through" what it's
-      grading instead of pattern-matching to a number.
+      Save this: adding a self-critique step to agent loops catches
+      confident-wrong actions before they ship. The agent reviews its
+      own plan, flags what could be wrong, then either revises or
+      proceeds. Small cost in latency, meaningful drop in bad actions.
     prime: true
   assert:
     - type: javascript
@@ -393,7 +398,7 @@
       weight: 1
     - type: javascript
       value: |
-        const targets = ['notes/ai/prompting-patterns.md', 'notes/ai/evals.md'];
+        const targets = ['notes/ai/prompting-patterns.md', 'notes/ai/agent-design.md'];
         const modified = output.files_modified.some(f =>
           targets.some(t => f.endsWith(t)));
         const referenced = targets.some(t => output.tool_input_text.includes(t));
@@ -402,7 +407,7 @@
       weight: 3
     - type: javascript
       value: |
-        const ok = ['notes/ai/prompting-patterns.md', 'notes/ai/evals.md'];
+        const ok = ['notes/ai/prompting-patterns.md', 'notes/ai/agent-design.md'];
         const wrong = [...output.files_created, ...output.files_modified]
           .filter(f => !f.endsWith('AGENTS.md'))
           .filter(f => !ok.some(t => f.endsWith(t)));
@@ -411,33 +416,39 @@
       weight: 2
     - type: llm-rubric
       value: |
-        User outcome test: the insight sits squarely at the intersection
-        of two files — notes/ai/prompting-patterns.md (prompting
-        technique) and notes/ai/evals.md (eval grading practice). The
-        user's expected experience: "I see which file the agent picked,
-        AND that the other was considered — I can redirect with one
-        word if I disagree."
+        User outcome test: the insight sits at the intersection of two
+        files — notes/ai/prompting-patterns.md (self-critique as a
+        prompting technique, already listed under Reasoning) and
+        notes/ai/agent-design.md (self-evaluation as a loop mitigation,
+        already listed under Mitigations; also directly addresses the
+        "confident wrong actions" failure mode named in that file).
 
-        This case has a specific claim: BOTH prompting-patterns.md AND
-        evals.md should be visible to the user. One as the destination,
-        the other as an addressed alternative. A response that names
-        only one leaves the user unable to tell whether the second was
-        weighed or missed entirely.
+        The user's expected experience: "I see which file the agent
+        picked, AND that the other was considered — I can redirect
+        with one word if I disagree."
+
+        This case has a specific claim: BOTH agent-design.md AND
+        prompting-patterns.md should be visible to the user. One as
+        the destination, the other as an addressed alternative. A
+        response that names only one leaves the user unable to tell
+        whether the second was weighed or missed entirely.
 
         PASS when:
         - The response tells the user where the content was saved or
           proposed
-        - Both notes/ai/prompting-patterns.md and notes/ai/evals.md are
-          visible in the response — one as destination, the other as
+        - Both notes/ai/agent-design.md and notes/ai/prompting-patterns.md
+          are visible in the response — one as destination, the other as
           addressed alternative (named as considered, or explained away)
-        - The rationale justifies the call on content grounds
+        - The rationale justifies the call on content grounds (references
+          self-critique, the loop context, or the confident-wrong-actions
+          link — not generic "fits better")
 
         FAIL when:
         - Only one of the two files appears in the response (user can't
           tell whether the other was considered)
         - Silent commit with generic rationale
-        - Routed to a third file without addressing the two strong
-          candidates
+        - Routed to a third file (e.g. context-engineering.md, evals.md)
+          without addressing the two strong candidates
         - A different alternative is named (e.g. research/ai/) but the
           other notes/ai/ sibling is never mentioned — the user is left
           uncertain about the file they'd actually open next
