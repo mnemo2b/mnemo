@@ -13,6 +13,11 @@ providers:
 defaultTest:
   vars:
     fixture: "realistic"
+  # grader for llm-rubric assertions — sonnet 4.6 is cheap enough for
+  # qualitative checks (framing, proposal vs. silent pick) at ~$0.002/call.
+  # override per-assertion if a specific rubric needs opus nuance.
+  options:
+    provider: anthropic:messages:claude-sonnet-4-6
   assert:
     - type: cost
       threshold: 1.00
