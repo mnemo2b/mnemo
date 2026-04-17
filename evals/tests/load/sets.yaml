@@ -2,7 +2,7 @@
 #
 # realistic fixture defines two project-level sets:
 #   ai-deep-dive: notes/ai + research/ai
-#   recipe-app: notes/projects/recipe-app + notes/cooking/recipes
+#   recipe-app: projects/recipe-app + notes/cooking/recipes
 # prime surfaces these in the session context. the agent should
 # use the set syntax (:set-name) or at minimum reach both paths.
 
