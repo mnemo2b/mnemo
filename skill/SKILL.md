@@ -26,6 +26,8 @@ Save requests route through `references/save.md`. Read it before any tool use on
 
 Save signals: explicit ("save this to X"), open-ended ("capture this", "save what we discussed"), or any user request to write to the knowledge base.
 
+Do not pre-commit to a destination when invoking this skill. The Skill args should describe the content, not a path — e.g. `save an insight about chain-of-thought prompting`, not `save to notes/ai/prompting-patterns`. Routing is the save agent's job, not yours. When you guess a destination from prime context and include it in the args, you anchor the save agent to your guess and hide cross-base alternatives. Describe the what; let the agent pick the where.
+
 ## Proactive use
 
 When project config (AGENTS.md) mentions a mnemo knowledge base:
