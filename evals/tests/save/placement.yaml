@@ -12,27 +12,33 @@
       water before draining for the sauce. Save these to cooking/techniques.
     prime: true
   assert:
-    # save sub-agent was invoked — flat search is more robust than guessing tool name
+    # mechanical — save sub-agent was invoked
     - type: javascript
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
-    # the cooking/techniques area surfaced somewhere in the trajectory
-    # (brief construction, sub-agent research, or write target)
+    # mechanical — the cooking/techniques area surfaced in tool inputs
     - type: javascript
       value: "output.tool_input_text.includes('cooking/techniques')"
       metric: reached_target
       weight: 2
-    # dispatcher relays a SAVED outcome — keywords from the skill's response template
+    # filesystem — a non-AGENTS file under cooking/techniques was written
+    # (either a new pasta-water note or an extension to an existing technique)
     - type: javascript
-      value: "/saved|wrote|created|updated/i.test(output.result)"
-      metric: status_saved
+      value: "[...output.files_created, ...output.files_modified].filter(f => f.startsWith('notes/cooking/techniques/') && !f.endsWith('AGENTS.md')).length >= 1"
+      metric: wrote_to_target_area
+      weight: 3
+    # qualitative — dispatcher confirmed the save rather than asking for clarification
+    - type: llm-rubric
+      value: |
+        The reply confirms the save completed. Acceptable signals: "saved",
+        "wrote", "created", "added to", "updated", reference to the target
+        file, or narrating what went where. Unacceptable: asking where it
+        should go, listing options for the user to pick, or declining to
+        proceed because the exact file doesn't exist yet. Ignore any text
+        about AGENTS.md or maintenance work.
+      metric: committed_to_save
       weight: 2
-    # didn't punt to clarifying questions
-    - type: javascript
-      value: "!/which|clarify|could you|can you tell/i.test(output.result)"
-      metric: no_clarification_punt
-      weight: 1
 
 - description: "novel topic, clear area — thai cooking history into cooking"
   vars:
@@ -43,23 +49,33 @@
       foundation. Save a note on Thai cooking history.
     prime: true
   assert:
+    # mechanical — save sub-agent was invoked
     - type: javascript
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
-    # cooking is the obvious area even though no thai-history file exists yet
+    # mechanical — cooking area surfaced in tool inputs
     - type: javascript
       value: "output.tool_input_text.includes('cooking')"
       metric: reached_target
       weight: 2
-    # SAVED or PROPOSAL both acceptable — the test is willingness to proceed,
-    # not specifically writing without approval
+    # filesystem — something got written under notes/cooking/ (new file most
+    # likely, but an extension to an existing note is also valid). excludes
+    # AGENTS.md since maintenance may bootstrap conventions docs.
     - type: javascript
-      value: "/saved|wrote|created|proposal|propose/i.test(output.result)"
+      value: "[...output.files_created, ...output.files_modified].filter(f => f.startsWith('notes/cooking/') && !f.endsWith('AGENTS.md')).length >= 1"
+      metric: wrote_to_target_area
+      weight: 3
+    # qualitative — dispatcher was willing to proceed rather than refusing on
+    # "no existing file" grounds. SAVED or PROPOSAL are both acceptable here
+    # (novel topic can merit either).
+    - type: llm-rubric
+      value: |
+        The reply shows the dispatcher was willing to proceed — either by
+        confirming a save to a new file, or by proposing one or more
+        plausible destinations. Unacceptable: refusing because no matching
+        file exists, claiming it can't determine where the content belongs
+        when cooking is the obvious area, or returning an error-style
+        response. Ignore any text about AGENTS.md or maintenance work.
       metric: willing_to_proceed
       weight: 2
-    # didn't refuse on grounds of "no existing file"
-    - type: javascript
-      value: "!/no existing|doesn't exist|cannot find|no matching file/i.test(output.result)"
-      metric: no_new_file_refusal
-      weight: 1
