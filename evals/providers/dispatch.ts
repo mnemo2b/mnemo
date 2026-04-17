@@ -426,10 +426,19 @@ export default class DispatchProvider {
         .map((c) => JSON.stringify(c.input ?? {}))
         .join("\n");
 
+      // extract the prompt passed to every sub-agent invocation. used by
+      // dispatch-focused tests to assert on the actual brief the dispatcher
+      // constructed (destination signal choice, preserved user phrasing,
+      // etc.) rather than fuzzing the flattened blob.
+      const agentPrompts = state.toolCalls
+        .filter((c) => c.input && "subagent_type" in c.input && "prompt" in c.input)
+        .map((c) => c.input.prompt as string);
+
       return {
         output: {
           tool_calls: state.toolCalls,
           tool_input_text: toolInputText,
+          agent_prompts: agentPrompts,
           result: state.result,
           final_text: state.finalText,
           files_created: fsDiff.created,

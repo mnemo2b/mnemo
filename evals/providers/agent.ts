@@ -71,14 +71,37 @@ export default class AgentProvider {
 		return "agent";
 	}
 
-	// copy the fixture knowledge base to a temp directory
+	// detects fixture layout and returns the bases to register.
+	// mirrors dispatch.ts so agent-mode evals see the same base shape as
+	// integration-mode evals. fixtures with a root AGENTS.md are single-base
+	// ("eval"); fixtures without one treat each top-level dir as its own base.
+
+	private detectBases (fixtureDir: string): Record<string, string> {
+		if (existsSync(join(fixtureDir, 'AGENTS.md'))) {
+			return { eval: fixtureDir };
+		}
+		const bases: Record<string, string> = {};
+		for (const entry of readdirSync(fixtureDir, { withFileTypes: true })) {
+			if (entry.isDirectory()) {
+				bases[entry.name] = join(fixtureDir, entry.name);
+			}
+		}
+		return bases;
+	}
+
+	// copy the fixture knowledge base to a temp directory and register bases
 
 	private setup (fixtureName: string) {
 		const fixtureSource = join(__dirname, '..', 'fixtures', fixtureName);
 		const tempDir = mkdtempSync(join(tmpdir(), 'mnemo-eval-'));
 		cpSync(fixtureSource, tempDir, { recursive: true })
+
+		const bases = this.detectBases(tempDir);
+		const basesYaml = Object.entries(bases)
+			.map(([name, path]) => `  ${name}: ${path}`)
+			.join('\n');
 		const tempConfig = join(tempDir, '.mnemo-config.yml');
-		writeFileSync(tempConfig, `bases:\n  eval: ${tempDir}\n`)
+		writeFileSync(tempConfig, `bases:\n${basesYaml}\n`)
 		return { tempDir, tempConfig };
 	}
 
@@ -189,7 +212,10 @@ export default class AgentProvider {
 	private async execute(prompt: string, tempDir: string, tempConfig: string, message: string, model?: string) {
 		const token = this.getAuthToken();
 		const settings = JSON.stringify({ apiKeyHelper: `echo ${token}` })
-		writeFileSync(join(tempDir, '.system-prompt.md'), prompt);
+		// substitute {FIXTURE_PATH} with the temp dir so test-authored briefs
+		// can reference real base paths without knowing the runtime path
+		const substituted = prompt.replaceAll('{FIXTURE_PATH}', tempDir);
+		writeFileSync(join(tempDir, '.system-prompt.md'), substituted);
 
 		return new Promise<{ raw: string; parsed: Record<string, unknown> }>((resolve, reject) => {
 			let stdout = '';
