@@ -17,25 +17,34 @@
       this note about prompt engineering.
     prime: true
   assert:
+    # mechanical — save sub-agent was invoked
     - type: javascript
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
-    # both plausible areas should surface in the trajectory
+    # mechanical — both plausible areas should surface in the trajectory
     - type: javascript
       value: "output.tool_input_text.includes('notes/ai') && output.tool_input_text.includes('research/ai')"
       metric: explored_both_areas
       weight: 2
-    # dispatcher relays a proposal — keywords from the skill's PROPOSAL template
+    # filesystem — no content file should have been written (waiting for the
+    # user to pick). AGENTS.md changes are maintenance and don't count.
     - type: javascript
-      value: "/proposal|propose|options?|could go|either|which (one|location|area)/i.test(output.result)"
+      value: "[...output.files_created, ...output.files_modified].filter(f => !f.endsWith('AGENTS.md')).length === 0"
+      metric: no_silent_save
+      weight: 3
+    # qualitative — dispatcher presented placement options rather than picking one
+    - type: llm-rubric
+      value: |
+        The reply presents multiple plausible destinations and asks the user
+        to choose, or otherwise communicates a proposal. Acceptable signals:
+        listing two or more options, phrases like "could go in X or Y",
+        "either...or", "which would you prefer", "proposal", "options".
+        Unacceptable: announcing a completed save, silently picking one
+        destination, or refusing to engage. Ignore any text about AGENTS.md
+        or maintenance work.
       metric: status_proposal
       weight: 2
-    # didn't silently commit a single placement
-    - type: javascript
-      value: "!/^.*saved.*$/im.test(output.result) || /proposal|propose/i.test(output.result)"
-      metric: no_silent_save
-      weight: 1
 
 - description: "vague brief — 'python' fits multiple unrelated areas"
   vars:
@@ -45,22 +54,28 @@
     message: "Save what we discussed about python."
     prime: true
   assert:
-    - type: javascript
-      value: "output.tool_input_text.includes('subagent_type')"
-      metric: invoked_save
-      weight: 1
-    # the response should be a question, not a placement decision
+    # mechanical — dispatcher asked a question (string contains '?')
     - type: javascript
       value: "output.result.includes('?')"
       metric: asked_clarifying_question
       weight: 2
-    # signals from NEEDS_CONTEXT response template — questions, options, "which"
+    # filesystem — nothing was written. strongest signal for "no phantom save"
+    # since we can check the fixture state directly instead of hoping the
+    # dispatcher's reply happens to mention (or not mention) a file.
     - type: javascript
-      value: "/which|clarify|could you|can you (tell|share|provide)|need more|need_context|needs_context/i.test(output.result)"
+      value: "[...output.files_created, ...output.files_modified].filter(f => !f.endsWith('AGENTS.md')).length === 0"
+      metric: no_phantom_save
+      weight: 3
+    # qualitative — dispatcher asked for clarification about what/where to save
+    - type: llm-rubric
+      value: |
+        The reply asks the user to clarify — either about which topic
+        "python" refers to (the language, the pet snake, research notes),
+        where it should be saved, or what content to save. Acceptable
+        signals: explicit questions, "which", "could you tell me", "need
+        more info", listing candidate areas. Unacceptable: confirming a
+        save happened, fabricating python content, or confidently picking
+        a destination without asking. Ignore any text about AGENTS.md or
+        maintenance work.
       metric: status_needs_context
       weight: 2
-    # didn't fabricate content or claim to have saved nothing meaningful
-    - type: javascript
-      value: "!/i(\\.|'ve| have) saved|file (was|has been) (created|written)/i.test(output.result)"
-      metric: no_phantom_save
-      weight: 1
