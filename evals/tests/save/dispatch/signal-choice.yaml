@@ -1,0 +1,89 @@
+# signal-choice — does the dispatcher pick the right destination signal?
+#
+# the skill reference describes three signals the dispatcher can pass to
+# the save agent:
+#   Specified: user named a path in their words     — instruction-strength
+#   Suggested: dispatcher inferred with confidence  — soft prior
+#   Candidates: dispatcher saw multiple plausible   — invite agent to choose
+#
+# the failure these probes catch: on structurally ambiguous content, the
+# dispatcher pre-commits to `Suggested` from prime context and hides
+# alternatives the save agent would otherwise surface. this is the
+# dispatcher-layer half of the axis-3 failure in integration — split here
+# so we can see which layer regresses when it does.
+#
+# dispatch.ts exposes every sub-agent invocation's prompt as
+# `output.agent_prompts[]`. assertions look at agent_prompts[0] directly.
+
+- description: "ambiguous self-critique — dispatcher should choose Candidates, not Suggested"
+  vars:
+    # same content as the axis-3 ambiguous integration case — the insight
+    # straddles notes/ai/prompting-patterns.md (self-critique as prompting
+    # technique) and notes/ai/agent-design.md (self-evaluation as loop
+    # mitigation + addresses "confident wrong actions"). both files have a
+    # structural claim from prime context. the dispatcher should recognize
+    # this straddle and pass Candidates rather than picking one as Suggested.
+    message: >
+      Save this: adding a self-critique step to agent loops catches
+      confident-wrong actions before they ship. The agent reviews its
+      own plan, flags what could be wrong, then either revises or
+      proceeds. Small cost in latency, meaningful drop in bad actions.
+    prime: true
+  assert:
+    # regression sentinel — a sub-agent was actually invoked
+    - type: javascript
+      value: "output.agent_prompts.length > 0"
+      metric: invoked_save
+      weight: 1
+    # outcome — the dispatcher framed the routing as Candidates (plural)
+    # rather than Suggested (one pre-committed pick)
+    - type: javascript
+      value: "output.agent_prompts[0].includes('Candidates:')"
+      metric: chose_candidates_signal
+      weight: 3
+    # outcome — the dispatcher did NOT pre-commit to Suggested
+    - type: javascript
+      value: "!output.agent_prompts[0].includes('Suggested:')"
+      metric: avoided_premature_suggestion
+      weight: 3
+    # outcome — both target files named in the Candidates line, so the
+    # save agent inherits the full set of plausible destinations
+    - type: javascript
+      value: |
+        const prompt = output.agent_prompts[0] || '';
+        const candLine = prompt.split('\n').find(l => l.startsWith('Candidates:')) || '';
+        return candLine.includes('prompting-patterns') && candLine.includes('agent-design');
+      metric: both_candidates_named
+      weight: 3
+    - type: llm-rubric
+      value: |
+        Dispatcher probe: the user sent content that structurally straddles
+        two files in notes/ai/ — prompting-patterns.md (where self-critique
+        is already a Reasoning bullet) and agent-design.md (where
+        self-evaluation is a loop mitigation and confident-wrong-actions
+        is a named failure mode).
+
+        The skill reference tells the dispatcher: "If you see multiple
+        plausible homes, use Candidates and let the save agent pick from
+        them. Pre-committing Suggested on ambiguous content looks decisive
+        but produces silent misplacements."
+
+        The brief the dispatcher constructs for the sub-agent should:
+        - frame the routing as Candidates (NOT Suggested), because neither
+          file dominates on content terms
+        - name BOTH notes/ai/prompting-patterns.md and notes/ai/agent-design.md
+          in the Candidates line
+        - preserve the user's own phrasing in the Brief section — the
+          dispatcher is distilling, not paraphrasing
+
+        PASS when the brief frames destination as Candidates covering both
+        files and preserves the user's content.
+
+        FAIL when the dispatcher pre-commits to one file via Suggested
+        (hides the alternative), or names only one file in Candidates
+        (also hides the alternative), or fabricates content not in the
+        user's message.
+
+        Ignore anything outside the brief (maintenance invocations, etc).
+      metric: dispatcher_frames_ambiguity_correctly
+      weight: 3

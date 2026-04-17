@@ -1,0 +1,43 @@
+description: "mnemo save — dispatcher probes (what brief does the dispatcher pass?)"
+
+# dispatch mode: full Claude Code with skill loaded (same as integration),
+# but assertions target the dispatcher's output — specifically the brief
+# passed to the sub-agent — rather than the eventual filesystem changes.
+#
+# dispatch.ts surfaces every sub-agent invocation's prompt as
+# `output.agent_prompts[]`. tests assert on signal choice (Specified vs
+# Suggested vs Candidates), preserved user phrasing, and brief shape.
+#
+# failure mode these probes catch: dispatcher pre-commits to `Suggested`
+# on structurally ambiguous content, stripping alternatives the sub-agent
+# would otherwise surface to the user.
+
+prompts:
+  - "{{message}}"
+
+providers:
+  - id: "file://../../providers/dispatch.ts"
+    config:
+      timeoutMs: 240000
+
+defaultTest:
+  vars:
+    fixture: "realistic"
+  options:
+    provider:
+      id: "file://../../providers/grader.ts"
+      config:
+        model: sonnet
+        timeoutMs: 60000
+  assert:
+    - type: cost
+      threshold: 1.00
+      metric: cost_guardrail
+      weight: 0.5
+    - type: latency
+      threshold: 210000
+      metric: latency_guardrail
+      weight: 0.5
+
+tests:
+  - file://../../tests/save/dispatch/signal-choice.yaml
