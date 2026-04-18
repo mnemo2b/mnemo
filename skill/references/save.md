@@ -86,7 +86,7 @@ User said: "[the user's exact words that triggered the save]"
 [Destination signal — include at most ONE of the three lines below, or omit entirely
 if you have no destination information. The label communicates authority — pick the
 label that matches how you derived the destination. See "Destination signals" below.]
-Specified: [path or base user named] (user named: "[the exact phrase where they named the path]")
+Specified: [path or base user named] (from User said, verbatim: "[substring of the User said quote that names the path]")
 Suggested: [path] (reason: [why this one place fits on content terms])
 Candidates: [path], [path][, [path]] (reason: [why multiple homes have a claim])
 
@@ -109,7 +109,7 @@ Structure:
 
 **Destination signals** — include at most one of the three labels below, matching how you derived the destination. Each label carries different authority, and the save agent behaves differently based on which one you choose:
 
-- **Specified** — the user literally named a path or base in their words. Apply the quote-test: quote the user's exact words. If a path or base name does not appear inside that quote, the signal is not Specified, no matter how instructional the message sounds. The `(user named: "...")` annotation is required — fill it with the exact phrase from the user's message where the path appears. If you cannot fill it in because no phrase names a path, you cannot use Specified; drop to Suggested or Candidates. The save agent honors the named path unless the content radically doesn't fit — in which case it surfaces the mismatch rather than overriding silently.
+- **Specified** — the user literally named a path or base inside the User said quote. The annotation phrase is a retrieval, not a generation: copy a verbatim substring of the User said line above, do not paraphrase or reconstruct. If no substring of User said contains a path or base name, Specified is unavailable — use Suggested or Candidates regardless of how instructional the message sounds. Do not write Specified first and then fabricate a quote to justify it; if you cannot literally copy the phrase from User said, the label is wrong. The save agent honors the named path unless the content radically doesn't fit — in which case it surfaces the mismatch rather than overriding silently.
 - **Suggested** — the content clearly fits one place on content terms; the dispatcher is confident. Soft prior. The save agent weighs it against its own read of the file and may override when the read disagrees — but its response names what drove the call so the user can trust it.
 - **Candidates** — multiple plausible destinations and you have not picked one. The save agent reads each candidate, picks the best fit, and names the alternatives in its response.
 
