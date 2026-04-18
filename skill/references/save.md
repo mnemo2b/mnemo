@@ -25,7 +25,7 @@ The save agent determines its own confidence after researching the knowledge bas
 The save agent committed directly. It had a clear best guess for the destination — sometimes unambiguous, sometimes with alternatives weighed but one candidate clearly winning. The user can redirect cheaply if the agent got it wrong, so SAVED is the preferred outcome whenever the agent has a confident read.
 
 - Present what was saved: file paths and a brief summary
-- **Relay the signal path and alternatives verbatim.** The save agent's response names which signal drove the call — "saved as specified," "confirmed the suggestion," or "picked from the candidates." That phrasing is the user's receipt for how the call was made. Relay it intact, along with any `Alternatives considered` section. Example: "Saved to notes/ai/prompting-patterns.md — picked from the candidates. Considered notes/ai/agent-design.md; the content fits the prompting-technique framing better. Say the word if you'd rather have it in agent-design."
+- **Relay the signal path and alternatives verbatim.** The save agent's response names which signal drove the call — "saved as specified," "confirmed the suggestion," or "picked from the candidates." That phrasing is the user's receipt for how the call was made. Relay it intact, along with any `Alternatives considered` section. Example: "Saved to topics/gardening/soil-building.md — picked from the candidates. Considered topics/gardening/composting.md; the content fits the soil-structure framing better. Say the word if you'd rather have it in composting."
 - Don't flatten the signal-echo into procedural summary ("agent selected X") — that strips the reasoning the user needs to trust or redirect
 - No approval needed — the agent already wrote
 - Spawn the maintenance agent in the background
@@ -35,7 +35,7 @@ The save agent committed directly. It had a clear best guess for the destination
 The save agent has a plan but wants approval first. Ambiguous destination, multiple plausible locations, contradictions found, content that needs splitting or merging, or weak area conventions.
 
 - Present the full proposal to the user: drafted text, target locations, reasoning
-- Keep the save agent's plain-language rationale intact. If the agent explained its routing in content terms ("this reads like a takeaway you've already synthesized"), relay that directly. Don't flatten it into procedural summary ("agent selected notes/ai/") or strip the "why not X" alternatives. The rationale is part of the product — it's what lets the user trust or redirect quickly.
+- Keep the save agent's plain-language rationale intact. If the agent explained its routing in content terms ("this reads like a takeaway you've already synthesized"), relay that directly. Don't flatten it into procedural summary ("agent selected the topics base") or strip the "why not X" alternatives. The rationale is part of the product — it's what lets the user trust or redirect quickly.
 - Surface contradictions prominently if found
 - Wait for the user's response:
   - **Approved** → re-spawn the save agent in WRITE mode with the approved proposal
@@ -64,7 +64,7 @@ The save agent needs to understand *why* something is worth saving, not just *wh
 
 A brief that says "save our discussion about save architecture" forces the save agent to guess what mattered. A brief that says "save these three architectural decisions about sub-agent boundaries, with the user's framing: 'the agent is the author, the user is the editor'" gives the save agent everything it needs.
 
-**Don't pre-commit to a destination when the user didn't.** Routing is the save agent's job, not yours. When the user's request is topical ("save this note about prompt engineering") rather than locational ("save this to notes/ai"), resist the urge to pick a destination from prime context and label it `Suggested`. The agent may be juggling a `notes/` area and a `research/` area with overlapping topics — you can't tell which fits better from the skill layer. If you see multiple plausible homes, use `Candidates` and let the save agent pick from them. Save `Suggested` for cases where the content genuinely fits one place on content terms, and `Specified` for cases where the user named the path themselves. Pre-committing `Suggested` on ambiguous content looks decisive but produces silent misplacements when a cross-base option would have been a better fit.
+**Don't pre-commit to a destination when the user didn't.** Routing is the save agent's job, not yours. When the user's request is topical ("save this note about companion planting") rather than locational ("save this to topics/gardening"), resist the urge to pick a destination from prime context and label it `Suggested`. The agent may be juggling a curated-notes base and a raw-research base with overlapping topics — you can't tell which fits better from the skill layer. If you see multiple plausible homes, use `Candidates` and let the save agent pick from them. Save `Suggested` for cases where the content genuinely fits one place on content terms, and `Specified` for cases where the user named the path themselves. Pre-committing `Suggested` on ambiguous content looks decisive but produces silent misplacements when a cross-base option would have been a better fit.
 
 ### Brief template
 
