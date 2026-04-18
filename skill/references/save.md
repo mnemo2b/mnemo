@@ -86,9 +86,9 @@ User said: "[the user's exact words that triggered the save]"
 [Destination signal — include at most ONE of the three lines below, or omit entirely
 if you have no destination information. The label communicates authority — pick the
 label that matches how you derived the destination. See "Destination signals" below.]
-Specified: [path or base the user explicitly named]
-Suggested: [path you inferred with high confidence — content clearly fits one place]
-Candidates: [path], [path][, [path]]
+Specified: [path or base user named] (user named: "[the exact phrase where they named the path]")
+Suggested: [path] (reason: [why this one place fits on content terms])
+Candidates: [path], [path][, [path]] (reason: [why multiple homes have a claim])
 
 ## Knowledge base
 Bases:
@@ -109,11 +109,17 @@ Structure:
 
 **Destination signals** — include at most one of the three labels below, matching how you derived the destination. Each label carries different authority, and the save agent behaves differently based on which one you choose:
 
-- **Specified** — the user explicitly named a path or base in their words. Instruction-strength. The save agent honors it unless the content radically doesn't fit — in which case it surfaces the mismatch rather than overriding silently.
+- **Specified** — the user literally named a path or base in their words. Apply the quote-test: quote the user's exact words. If a path or base name does not appear inside that quote, the signal is not Specified, no matter how instructional the message sounds. The `(user named: "...")` annotation is required — fill it with the exact phrase from the user's message where the path appears. If you cannot fill it in because no phrase names a path, you cannot use Specified; drop to Suggested or Candidates. The save agent honors the named path unless the content radically doesn't fit — in which case it surfaces the mismatch rather than overriding silently.
 - **Suggested** — the content clearly fits one place on content terms; the dispatcher is confident. Soft prior. The save agent weighs it against its own read of the file and may override when the read disagrees — but its response names what drove the call so the user can trust it.
 - **Candidates** — multiple plausible destinations and you have not picked one. The save agent reads each candidate, picks the best fit, and names the alternatives in its response.
 
-Choosing a label is a judgment about your own confidence, not the content. If you catch yourself about to write `Suggested` on content where two files have a real claim, use `Candidates` instead — pre-committing on ambiguous content hides alternatives the save agent would otherwise surface.
+The quote-test is the sole arbiter. "save this to `topics/gardening/soil-building.md`" passes — a path appears inside the quote. "save this insight about soil health" fails — no path appears, even though the message opens with a directive. Directive tone is not authorization to pick a destination; it is authorization to save something. If the user did not name where, the signal is an inference — `Suggested` at best, often `Candidates`.
+
+Choosing a label is a judgment about your own confidence, not the content. If you catch yourself about to write `Suggested` on content where two files have a real claim, use `Candidates` instead — pre-committing on ambiguous content hides alternatives the save agent would otherwise surface. The same rule applies if you catch yourself about to write `Specified` for an inference: drop to `Suggested` or `Candidates`.
+
+**Default to Candidates for topical saves when multiple homes could plausibly hold the content.** Before writing `Suggested` or `Specified`, scan the Structure tree twice: first for sibling files in the same topic area, then for the same topic area appearing in other bases. If two or more homes could plausibly hold the content on a quick skim — whether siblings in one area or matching areas across bases — the correct label is `Candidates` listing them all, not `Suggested` picking one. Imagine a user says "save this insight about garden soil" and the Structure shows `topics/gardening/` containing both `soil-building.md` and `composting.md`; the correct brief uses `Candidates: topics/gardening/soil-building.md, topics/gardening/composting.md` even if soil-building.md feels like the stronger match. If the Structure also shows a `sources/horticulture/` area, a reading-session framing on the same topic adds that as a candidate base even when a topics-side file looks like the clearest fit. The save agent reads each candidate and picks; the user sees them all and can redirect. Keyword-matching your way to one file ("garden soil → soil-building.md") is exactly the pre-commit failure this rule exists to prevent.
+
+**Prefer loose recommendations over missing ones.** When deciding between two and three candidates, pick three. When a cross-base option is a weaker fit than an in-base sibling, include it anyway — the save agent reads each one and picks the best, and the user sees the full set so they can redirect cheaply. A candidate list of three plausible files is always better than a list of one strong file: the stronger file still wins at the save-agent layer, but now the user has visibility into alternatives. The cost of an extra candidate is trivial — a few seconds of file reads. The cost of a missing candidate is silent misplacement.
 
 Omit all three lines when you have no destination information (e.g., brief is topical, the structure spans multiple bases with matching areas). The save agent will route from the Brief, Context, and Knowledge base sections.
 
