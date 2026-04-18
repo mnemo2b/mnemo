@@ -421,20 +421,30 @@
         return !brief.includes('Suggested:') && !brief.includes('Specified:');
       metric: avoided_premature_commitment
       weight: 3
-    # brief-shape — Candidates line names agent-design.md (primary anchor)
+    # brief-shape — Candidates block names agent-design.md (primary anchor)
     # plus at least one plausible alternative. we prefer "more loose
     # candidates" over "fewer strict candidates" — cross-base alternatives
     # are fine even when weaker than in-base siblings.
     - type: javascript
       value: |
         const prompt = output.agent_prompts[0] || '';
-        const candLine = prompt.split('\n').find(l => l.startsWith('Candidates:')) || '';
-        const hasAnchor = candLine.includes('agent-design');
+        const match = prompt.match(/\nCandidates:\n((?:[ \t]+.*\n?)+)/);
+        const candBlock = match ? match[1] : '';
+        const hasAnchor = candBlock.includes('agent-design');
         const alts = ['prompting-patterns', 'agent-memory'];
-        const hasAlt = alts.some(a => candLine.includes(a));
+        const hasAlt = alts.some(a => candBlock.includes(a));
         return hasAnchor && hasAlt;
       metric: anchor_plus_alt_named
       weight: 3
+    # brief-shape — per-candidate cuts present (v0.8 cuts-as-hypothesis)
+    - type: javascript
+      value: |
+        const prompt = output.agent_prompts[0] || '';
+        const match = prompt.match(/\nCandidates:\n((?:[ \t]+.*\n?)+)/);
+        const candBlock = match ? match[1] : '';
+        return candBlock.includes('covers:');
+      metric: per_candidate_cuts_present
+      weight: 2
     - type: javascript
       value: |
         const targets = ['notes/ai/prompting-patterns.md', 'notes/ai/agent-design.md'];

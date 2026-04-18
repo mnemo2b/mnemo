@@ -99,14 +99,24 @@
       value: "(output.agent_prompts[0] || '').includes('Candidates:')"
       metric: chose_candidates_signal
       weight: 3
-    # brief-shape — Candidates line spans both bases (notes/ and research/)
+    # brief-shape — Candidates block spans both bases (notes/ and research/)
     - type: javascript
       value: |
         const prompt = output.agent_prompts[0] || '';
-        const candLine = prompt.split('\n').find(l => l.startsWith('Candidates:')) || '';
-        return candLine.includes('notes/') && candLine.includes('research/');
+        const match = prompt.match(/\nCandidates:\n((?:[ \t]+.*\n?)+)/);
+        const candBlock = match ? match[1] : '';
+        return candBlock.includes('notes/') && candBlock.includes('research/');
       metric: cross_base_candidates_named
       weight: 3
+    # brief-shape — per-candidate cuts present (v0.8 cuts-as-hypothesis)
+    - type: javascript
+      value: |
+        const prompt = output.agent_prompts[0] || '';
+        const match = prompt.match(/\nCandidates:\n((?:[ \t]+.*\n?)+)/);
+        const candBlock = match ? match[1] : '';
+        return candBlock.includes('covers:');
+      metric: per_candidate_cuts_present
+      weight: 2
     # outcome — destination landed in one of the two legitimate homes
     - type: javascript
       value: |
