@@ -9,16 +9,15 @@
 # missing, so the user outcome is "got asked what I meant before anything
 # was written".
 
-- description: "ambiguous area — prompt engineering reading session insight"
+- description: "reading-session insight — synthesized principle with origin context"
   vars:
-    # two competing signals in the brief:
-    #   1. content classification — "insight" + already-articulated reasoning →
-    #      synthesized, fits notes/ over research/
-    #   2. framing trigger — "reading session" → research/ ambiguity signal
-    # we have an opinion: notes/ai/prompting-patterns.md is the right home
-    # (there's an existing CoT bullet with a mechanism-shaped gap). user
-    # should see that file as the destination and research/ai/ addressed
-    # as the alternative that "reading session" gestured at.
+    # "insight from a reading session" is synthesis, not raw extract. the
+    # mechanism ("because it surfaces intermediate reasoning") is already
+    # articulated in the user's voice. research/ is for structured research
+    # outputs (tool landscapes, product comparisons, competitive research),
+    # not for every mention of "reading". so research/ is not a candidate
+    # here — the right home is notes/ai/prompting-patterns.md, where an
+    # existing CoT bullet has a mechanism-shaped gap.
     message: >
       Insight from a prompt engineering reading session — chain-of-thought
       works because it surfaces intermediate reasoning that the model would
@@ -27,22 +26,10 @@
       this note about prompt engineering.
     prime: true
   assert:
-    # regression sentinel — save sub-agent was invoked
     - type: javascript
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
-    # regression sentinel — both bases surfaced somewhere in trajectory.
-    # accepts either the area path or the base AGENTS.md — reading the
-    # base-level doc is sufficient to rule a base in or out.
-    - type: javascript
-      value: |
-        const sawNotes = output.tool_input_text.includes('notes/ai') || output.tool_input_text.includes('notes/AGENTS.md');
-        const sawResearch = output.tool_input_text.includes('research/ai') || output.tool_input_text.includes('research/AGENTS.md');
-        return sawNotes && sawResearch;
-      metric: explored_both_bases
-      weight: 2
-    # outcome — the destination file surfaced in the response
     - type: javascript
       value: |
         const target = 'notes/ai/prompting-patterns.md';
@@ -51,7 +38,6 @@
         return modified || referenced;
       metric: placement_correct
       weight: 3
-    # outcome — nothing wrong got written
     - type: javascript
       value: |
         const target = 'notes/ai/prompting-patterns.md';
@@ -63,34 +49,115 @@
       weight: 2
     - type: llm-rubric
       value: |
-        User outcome test: the brief has mixed signals (synthesized
-        content + "reading session" framing). We have an opinion about
-        the right home: notes/ai/prompting-patterns.md — it already has
-        a CoT bullet without a mechanism, and this insight fills that
-        gap. The user's expected experience: "I see it landed in
-        prompting-patterns.md, I understand why (the existing CoT
-        entry), and if the 'reading session' framing suggested
-        research/ai/ to me, I see that was considered and ruled out."
+        User outcome test: synthesized principle with origin context
+        ("from a reading session"). Right home is
+        notes/ai/prompting-patterns.md — the existing CoT bullet has a
+        mechanism-shaped gap this fills. The user's expected experience:
+        "landed in prompting-patterns.md, rationale referenced the
+        existing CoT entry or the synthesized framing — I know why."
 
         PASS when:
-        - The response tells the user the content was saved or proposed
-          to notes/ai/prompting-patterns.md
+        - The response tells the user the content went to
+          notes/ai/prompting-patterns.md
         - The rationale names something concrete — the existing CoT
-          entry, the synthesized-vs-raw-source distinction, or similar
-          content-grounded reasoning
-        - The research/ base is addressed in some form (named as
-          considered, or its absence explained) so the user isn't left
-          wondering about the "reading session" signal
+          entry, the synthesis framing, or similar content-grounded
+          reasoning
 
         FAIL when:
         - Routed somewhere other than notes/ai/prompting-patterns.md
         - Silent commit with generic rationale ("fits here")
-        - research/ai/ was never addressed — user is left wondering
-          whether the "reading session" signal was weighed
         - Agent fabricated content not in the user's brief
 
         Ignore AGENTS.md / maintenance text.
       metric: user_can_trust_placement
+      weight: 3
+
+- description: "cross-base ambiguous — researched landscape with distilled pattern"
+  vars:
+    # models the user's actual research workflow: they research a subject
+    # (tool landscape, competitive analysis, SaaS comparison) and produce
+    # BOTH a structured landscape AND a distilled cross-cutting pattern.
+    # the landscape fits research/ai/llm-evaluation.md (research base is
+    # for research deliverables). the distilled pattern fits
+    # notes/ai/evals.md (synthesized principle). both bases have a real
+    # claim — Candidates should name both, and the response should
+    # address the choice so the user can redirect cheaply.
+    message: >
+      Spent the morning researching agent evaluation tools — DeepEval does
+      pytest-style assertions, Promptfoo does matrix-style grids, Inspect
+      AI is constitution-driven. The common pattern across all three: eval
+      frameworks are moving away from single-score rubrics toward
+      per-assertion grading. Save this.
+    prime: true
+  assert:
+    - type: javascript
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    # brief-shape — dispatcher framed routing as Candidates (plural)
+    - type: javascript
+      value: "(output.agent_prompts[0] || '').includes('Candidates:')"
+      metric: chose_candidates_signal
+      weight: 3
+    # brief-shape — Candidates line spans both bases (notes/ and research/)
+    - type: javascript
+      value: |
+        const prompt = output.agent_prompts[0] || '';
+        const candLine = prompt.split('\n').find(l => l.startsWith('Candidates:')) || '';
+        return candLine.includes('notes/') && candLine.includes('research/');
+      metric: cross_base_candidates_named
+      weight: 3
+    # outcome — destination landed in one of the two legitimate homes
+    - type: javascript
+      value: |
+        const ok = ['notes/ai/evals.md', 'research/ai/llm-evaluation.md'];
+        const landed = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'))
+          .some(f => ok.some(t => f.endsWith(t)));
+        const referenced = ok.some(t => output.tool_input_text.includes(t));
+        return landed || referenced;
+      metric: placement_acceptable
+      weight: 3
+    - type: javascript
+      value: |
+        const ok = ['notes/ai/evals.md', 'research/ai/llm-evaluation.md'];
+        const wrong = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'))
+          .filter(f => !ok.some(t => f.endsWith(t)));
+        return wrong.length === 0;
+      metric: no_wrong_placement
+      weight: 2
+    - type: llm-rubric
+      value: |
+        User outcome test: the user did research and produced both a
+        structured landscape (three tools with distinguishing features)
+        and a distilled cross-tool pattern. Both bases have a real
+        claim — research/ai/llm-evaluation.md for the landscape,
+        notes/ai/evals.md for the synthesized pattern. The user's
+        expected experience: "I see which base the agent picked AND
+        that the other base was considered — I can redirect with one
+        reply if I want the other frame."
+
+        PASS when ALL hold:
+        - The response tells the user where the content was saved or
+          proposed (research/ai/llm-evaluation.md or notes/ai/evals.md
+          — either is defensible as the primary)
+        - Both bases are visible in the response — one as destination,
+          the other as addressed alternative (named as considered, or
+          explained away)
+        - The rationale explains the call on content grounds (the
+          landscape framing, the distilled pattern, or a clear reason
+          to favor one framing over the other)
+
+        FAIL when:
+        - Only one base appears in the response (user can't tell
+          whether the other was considered)
+        - Silent commit with generic rationale
+        - Routed somewhere other than the two acceptable homes
+        - Agent fabricated content not in the user's brief
+
+        Ignore AGENTS.md / maintenance text.
+      metric: user_can_redirect
       weight: 3
 
 - description: "vague brief — 'python' fits multiple unrelated areas"

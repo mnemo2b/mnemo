@@ -341,12 +341,14 @@
         return modified || referenced;
       metric: placement_correct
       weight: 3
+    # sibling edits under notes/ai/ are acceptable — contradiction-resolution
+    # in a neighboring file is desired behavior on a clear save. what we
+    # guard against is placement OUTSIDE the target area.
     - type: javascript
       value: |
-        const target = 'notes/ai/prompting-patterns.md';
         const wrong = [...output.files_created, ...output.files_modified]
           .filter(f => !f.endsWith('AGENTS.md'))
-          .filter(f => !f.endsWith(target));
+          .filter(f => !f.includes('notes/ai/'));
         return wrong.length === 0;
       metric: no_wrong_placement
       weight: 2
@@ -354,7 +356,9 @@
       value: |
         User outcome test: specific prompting pattern. One clear file home
         (notes/ai/prompting-patterns.md). User's expected experience:
-        "landed in the right file, no options presented."
+        "landed in the right file, no options presented." A secondary
+        edit to a sibling file is fine (contradiction resolution,
+        cross-reference updates) as long as the response surfaces it.
 
         PASS when:
         - The response tells the user the content went to
