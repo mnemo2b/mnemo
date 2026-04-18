@@ -19,6 +19,15 @@
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
+    # brief-shape — dispatcher used the Specified label because the user
+    # named a path ("cooking/techniques") in their message. this is the
+    # happy-path counterpart to the anti-fabrication checks on ambiguous
+    # content: Specified must be reachable when the quote-test actually
+    # finds a path in User said.
+    - type: javascript
+      value: "(output.agent_prompts[0] || '').includes('Specified:')"
+      metric: used_specified_signal
+      weight: 3
     # outcome — destination appears in response (user knows where it went)
     - type: javascript
       value: "output.tool_input_text.includes('cooking/techniques')"
