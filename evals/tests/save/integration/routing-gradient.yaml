@@ -385,6 +385,12 @@
     # this case also probes within-area discovery: if the agent silent-
     # commits to one file without mentioning the sibling, it likely
     # never listed notes/ai/ or read both files before committing.
+    #
+    # the brief-shape assertions below probe the dispatcher layer directly:
+    # on this structurally ambiguous content, the dispatcher should pass
+    # `Candidates:` with ≥2 plausible files, not pre-commit via `Suggested:`
+    # or `Specified:`. `Specified:` is reserved for cases where the user
+    # literally named a path — inferred destinations are never Specified.
     message: >
       Save this: adding a self-critique step to agent loops catches
       confident-wrong actions before they ship. The agent reviews its
@@ -396,6 +402,35 @@
       value: "output.tool_input_text.includes('subagent_type')"
       metric: invoked_save
       weight: 1
+    # brief-shape — dispatcher framed routing as Candidates (plural)
+    # rather than pre-committing via Suggested or Specified
+    - type: javascript
+      value: "(output.agent_prompts[0] || '').includes('Candidates:')"
+      metric: chose_candidates_signal
+      weight: 3
+    # brief-shape — dispatcher did NOT pre-commit to a single destination.
+    # both `Suggested:` and `Specified:` hide alternatives; on structurally
+    # ambiguous content, Candidates is the only correct shape.
+    - type: javascript
+      value: |
+        const brief = output.agent_prompts[0] || '';
+        return !brief.includes('Suggested:') && !brief.includes('Specified:');
+      metric: avoided_premature_commitment
+      weight: 3
+    # brief-shape — Candidates line names agent-design.md (primary anchor)
+    # plus at least one plausible alternative. we prefer "more loose
+    # candidates" over "fewer strict candidates" — cross-base alternatives
+    # are fine even when weaker than in-base siblings.
+    - type: javascript
+      value: |
+        const prompt = output.agent_prompts[0] || '';
+        const candLine = prompt.split('\n').find(l => l.startsWith('Candidates:')) || '';
+        const hasAnchor = candLine.includes('agent-design');
+        const alts = ['prompting-patterns', 'agent-memory'];
+        const hasAlt = alts.some(a => candLine.includes(a));
+        return hasAnchor && hasAlt;
+      metric: anchor_plus_alt_named
+      weight: 3
     - type: javascript
       value: |
         const targets = ['notes/ai/prompting-patterns.md', 'notes/ai/agent-design.md'];
