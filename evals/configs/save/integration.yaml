@@ -4,8 +4,11 @@ description: "mnemo save — end-to-end integration (dispatcher + sub-agent + KB
 # what the user actually experiences: skill loads, SessionStart hook fires,
 # dispatcher constructs a brief, sub-agent runs, knowledge base changes.
 #
-# when an integration case fails, the breakpoint could be anywhere in the
-# pipeline — use the dispatch/ and agent/ suites to isolate which layer.
+# dispatcher-layer assertions (brief shape, signal choice) ride inside
+# integration cases via `output.agent_prompts[]` — see the axis-3 ambiguous
+# case in routing-gradient for the pattern. the agent/ suite isolates
+# sub-agent behavior with a bypass provider for cases integration can't
+# reach naturally.
 
 prompts:
   - "{{message}}"
