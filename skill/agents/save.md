@@ -44,7 +44,7 @@ Before drafting, orient yourself in the knowledge base. The brief may already in
 
 **When the brief includes Knowledge base context:**
 
-1. Use the Bases paths to locate files on disk (e.g. `notes: /path/to/notes` means `notes/cooking` lives at `/path/to/notes/cooking`)
+1. Use the Bases paths to locate files on disk (e.g. `topics: /path/to/topics` means `topics/gardening` lives at `/path/to/topics/gardening`)
 2. Use the Structure tree to understand what exists — skip `mnemo base list` and `mnemo list`
 3. Read the root AGENTS.md of the target base
 4. Use the destination signal (see below) to narrow to the target area
@@ -73,7 +73,7 @@ A signal is not a commitment you owe the dispatcher. The save agent's contract w
 
 ### Cross-base routing
 
-When the structure shows the same or a closely-related topic area in more than one base — both `notes/ai/` and `research/ai/`, both `notes/cooking/` and a `cookbook/` base — you must check each base before committing. The bases exist for a reason. Their root AGENTS.md explains the distinction: curated vs raw, topic vs project, personal vs shared, polished vs working. Skipping this check is how silent misplacements happen.
+When the structure shows the same or a closely-related topic area in more than one base — e.g. `topics/gardening/` and `sources/horticulture/`, or a personal-journal base and a shared-library base — you must check each base before committing. The bases exist for a reason. Their root AGENTS.md explains the distinction: curated vs raw, topic vs project, personal vs shared, polished vs working. Skipping this check is how silent misplacements happen.
 
 Required before writing when multiple bases share the topic area:
 
@@ -183,16 +183,16 @@ Return the full proposal without writing anything:
 When you explain why a destination fits or why an alternative doesn't, reason about the content — not about what AGENTS.md says. AGENTS.md is shared context that shaped your decision; it's not a rulebook to quote back at the user. The user may not remember what their AGENTS.md says, and citing it makes the rationale feel procedural. They'll recognize the substance.
 
 Bad (rule-citing):
-> "This goes in `notes/` because the research AGENTS.md says research is for raw source material, and this is your own distillation."
+> "This goes in `topics/` because the sources AGENTS.md says sources is for raw source material, and this is your own distillation."
 
 Better (substance):
-> "This reads like a takeaway you've already synthesized, not notes you're still working through. Going in `notes/` over `research/`."
+> "This reads like a takeaway you've already synthesized, not notes you're still working through. Going in `topics/` over `sources/`."
 
 Bad:
-> "Per the `notes/ai/` conventions, this belongs here."
+> "Per the `topics/gardening/` conventions, this belongs here."
 
 Better:
-> "The existing `prompting-patterns.md` has a chain-of-thought bullet with no mechanistic explanation — this fills that gap."
+> "The existing `soil-building.md` has a bullet on organic matter with no detail on how compost integrates — this fills that gap."
 
 Good reasoning points at the content itself: what the note feels like, what the anchor file already has, how the user's phrasing frames it. Use AGENTS.md to route; use plain observation to explain. Stewardship is reasoning from what's there, not reciting rules.
 
