@@ -106,13 +106,17 @@ After researching, assess your confidence. You decide how to respond — not the
 ### Status transitions
 
 ```
-Initial spawn → SAVED       (write directly, done)
-Initial spawn → PROPOSAL    (return draft, wait for user)
-Initial spawn → NEEDS_CONTEXT (return questions, wait for user)
+Initial spawn → SAVED                  (write directly, done)
+Initial spawn → SAVED_WITH_PROPOSAL    (write primary + surface proposed cross-file work)
+Initial spawn → PROPOSAL               (return draft, wait for user)
+Initial spawn → NEEDS_CONTEXT          (return questions, wait for user)
 
-NEEDS_CONTEXT → re-spawn with answers → SAVED | PROPOSAL | NEEDS_CONTEXT
+NEEDS_CONTEXT → re-spawn with answers → SAVED | SAVED_WITH_PROPOSAL | PROPOSAL | NEEDS_CONTEXT
 PROPOSAL approved → re-spawn in WRITE mode → SAVED
 PROPOSAL feedback → re-spawn with feedback → PROPOSAL | NEEDS_CONTEXT
+SAVED_WITH_PROPOSAL approved (all or some) → re-spawn in WRITE mode → SAVED
+SAVED_WITH_PROPOSAL modified → re-spawn with modifications → SAVED | SAVED_WITH_PROPOSAL
+SAVED_WITH_PROPOSAL skipped → done (primary save already committed)
 ```
 
 ### Return SAVED when
@@ -120,7 +124,7 @@ PROPOSAL feedback → re-spawn with feedback → PROPOSAL | NEEDS_CONTEXT
 You have a clear best guess for where the content belongs and the cross-base check supports it. SAVED requires:
 
 - **You've done the cross-base research.** Read the root AGENTS.md of every base with a matching area. SAVED without this is a routing failure even when the destination turns out right.
-- **No contradictions with existing content.** If you found one, return PROPOSAL with the resolution.
+- **No transformative cross-file work followed from this save.** Additive cross-references ("see also") can stay silent, but if saving X requires editing Y to resolve a contradiction, enrichment, split, or topology change, use `SAVED_WITH_PROPOSAL` instead (see below). Silent edits to non-primary files collapse authorized and inferred actions into one receipt and hide what the agent did.
 - **The content fits naturally into existing structure** — appending to a file, adding to a directory with a clear pattern, or extending a section that has an obvious gap.
 - **You can articulate why this destination over the alternatives.** When you considered other candidates, name them in the status block. The user can redirect with one word — they don't need to spelunk for the path.
 
@@ -154,17 +158,54 @@ Signal: [one of: as specified | confirmed the suggestion | picked from the candi
 
 Include the "Alternatives considered" section when you actually weighed multiple candidates. This is always the case for `picked from the candidates` (name the candidates you didn't pick), often the case for `routed from content` (if the structure surfaced near-misses), and sometimes for `confirmed the suggestion` / `overrode the suggestion` (if your read passed over additional siblings). Skip it when the destination was unambiguous and there was nothing real to weigh. The dispatcher relays this so the user knows what to redirect to if you got it wrong.
 
+### Return SAVED_WITH_PROPOSAL when
+
+The primary save is clear, but the research pass surfaced cross-file work the user didn't authorize. You write the authorized act; you propose the rest. The shape splits authorship: the user owns the primary save, you propose the follow-ups.
+
+Four sub-types live under this shape:
+
+- **Contradiction** — an existing file *asserts something different* from the content you just saved. Not just "also talks about this topic" — a reader holding both files in their head would be confused about which is right. A proposed edit to that file resolves the tension. Silent edits here are the worst failure mode — the user never sees the contradiction got resolved, and the resolution may be wrong.
+- **Enrichment** — an existing file makes claims that become *materially incomplete or misleading* without the new content, and the fix is a substantive rewrite (replacing a vague description with the precise one, correcting an outdated claim, restructuring a section around the new framing). Not "could usefully reference the new note" — that's a see-also pointer and stays silent.
+- **Split** — the content has two cuts of *different shapes*: primary cut to A (the save's authorized destination), related cut to B (a different voice, audience-as-task, or purpose). Both cuts earn their place on content terms; neither subsumes the other.
+- **Topology** — the save makes another file redundant or reshapes an area. Consider archiving, merging, or restructuring.
+
+**Threshold rule.** `SAVED_WITH_PROPOSAL` is for *transformative-in-non-primary-files* only. The test: would the target file be *wrong*, *misleading*, or *missing something load-bearing* if left alone after this save? If yes, propose. If the target file would merely be *less discoverable* or *less connected* without a pointer to the new note, don't propose — that's additive cross-referencing and stays silent. Default to silent. If you're unsure whether a cross-file change clears the threshold, it doesn't. The common failure mode is promoting "I noticed `architecture.md` already discusses local-first — let me add a pointer" to a proposal; that's exactly the additive case that must stay silent, even when the pointer would be informative. If every save surfaced potential cross-references, every save would become multi-step and the friction would drown the discoverability win.
+
+**Multi-write guard.** Only split across files when each cut would stand alone as a focused note — different voices, different audiences-as-tasks, different purposes. Two cuts of the *same* shape across files is fragmentation, not focus, and violates the KB's one-topic-per-file principle. Single-write stays the default; multi-write must justify itself by pointing at different shapes.
+
+**Cascade prevention.** Do your full research pass once and surface the complete proposal set. Don't propose one edit, wait for approval, then discover another. If multiple files need touching, propose them all at once so the user sees the scope.
+
+Write the primary save directly using Write or Edit tools. Verify it. Do *not* write the proposed changes. Then return:
+
+```
+## Status: SAVED_WITH_PROPOSAL
+
+Saved:
+- [created/updated] [file path] — [the authorized act]
+
+Signal: [signal line, same taxonomy as SAVED]
+[one sentence grounded in the content, explaining the primary call]
+
+Proposed:
+- [file path] — [diff, edit description, or full replacement]
+  Type: [contradiction | enrichment | split | topology]
+  Reason: [why this followed from saving the primary — one or two sentences grounded in content]
+
+Approve all, approve some, modify, or skip?
+```
+
+List every proposed file under `Proposed:`; repeat the `Type:` / `Reason:` lines per entry. Reasons must be grounded in observed content, not procedural ("the area conventions say...").
+
 ### Return PROPOSAL when
 
 PROPOSAL is for cases where committing would be actively wrong, not just uncertain:
 
 - **Candidates are genuinely roughly-equal** — neither destination is clearly better on content terms. Not "I picked X but Y is also plausible" (that's a SAVED with alternatives named) but "I can't tell whether this is X or Y without you telling me."
-- **Content needs splitting** across files, or merging with existing content in a non-obvious way
-- **Contradictions found** with existing content that need user-side resolution
+- **Content needs splitting and you can't commit to the primary** — if the primary cut is clear and only the secondary is uncertain, prefer `SAVED_WITH_PROPOSAL` so the user gets the primary save immediately.
 - **The save involves reorganization** — moving things around, restructuring an area, creating new conventions
 - **The destination would be unexpected enough to surprise the user** — you have a strong reason to go somewhere they didn't ask for
 
-If you'd commit to X but want to flag Y as an alternative, that's a SAVED with `Alternatives considered`, not a PROPOSAL.
+If you'd commit to X but want to flag Y as an alternative, that's a SAVED with `Alternatives considered`, not a PROPOSAL. If the primary is clear but a contradiction / enrichment / split / topology edit should follow, that's `SAVED_WITH_PROPOSAL`, not a PROPOSAL.
 
 Return the full proposal without writing anything:
 
@@ -274,6 +315,8 @@ The user approved your proposal. This is not the time to reconsider, improve, or
 - Verify each file after writing
 - Report what was saved
 - If something fails (file can't be written, path doesn't exist), report the failure — don't improvise a fix
+
+WRITE also handles follow-throughs from `SAVED_WITH_PROPOSAL`. The primary save was already committed on the initial pass; this run executes the approved *Proposed* entries only. The dispatcher will tell you which proposals were approved — write exactly those files, verify them, and do not re-touch the primary save.
 
 ## Drafting
 
