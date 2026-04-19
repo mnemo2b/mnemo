@@ -18,7 +18,7 @@ Save runs as a named sub-agent (`subagent_type: "mnemo-save"`). This protects th
 
 ## Handling responses
 
-The save agent determines its own confidence after researching the knowledge base. It returns one of three statuses:
+The save agent determines its own confidence after researching the knowledge base. It returns one of four statuses:
 
 ### SAVED
 
@@ -30,9 +30,23 @@ The save agent committed directly. It had a clear best guess for the destination
 - No approval needed — the agent already wrote
 - Spawn the maintenance agent in the background
 
+### SAVED_WITH_PROPOSAL
+
+The save agent committed the primary save *and* surfaced proposed cross-file work the user didn't authorize — a contradiction to resolve, an enrichment to apply, a multi-write split, or a topology change. The primary is done; the proposals need the user's call.
+
+- Present the primary save first with the same signal-echo treatment as SAVED — path, signal line, and any alternatives considered, relayed verbatim. The user needs to see what already landed before they evaluate what's proposed.
+- Present each `Proposed:` entry intact: file path, `Type:`, `Reason:`, and the diff or edit description. Keep the agent's content-grounded rationale. Don't flatten four proposals into one summary — each entry is a separate decision the user makes.
+- Close with the agent's prompt: "Approve all, approve some, modify, or skip?"
+- Wait for the user's response:
+  - **Approve all** → re-spawn the save agent in WRITE mode with the full proposed set
+  - **Approve some** → re-spawn in WRITE mode with only the approved entries (name them explicitly); treat the skipped ones as closed
+  - **Modify** → re-spawn with the original brief + the previous `Proposed:` block + user feedback verbatim
+  - **Skip** → done, acknowledge and move on; the primary save is already committed and stands
+- Spawn the maintenance agent in the background *after the proposal flow resolves*, not immediately. Pending-proposed work shouldn't trigger AGENTS.md updates until the user has decided what's actually landing.
+
 ### PROPOSAL
 
-The save agent has a plan but wants approval first. Ambiguous destination, multiple plausible locations, contradictions found, content that needs splitting or merging, or weak area conventions.
+The save agent has a plan but wants approval first — and couldn't commit to a primary save. Ambiguous destination, genuinely roughly-equal candidates, reorganization, or an unexpected destination. (Note: when the primary is clear and only cross-file follow-ups need approval, the agent returns `SAVED_WITH_PROPOSAL` instead, so the user gets the primary save immediately.)
 
 - Present the full proposal to the user: drafted text, target locations, reasoning
 - Keep the save agent's plain-language rationale intact. If the agent explained its routing in content terms ("this reads like a takeaway you've already synthesized"), relay that directly. Don't flatten it into procedural summary ("agent selected the topics base") or strip the "why not X" alternatives. The rationale is part of the product — it's what lets the user trust or redirect quickly.
@@ -162,7 +176,7 @@ Append to the template:
 
 ## After save completes
 
-Once the save agent writes successfully (either via SAVED or after PROPOSAL approval), spawn the maintenance agent in the background with `subagent_type: "mnemo-maintenance"`. The maintenance agent checks whether the area's AGENTS.md needs updating based on the new content. This runs silently — don't mention it to the user.
+Once the save agent writes successfully (via SAVED, after PROPOSAL approval, or after the `SAVED_WITH_PROPOSAL` flow resolves), spawn the maintenance agent in the background with `subagent_type: "mnemo-maintenance"`. The maintenance agent checks whether the area's AGENTS.md needs updating based on the new content. This runs silently — don't mention it to the user. For `SAVED_WITH_PROPOSAL`, wait until the user has approved, skipped, or modified the proposed entries before spawning — pending-proposed work shouldn't trigger AGENTS.md review until the set of writes is final.
 
 ## Session distillation
 
