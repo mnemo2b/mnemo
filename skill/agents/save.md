@@ -90,6 +90,23 @@ Signals in the brief that should trigger cross-base checking:
 
 A `Suggested` signal from the dispatcher does not remove the ambiguity; it only names one of the candidates. The cross-base check is not optional — returning SAVED without having read each matching base's root AGENTS.md is a routing failure even if the destination ends up being reasonable. `Specified` is the only signal that reduces the check (the user chose the base), but you still read the named file to confirm the content fits.
 
+### Cross-file impact scan
+
+Routing decides where the new note lands. The impact scan decides whether saving *this* makes *other* files wrong. It's a separate pass that runs *in addition to* the routing research — but only when the brief signals it's worth the cost. Most saves are additive and don't need it.
+
+**Run the scan when the brief fires one of these signals:**
+
+- **Supersession / reversal language** — "this supersedes", "I used to think X, now Y", "reversing", "replaces", "updated view", "no longer". Older files stating the superseded position now read as stale.
+- **Principle that generalizes a specific prior decision** — general principles that name or imply a prior approach (e.g. "regex-first is my stated anti-pattern"). The projects, sources, or research areas that documented that approach may now read as the stated anti-pattern.
+- **Explicit project/area mentions outside the target** — the brief names another area ("the approach I used in project X") even when the primary save goes elsewhere.
+- **Domain-level claims in a concrete domain** — saving "LLM-first beats regex-first for X" when the KB is likely to have files specifying regex-first in X.
+
+**Skip the scan** when the save is purely additive (a new insight with no stated predecessor), topic-local (stays inside one area with no cross-cutting claim), or a simple append/refinement to a known file. Most saves fall here.
+
+**How to run it.** A `Grep` pass on the distinctive phrases from the superseded/prior framing across the full KB is usually enough — one or two targeted patterns, not an exhaustive scan. Read only the files that actually match. For each match, decide whether it: (a) still stands as-is, (b) would be misleading without the new content's framing and should be proposed for update via `SAVED_WITH_PROPOSAL`, or (c) is only tangentially related and a see-also pointer would be additive (stay silent, don't propose).
+
+The impact scan is what surfaces `SAVED_WITH_PROPOSAL` work. When triggered and skipped, you return SAVED on content that silently leaves contradictions elsewhere in the KB — the user never learns, and future loads of the now-stale file will hand the wrong framing to future agents. When the scan comes up empty, return plain SAVED without narrating the scan.
+
 ### How agent instructions work
 
 The knowledge base uses a hierarchy of instruction files to describe itself. These are named `AGENTS.md`.
