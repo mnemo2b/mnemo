@@ -17,7 +17,7 @@ Curated sets of inputs + expected behavior, run against your system, scored. LLM
 - **String match** — when output has a canonical form
 - **Structural** — JSON schema validation, tool call sequences
 - **Regex/contains** — softer version of string match
-- **LLM-as-judge** — another model grades. Cheap but variable.
+- **LLM-as-judge** — another model grades. Reliable for most production use cases; agreement rates with humans sit in the 80s. Cheaper than human grading and scales easily.
 - **Human grading** — expensive, the gold standard for subjective work
 
 ## Dimensions
