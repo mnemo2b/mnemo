@@ -42,3 +42,4 @@ tests:
   - file://../../tests/save/integration/routing.yaml
   - file://../../tests/save/integration/routing-gradient.yaml
   - file://../../tests/save/integration/update.yaml
+  - file://../../tests/save/integration/saved-with-proposal.yaml

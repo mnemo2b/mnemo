@@ -1,0 +1,110 @@
+# saved-with-proposal — does the agent split authorized save from inferred cross-file work?
+#
+# v0.8 shape: primary save commits directly; transformative-in-non-primary-files
+# surfaces as a proposal the user can approve/skip. assertions grade
+# USER OUTCOMES — "did the primary save land somewhere topical?",
+# "did the user see the contradiction surfaced rather than silently
+# resolved?", "is the conflicting file untouched until the user decides?"
+
+- description: "contradiction — general principle invalidates a project-scoped decision"
+  vars:
+    # user frames this as a GENERAL principle note, explicitly not
+    # recipe-app-scoped. that forces the primary save into a topic area
+    # (notes/dev/ or notes/ai/), NOT into projects/recipe-app/
+    # ingredients-api.md where the contradicted decision lives. the
+    # agent's job: notice that ingredients-api.md's documented approach
+    # is now the stated anti-pattern and PROPOSE an edit — not silently
+    # edit the file, not pretend the contradiction doesn't exist.
+    message: >
+      Save this as a general parser-architecture principle — not scoped
+      to any one project. For high-frequency parsing with varied input
+      shapes, LLM-first with a regex cache beats regex-first with LLM
+      fallback once inference latency is under 200ms per parse. The
+      maintenance burden of regex edge cases overwhelms the latency
+      savings at that point. This supersedes the regex-first-with-LLM-
+      fallback framing I had been using.
+    prime: true
+  assert:
+    # regression sentinel — save sub-agent was invoked
+    - type: javascript
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    # outcome — the primary save landed in a general topic area, not
+    # inside the contradicted project file
+    - type: javascript
+      value: |
+        const nonAgents = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'));
+        const inTopic = nonAgents.some(f =>
+          f.includes('notes/dev/') || f.includes('notes/ai/'));
+        const referenced = output.tool_input_text.includes('notes/dev/')
+          || output.tool_input_text.includes('notes/ai/');
+        return inTopic || referenced;
+      metric: primary_save_in_topic_area
+      weight: 3
+    # outcome — ingredients-api.md was NOT silently modified. this is
+    # the worst failure mode — collapsing authorized and inferred
+    # actions into one receipt hides the cross-file work.
+    - type: javascript
+      value: |
+        const silentEdit = output.files_modified.some(f =>
+          f.endsWith('projects/recipe-app/ingredients-api.md'));
+        return !silentEdit;
+      metric: no_silent_contradiction_edit
+      weight: 3
+    # shape — dispatcher relayed a proposal flow (approve / skip / modify)
+    - type: javascript
+      value: |
+        const result = (output.result || '').toLowerCase();
+        const hasApprovalLang = result.includes('approve')
+          || result.includes('skip')
+          || result.includes('proposed');
+        return hasApprovalLang;
+      metric: proposal_surfaced_to_user
+      weight: 3
+    # shape — the conflicting file is named in the dispatcher response
+    - type: javascript
+      value: |
+        const txt = (output.result || '') + ' ' + (output.tool_input_text || '');
+        return txt.includes('ingredients-api');
+      metric: contradiction_target_named
+      weight: 2
+    - type: llm-rubric
+      value: |
+        User outcome test: the user saved a general parser-architecture
+        principle that reads the regex-first/LLM-fallback approach as
+        the anti-pattern. projects/recipe-app/ingredients-api.md
+        documents that exact anti-pattern as its current approach.
+
+        Expected agent behavior: SAVE the general principle to a topic
+        area, then SURFACE to the user that ingredients-api.md now
+        contradicts the stated principle and offer to update it — but
+        without having already modified ingredients-api.md.
+
+        PASS when:
+        - Primary save confirmed in notes/dev/ or notes/ai/ (general
+          topic area)
+        - Response tells the user that ingredients-api.md now conflicts
+          with the new principle and offers a proposed edit (language
+          like "proposed", "approve", "also propose", "conflicts with"
+          all acceptable)
+        - ingredients-api.md appears unmodified in the save trajectory
+
+        FAIL when:
+        - Agent silently edited ingredients-api.md (hides the
+          cross-file work, collapses authored + inferred into one
+          receipt)
+        - Agent routed the primary save INTO ingredients-api.md
+          (ignores the general-principle framing the user specified)
+        - Response makes no mention of the contradiction with
+          ingredients-api.md (user never learns their KB now has
+          conflicting guidance)
+        - Response proposes only a trivial "see also" pointer to
+          ingredients-api.md (that's additive cross-reference, should
+          stay silent — the contradiction calls for a substantive
+          update)
+
+        Ignore AGENTS.md / maintenance text.
+      metric: user_sees_split_authored_and_inferred
+      weight: 3
