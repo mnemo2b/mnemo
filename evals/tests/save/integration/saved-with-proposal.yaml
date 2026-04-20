@@ -108,3 +108,111 @@
         Ignore AGENTS.md / maintenance text.
       metric: user_sees_split_authored_and_inferred
       weight: 3
+
+- description: "enrichment — specific finding makes a vague existing claim materially incomplete"
+  vars:
+    # user frames this as a reading note. that forces the primary save
+    # into notes/reading/articles/, NOT into notes/ai/evals.md or
+    # research/ai/llm-evaluation.md where the now-incomplete claims live.
+    # evals.md says "LLM-as-judge — another model grades. Cheap but
+    # variable." that line isn't wrong, but with the new finding it
+    # flattens a step-function (binary ≈85%, 5+ classes <70%) into
+    # undifferentiated "variable". the agent's job: save the article
+    # note, then PROPOSE a rewrite of the evals.md line — not silently
+    # edit it, not just drop a see-also pointer.
+    message: >
+      Reading note — just read "Judge Reliability in Open-Ended Tasks"
+      by Chen et al. Save it as an article note in notes/reading/
+      alongside my other article summaries. Core finding worth citing:
+      LLM-as-judge agreement with human graders sits around 85% on
+      binary classification but collapses to under 70% once the output
+      space has 5+ classes. Class count matters more than which judge
+      model you pick. Authors recommend using LLM-judge as triage below
+      that threshold, not as a final gate.
+    prime: true
+  assert:
+    # regression sentinel — save sub-agent was invoked
+    - type: javascript
+      value: "output.tool_input_text.includes('subagent_type')"
+      metric: invoked_save
+      weight: 1
+    # outcome — the primary save landed in the reading area, not inside
+    # the now-incomplete evals notes or research file
+    - type: javascript
+      value: |
+        const nonAgents = [...output.files_created, ...output.files_modified]
+          .filter(f => !f.endsWith('AGENTS.md'));
+        const inReading = nonAgents.some(f => f.includes('notes/reading/'));
+        const referenced = output.tool_input_text.includes('notes/reading/');
+        return inReading || referenced;
+      metric: primary_save_in_reading_area
+      weight: 3
+    # outcome — neither enrichment candidate was silently modified.
+    # worst failure mode: collapsing authorized save into inferred edit.
+    - type: javascript
+      value: |
+        const silentEdit = output.files_modified.some(f =>
+          f.endsWith('notes/ai/evals.md')
+          || f.endsWith('research/ai/llm-evaluation.md'));
+        return !silentEdit;
+      metric: no_silent_enrichment_edit
+      weight: 3
+    # shape — dispatcher relayed a proposal flow (approve / skip / modify)
+    - type: javascript
+      value: |
+        const result = (output.result || '').toLowerCase();
+        const hasApprovalLang = result.includes('approve')
+          || result.includes('skip')
+          || result.includes('proposed');
+        return hasApprovalLang;
+      metric: proposal_surfaced_to_user
+      weight: 3
+    # shape — the enrichment target is named in the dispatcher response.
+    # either file is an acceptable target — both carry vague claims the
+    # new finding sharpens.
+    - type: javascript
+      value: |
+        const txt = (output.result || '') + ' ' + (output.tool_input_text || '');
+        return txt.includes('evals.md') || txt.includes('llm-evaluation');
+      metric: enrichment_target_named
+      weight: 2
+    - type: llm-rubric
+      value: |
+        User outcome test: the user saved a concrete finding about
+        LLM-as-judge reliability (binary ~85%, 5+ classes <70%).
+        notes/ai/evals.md describes LLM-as-judge only as "cheap but
+        variable" — vague, and now materially incomplete relative to the
+        saved finding. research/ai/llm-evaluation.md makes a similar
+        vague claim.
+
+        Expected agent behavior: SAVE the article note to
+        notes/reading/articles/, then SURFACE that evals.md (or the
+        research file) is now materially incomplete without the new
+        finding and PROPOSE a substantive rewrite of the relevant line —
+        without having silently edited either file.
+
+        PASS when:
+        - Primary save confirmed in notes/reading/ (article note shape)
+        - Response tells the user that one of the vague existing claims
+          (evals.md or llm-evaluation.md) is now materially incomplete
+          and offers a substantive proposed edit (rewriting the claim to
+          cite the concrete class-count threshold). Language like
+          "proposed", "approve", "also propose", "incomplete without" is
+          acceptable.
+        - Neither evals.md nor llm-evaluation.md appears modified in
+          the save trajectory
+
+        FAIL when:
+        - Agent silently edited evals.md or llm-evaluation.md
+        - Agent routed the primary save INTO evals.md or
+          llm-evaluation.md (ignores the "reading notes" framing)
+        - Response makes no mention of the incompleteness in the
+          existing files (user never learns their evals note now
+          flattens a step-function into "variable")
+        - Response proposes only a trivial "see also" pointer
+          (additive cross-reference, should stay silent — enrichment
+          calls for a substantive rewrite of the vague claim)
+
+        Ignore AGENTS.md / maintenance text.
+      metric: user_sees_enrichment_proposal
+      weight: 3
