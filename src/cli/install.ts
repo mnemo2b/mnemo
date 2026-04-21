@@ -14,17 +14,18 @@ import { homedir } from "os";
 // -----------------------------------------------------------------------------
 
 // paths where the skill, agents, and hooks live (used by install, doctor)
+
 const SKILL_TARGET = () => join(homedir(), ".claude", "skills", "mnemo");
 const AGENTS_TARGET = () => join(homedir(), ".claude", "agents");
 const SETTINGS_PATH = () => join(homedir(), ".claude", "settings.json");
 
+
 // -----------------------------------------------------------------------------
 
-/**
- * Walk up from the CLI entry point (dist) to find the package root
- */
+/** walk up from the CLI entry point (dist) to find the package root */
+
 function findPackageRoot(): string {
-  // resolve symlinks to start from the real file location
+  // resolve symlinks and start from the real location
   let dir = dirname(realpathSync(process.argv[1]!));
   for (let i = 0; i < 10; i++) {
     if (existsSync(join(dir, "package.json"))) return dir;
@@ -34,77 +35,10 @@ function findPackageRoot(): string {
   throw new Error(message);
 }
 
-/**
- * Checks if the skill exists in the users claude skills directory
- */
-export function isSkillInstalled(): boolean {
-  return existsSync(join(SKILL_TARGET(), "SKILL.md"));
-}
+// -----------------------------------------------------------------------------
 
-/**
- * Transform an agents/ source filename to its staged ~/.claude/agents/ name
- */
-function stagedAgentName(sourceFile: string): string {
-  return `mnemo-${sourceFile.replace(/\.md$/, "")}.md`;
-}
+/** copy skill files to ~/.claude/skills/mnemo/ (clean install) */
 
-/**
- * Expected agents, derived from agents/ in the package
- */
-function expectedAgentFilenames(): string[] {
-  const source = join(findPackageRoot(), "agents");
-  if (!existsSync(source)) return [];
-  return readdirSync(source)
-    .filter((f) => f.endsWith(".md"))
-    .map(stagedAgentName);
-}
-
-/**
- * True if every expected mnemo-*.md agent is staged under ~/.claude/agents/
- */
-export function isAgentsInstalled(): boolean {
-  return missingAgents().length === 0;
-}
-
-/**
- * List of expected agent filenames that are missing from ~/.claude/agents/
- */
-export function missingAgents(): string[] {
-  const target = AGENTS_TARGET();
-  const expected = expectedAgentFilenames();
-  if (expected.length === 0) return [];
-  if (!existsSync(target)) return expected;
-  return expected.filter((name) => !existsSync(join(target, name)));
-}
-
-/**
- * True if a SessionStart hook running `mnemo prime` is configured
- */
-export function isHookInstalled(): boolean {
-  const settingsPath = SETTINGS_PATH();
-  if (!existsSync(settingsPath)) return false;
-
-  let settings: Record<string, unknown>;
-  try {
-    settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
-  } catch {
-    // malformed settings file — treat as not installed so setup can fix it
-    return false;
-  }
-
-  const hooks = (settings.hooks ?? {}) as Record<string, unknown>;
-  const sessionStart = (hooks.SessionStart ?? []) as Array<{
-    hooks?: Array<{ command: string }>;
-  }>;
-
-  return sessionStart.some((entry) =>
-    entry.hooks?.some((h) => h.command.includes("mnemo prime")),
-  );
-}
-
-/**
- * Copy skill files to ~/.claude/skills/mnemo/ (clean install)
- */
 export function installSkill(): void {
   const source = join(findPackageRoot(), "skill");
   const target = SKILL_TARGET();
@@ -114,9 +48,26 @@ export function installSkill(): void {
   cpSync(source, target, { recursive: true });
 }
 
-/**
- * Stage agents from agents/ to ~/.claude/agents/ for named discovery
- */
+/** checks if the skill exists in the users claude skills directory */
+
+export function isSkillInstalled(): boolean {
+  return existsSync(join(SKILL_TARGET(), "SKILL.md"));
+}
+
+// -----------------------------------------------------------------------------
+
+/** a list of mnemo agents that should be in ~/.claude/agents  */
+
+function expectedAgentFilenames(): string[] {
+  const source = join(findPackageRoot(), "agents");
+  if (!existsSync(source)) return [];
+  return readdirSync(source)
+    .filter((f) => f.endsWith(".md"))
+    .map(stagedAgentName);
+}
+
+/** stage agents from agents/ to ~/.claude/agents/ for named discovery */
+
 export function installAgents(): void {
   const source = join(findPackageRoot(), "agents");
   if (!existsSync(source)) return;
@@ -130,10 +81,32 @@ export function installAgents(): void {
   }
 }
 
-/**
- * Add SessionStart hook to ~/.claude/settings.json.
- * Returns true if the hook was already present (no write performed).
- */
+/** checks ~/.claude/agents for mnemo agents */
+
+export function isAgentsInstalled(): boolean {
+  return missingAgents().length === 0;
+}
+
+/** list of mnemo agents missing from ~/.claude/agents */
+
+export function missingAgents(): string[] {
+  const target = AGENTS_TARGET();
+  const expected = expectedAgentFilenames();
+  if (expected.length === 0) return [];
+  if (!existsSync(target)) return expected;
+  return expected.filter((name) => !existsSync(join(target, name)));
+}
+
+/** transforms an agents filename (save) to a staged name (mnemo-save) */
+
+function stagedAgentName(sourceFile: string): string {
+  return `mnemo-${sourceFile.replace(/\.md$/, "")}.md`;
+}
+
+// -----------------------------------------------------------------------------
+
+/** add SessionStart hook to ~/.claude/settings.json */
+
 export function installHook(): boolean {
   const settingsPath = SETTINGS_PATH();
 
@@ -166,3 +139,29 @@ export function installHook(): boolean {
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf-8");
   return false;
 }
+
+/** checks if `mnemo prime` is configured */
+
+export function isHookInstalled(): boolean {
+  const settingsPath = SETTINGS_PATH();
+  if (!existsSync(settingsPath)) return false;
+
+  let settings: Record<string, unknown>;
+  try {
+    settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
+  } catch {
+    // malformed settings file
+    return false;
+  }
+
+  const hooks = (settings.hooks ?? {}) as Record<string, unknown>;
+  const sessionStart = (hooks.SessionStart ?? []) as Array<{
+    hooks?: Array<{ command: string }>;
+  }>;
+
+  return sessionStart.some((entry) =>
+    entry.hooks?.some((h) => h.command.includes("mnemo prime")),
+  );
+}
+
+
