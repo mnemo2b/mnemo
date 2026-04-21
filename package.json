@@ -9,6 +9,7 @@
   "files": [
     "dist",
     "skill",
+    "agents",
     "README.md"
   ],
   "repository": {

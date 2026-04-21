@@ -21,17 +21,16 @@ const SETTINGS_PATH = () => join(homedir(), ".claude", "settings.json");
 // -----------------------------------------------------------------------------
 
 /**
- * Walk up from the CLI entry point (dist) to find the skill directory
+ * Walk up from the CLI entry point (dist) to find the package root
  */
-function findSkillSource(): string {
+function findPackageRoot(): string {
   // resolve symlinks to start from the real file location
   let dir = dirname(realpathSync(process.argv[1]!));
   for (let i = 0; i < 10; i++) {
-    const candidate = join(dir, "skill", "SKILL.md");
-    if (existsSync(candidate)) return join(dir, "skill");
+    if (existsSync(join(dir, "package.json"))) return dir;
     dir = dirname(dir);
   }
-	const message = "couldn't find skill/ - try reinstalling with npm install -g @mnemo2b/mnemo"
+  const message = "couldn't find package root — try reinstalling with npm install -g @mnemo2b/mnemo";
   throw new Error(message);
 }
 
@@ -43,17 +42,17 @@ export function isSkillInstalled(): boolean {
 }
 
 /**
- * Transform a skill/agents/ source filename to its staged ~/.claude/agents/ name
+ * Transform an agents/ source filename to its staged ~/.claude/agents/ name
  */
 function stagedAgentName(sourceFile: string): string {
   return `mnemo-${sourceFile.replace(/\.md$/, "")}.md`;
 }
 
 /**
- * Expected agents, derived from skill/agents/ in the package
+ * Expected agents, derived from agents/ in the package
  */
 function expectedAgentFilenames(): string[] {
-  const source = join(findSkillSource(), "agents");
+  const source = join(findPackageRoot(), "agents");
   if (!existsSync(source)) return [];
   return readdirSync(source)
     .filter((f) => f.endsWith(".md"))
@@ -107,7 +106,7 @@ export function isHookInstalled(): boolean {
  * Copy skill files to ~/.claude/skills/mnemo/ (clean install)
  */
 export function installSkill(): void {
-  const source = findSkillSource();
+  const source = join(findPackageRoot(), "skill");
   const target = SKILL_TARGET();
   // clean install — remove stale files before copying
   rmSync(target, { recursive: true, force: true });
@@ -116,10 +115,10 @@ export function installSkill(): void {
 }
 
 /**
- * Stage agents from skill/agents/ to ~/.claude/agents/ for named discovery
+ * Stage agents from agents/ to ~/.claude/agents/ for named discovery
  */
 export function installAgents(): void {
-  const source = join(findSkillSource(), "agents");
+  const source = join(findPackageRoot(), "agents");
   if (!existsSync(source)) return;
 
   const target = AGENTS_TARGET();
