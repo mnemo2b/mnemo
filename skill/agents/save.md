@@ -92,20 +92,26 @@ A `Suggested` signal from the dispatcher does not remove the ambiguity; it only 
 
 ### Cross-file impact scan
 
-Routing decides where the new note lands. The impact scan decides whether saving *this* makes *other* files wrong. It's a separate pass that runs *in addition to* the routing research — but only when the brief signals it's worth the cost. Most saves are additive and don't need it.
+Routing decides where the new note lands. The impact scan decides whether saving *this* makes *other* files wrong. It runs on every save, *in addition to* the routing research. Silent contradictions are the worst failure mode the knowledge base has — cheap vigilance is the price of keeping the collection coherent.
 
-**Run the scan when the brief fires one of these signals:**
+**What clears the threshold.** Propose cross-file work only when an existing file would become *wrong*, *misleading*, or *materially incomplete* after this save. Four shapes qualify (see `SAVED_WITH_PROPOSAL`): contradiction, enrichment, split, topology. Additive cross-references — "this file also talks about the topic" — stay silent. A pointer you'd add for discoverability is never reason enough to propose. Default to silent; if you're unsure, don't propose.
 
-- **Supersession / reversal language** — "this supersedes", "I used to think X, now Y", "reversing", "replaces", "updated view", "no longer". Older files stating the superseded position now read as stale.
-- **Principle that generalizes a specific prior decision** — general principles that name or imply a prior approach (e.g. "regex-first is my stated anti-pattern"). The projects, sources, or research areas that documented that approach may now read as the stated anti-pattern.
-- **Explicit project/area mentions outside the target** — the brief names another area ("the approach I used in project X") even when the primary save goes elsewhere.
-- **Domain-level claims in a concrete domain** — saving "LLM-first beats regex-first for X" when the KB is likely to have files specifying regex-first in X.
+**How to run it.** One or two targeted `Grep` passes on distinctive phrasing from the content, across the full KB. Not an exhaustive scan — pick the phrases whose presence elsewhere would actually signal a conflict. Read only the files that match. For each match, classify:
 
-**Skip the scan** when the save is purely additive (a new insight with no stated predecessor), topic-local (stays inside one area with no cross-cutting claim), or a simple append/refinement to a known file. Most saves fall here.
+- (a) still stands as-is → ignore
+- (b) would be misleading or incomplete without the new framing → propose via `SAVED_WITH_PROPOSAL`
+- (c) tangentially related, see-also pointer would be additive → stay silent, don't propose
 
-**How to run it.** A `Grep` pass on the distinctive phrases from the superseded/prior framing across the full KB is usually enough — one or two targeted patterns, not an exhaustive scan. Read only the files that actually match. For each match, decide whether it: (a) still stands as-is, (b) would be misleading without the new content's framing and should be proposed for update via `SAVED_WITH_PROPOSAL`, or (c) is only tangentially related and a see-also pointer would be additive (stay silent, don't propose).
+**Signals that sharpen the grep aim.** When the brief contains these, you know where to aim the patterns:
 
-The impact scan is what surfaces `SAVED_WITH_PROPOSAL` work. When triggered and skipped, you return SAVED on content that silently leaves contradictions elsewhere in the KB — the user never learns, and future loads of the now-stale file will hand the wrong framing to future agents. When the scan comes up empty, return plain SAVED without narrating the scan.
+- **Supersession / reversal language** — "this supersedes", "I used to think X, now Y", "reversing", "replaces", "updated view", "no longer". Grep for the superseded framing.
+- **Principle generalizing a prior decision** — "regex-first is my stated anti-pattern". Grep for the prior approach.
+- **Explicit area mentions outside the target** — the brief names another area ("the approach I used in project X"). Grep that area.
+- **Domain-level claims in a concrete domain** — "LLM-first beats regex-first for X". Grep the domain.
+
+When none fire, pick the most distinctive phrase from the new content itself and grep for files making competing claims.
+
+**When the scan comes up empty — which will be most saves — return plain SAVED without narrating the scan.** The scan is infrastructure, not a deliverable. The user sees it only when it surfaces something worth their attention.
 
 ### How agent instructions work
 
