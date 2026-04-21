@@ -78,6 +78,25 @@ describe("doctor command", () => {
     cleanupTempDir(home);
   });
 
+  test("one of two agents missing — flagged and names the missing file", async () => {
+    const home = makeTempHome();
+
+    await runCli(["setup"], { home });
+
+    // simulate a half-broken install — remove only the maintenance agent
+    const { rmSync } = await import("fs");
+    const { join } = await import("path");
+    rmSync(join(home, ".claude", "agents", "mnemo-maintenance.md"));
+
+    const { exitCode, stdout } = await runCli(["doctor"], { home });
+
+    expect(exitCode).toBe(1);
+    expect(stdout).toContain("agents");
+    expect(stdout).toContain("mnemo-maintenance.md");
+
+    cleanupTempDir(home);
+  });
+
   test("skill present but hook removed — flagged and exits 1", async () => {
     const home = makeTempHome();
 

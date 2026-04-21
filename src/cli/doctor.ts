@@ -2,7 +2,7 @@ import { existsSync, readFileSync, realpathSync, statSync } from "fs";
 import { dirname, join } from "path";
 import { homedir } from "os";
 import { CONFIG_PATH, loadConfig, shortenPath } from "../core/config";
-import { isSkillInstalled, isAgentsInstalled, isHookInstalled } from "./install";
+import { isSkillInstalled, isAgentsInstalled, isHookInstalled, missingAgents } from "./install";
 import { DIM, RESET, GREEN, RED } from "./format";
 
 const OK = `${GREEN}✓${RESET}`;
@@ -88,8 +88,10 @@ export function runDoctor(): void {
   if (agentsOk) {
     console.log(`${DIM}agents ${RESET} ${agentsGlob} ${OK}`);
   } else {
+    const missing = missingAgents();
+    const detail = missing.length > 0 ? `missing: ${missing.join(", ")}` : "missing";
     console.log(
-      `${DIM}agents ${RESET} ${agentsGlob} ${FAIL} missing — run \`mnemo setup\``,
+      `${DIM}agents ${RESET} ${agentsGlob} ${FAIL} ${detail} — run \`mnemo setup\``,
     );
   }
 

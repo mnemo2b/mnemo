@@ -35,14 +35,32 @@ export function isSkillInstalled(): boolean {
   return existsSync(join(SKILL_TARGET(), "SKILL.md"));
 }
 
-/** True if any mnemo-*.md agent is staged under ~/.claude/agents/ */
-export function isAgentsInstalled(): boolean {
-  const target = AGENTS_TARGET();
-  if (!existsSync(target)) return false;
+/** Transform a skill/agents/ source filename to its staged ~/.claude/agents/ name */
+function stagedAgentName(sourceFile: string): string {
+  return `mnemo-${sourceFile.replace(/\.md$/, "")}.md`;
+}
 
-  return readdirSync(target).some(
-    (file) => file.startsWith("mnemo-") && file.endsWith(".md"),
-  );
+/** Expected staged filenames, derived from skill/agents/ in the package */
+function expectedAgentFilenames(): string[] {
+  const source = join(findSkillSource(), "agents");
+  if (!existsSync(source)) return [];
+  return readdirSync(source)
+    .filter((f) => f.endsWith(".md"))
+    .map(stagedAgentName);
+}
+
+/** True if every expected mnemo-*.md agent is staged under ~/.claude/agents/ */
+export function isAgentsInstalled(): boolean {
+  return missingAgents().length === 0;
+}
+
+/** List of expected agent filenames that are missing from ~/.claude/agents/ */
+export function missingAgents(): string[] {
+  const target = AGENTS_TARGET();
+  const expected = expectedAgentFilenames();
+  if (expected.length === 0) return [];
+  if (!existsSync(target)) return expected;
+  return expected.filter((name) => !existsSync(join(target, name)));
 }
 
 /** True if a SessionStart hook running `mnemo prime` is configured */
@@ -88,8 +106,7 @@ export function installAgents(): void {
 
   for (const file of readdirSync(source)) {
     if (!file.endsWith(".md")) continue;
-    const name = `mnemo-${file.replace(/\.md$/, "")}.md`;
-    cpSync(join(source, file), join(target, name));
+    cpSync(join(source, file), join(target, stagedAgentName(file)));
   }
 }
 
