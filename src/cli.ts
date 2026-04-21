@@ -4,7 +4,9 @@ import { CLIError } from "./core/errors";
 const args = process.argv.slice(2);
 const command = args[0];
 
+// -----------------------------------------------------------------------------
 // help
+
 if (!command || command === "--help") {
   console.log("usage: mnemo <list|load|base|set|setup|teardown|doctor> [options]");
   console.log("");
@@ -28,7 +30,9 @@ if (!command || command === "--help") {
   process.exit(0);
 }
 
+// -----------------------------------------------------------------------------
 // commands
+
 try {
   runCommand(command, args.slice(1));
 } catch (error) {

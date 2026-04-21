@@ -11,36 +11,47 @@ import {
 import { join, dirname } from "path";
 import { homedir } from "os";
 
-// paths where the skill, agents, and hook live. kept in one place so
-// install.ts and any health-check code agree on what "installed" means.
+// -----------------------------------------------------------------------------
+
+// paths where the skill, agents, and hooks live (used by install, doctor)
 const SKILL_TARGET = () => join(homedir(), ".claude", "skills", "mnemo");
 const AGENTS_TARGET = () => join(homedir(), ".claude", "agents");
 const SETTINGS_PATH = () => join(homedir(), ".claude", "settings.json");
 
-/** Walk up from the CLI entry point to find the package root containing skill/ */
+// -----------------------------------------------------------------------------
+
+/**
+ * Walk up from the CLI entry point (dist) to find the skill directory
+ */
 function findSkillSource(): string {
-  // resolve symlinks so global installs (npm install -g) start from the
-  // real file location, not the symlink in /usr/local/bin
-  let dir = dirname(realpathSync(process.argv[1]));
+  // resolve symlinks to start from the real file location
+  let dir = dirname(realpathSync(process.argv[1]!));
   for (let i = 0; i < 10; i++) {
     const candidate = join(dir, "skill", "SKILL.md");
     if (existsSync(candidate)) return join(dir, "skill");
     dir = dirname(dir);
   }
-  throw new Error("could not find skill/ directory — is mnemo installed correctly?");
+	const message = "couldn't find skill/ - try reinstalling with npm install -g @mnemo2b/mnemo"
+  throw new Error(message);
 }
 
-/** True if the mnemo skill is present in the user's claude config */
+/**
+ * Checks if the skill exists in the users claude skills directory
+ */
 export function isSkillInstalled(): boolean {
   return existsSync(join(SKILL_TARGET(), "SKILL.md"));
 }
 
-/** Transform a skill/agents/ source filename to its staged ~/.claude/agents/ name */
+/**
+ * Transform a skill/agents/ source filename to its staged ~/.claude/agents/ name
+ */
 function stagedAgentName(sourceFile: string): string {
   return `mnemo-${sourceFile.replace(/\.md$/, "")}.md`;
 }
 
-/** Expected staged filenames, derived from skill/agents/ in the package */
+/**
+ * Expected agents, derived from skill/agents/ in the package
+ */
 function expectedAgentFilenames(): string[] {
   const source = join(findSkillSource(), "agents");
   if (!existsSync(source)) return [];
@@ -49,12 +60,16 @@ function expectedAgentFilenames(): string[] {
     .map(stagedAgentName);
 }
 
-/** True if every expected mnemo-*.md agent is staged under ~/.claude/agents/ */
+/**
+ * True if every expected mnemo-*.md agent is staged under ~/.claude/agents/
+ */
 export function isAgentsInstalled(): boolean {
   return missingAgents().length === 0;
 }
 
-/** List of expected agent filenames that are missing from ~/.claude/agents/ */
+/**
+ * List of expected agent filenames that are missing from ~/.claude/agents/
+ */
 export function missingAgents(): string[] {
   const target = AGENTS_TARGET();
   const expected = expectedAgentFilenames();
@@ -63,7 +78,9 @@ export function missingAgents(): string[] {
   return expected.filter((name) => !existsSync(join(target, name)));
 }
 
-/** True if a SessionStart hook running `mnemo prime` is configured */
+/**
+ * True if a SessionStart hook running `mnemo prime` is configured
+ */
 export function isHookInstalled(): boolean {
   const settingsPath = SETTINGS_PATH();
   if (!existsSync(settingsPath)) return false;
@@ -86,7 +103,9 @@ export function isHookInstalled(): boolean {
   );
 }
 
-/** Copy skill files to ~/.claude/skills/mnemo/ (clean install) */
+/**
+ * Copy skill files to ~/.claude/skills/mnemo/ (clean install)
+ */
 export function installSkill(): void {
   const source = findSkillSource();
   const target = SKILL_TARGET();
@@ -96,7 +115,9 @@ export function installSkill(): void {
   cpSync(source, target, { recursive: true });
 }
 
-/** Stage agents from skill/agents/ to ~/.claude/agents/ for named discovery */
+/**
+ * Stage agents from skill/agents/ to ~/.claude/agents/ for named discovery
+ */
 export function installAgents(): void {
   const source = join(findSkillSource(), "agents");
   if (!existsSync(source)) return;
