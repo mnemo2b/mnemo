@@ -26,7 +26,6 @@ jobs:
       - run: bun run build
       - run: TEST_DIST=1 bun test
 
-      - run: npm install -g npm@latest
       - run: npm publish --provenance --access public
 
       - run: gh release create ${{ github.ref_name }} --generate-notes
