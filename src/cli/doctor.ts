@@ -10,7 +10,7 @@ const FAIL = `${RED}✗${RESET}`;
 
 /** Walk up from the CLI entry point to find package.json (for version) */
 function readVersion(): string {
-  let dir = dirname(realpathSync(process.argv[1]));
+  let dir = dirname(realpathSync(process.argv[1]!));
   for (let i = 0; i < 10; i++) {
     const candidate = join(dir, "package.json");
     if (existsSync(candidate)) {
