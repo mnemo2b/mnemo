@@ -109,8 +109,8 @@ Candidates:
 
 ## Knowledge base
 Bases:
-  [name]: [absolute path]
-  [name]: [absolute path]
+  [name]: [path]
+  [name]: [path]
 
 Structure:
   [full depth-2 tree covering every base — copy from prime output verbatim]
