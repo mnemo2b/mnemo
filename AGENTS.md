@@ -8,7 +8,7 @@ The current paradigm embeds AI inside apps, but each one rebuilds understanding 
 
 ## Where We Are
 
-v0.6.0 is published on npm as `@mnemo2b/mnemo`. Named sets bundle paths for reuse, `.mnemo` project files handle auto-loading, and the skill uses hub-and-spoke references. The MCP layer has been removed in favor of skills — the CLI is the only programmatic interface. Releases are automated via GitHub Actions with OIDC trusted publishing.
+v0.8.0 is published on npm as `@mnemo2b/mnemo`. The save skill ships with a dispatcher/sub-agent split, a three-signal destination vocabulary (`Specified`/`Suggested`/`Candidates`), and a `SAVED_WITH_PROPOSAL` status that separates authorized saves from inferred cross-file work via a conditional impact scan. A SessionStart prime hook injects bases, sets, and a depth-2 structure tree as agent context. `mnemo doctor` diagnoses install state (skill, agents, hook); `mnemo base add` auto-wires Claude Code on first run, staging named sub-agents under `~/.claude/agents/mnemo-*.md`. Named sets bundle paths for reuse, `.mnemo` project files handle auto-loading. The MCP layer has been removed in favor of skills — the CLI is the only programmatic interface. Releases are automated via GitHub Actions with OIDC trusted publishing.
 
 ## Verification
 

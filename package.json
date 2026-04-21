@@ -1,6 +1,6 @@
 {
   "name": "@mnemo2b/mnemo",
-  "version": "0.6.0",
+  "version": "0.8.0",
   "description": "A context layer backed by a second brain of markdown files.",
   "type": "module",
   "bin": {
