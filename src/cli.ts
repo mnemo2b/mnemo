@@ -4,7 +4,7 @@ import { CLIError } from "./core/errors";
 const args = process.argv.slice(2);
 const command = args[0];
 
-// help text
+// help
 if (!command || command === "--help") {
   console.log("usage: mnemo <list|load|base|set|setup|teardown|doctor> [options]");
   console.log("");
@@ -28,7 +28,7 @@ if (!command || command === "--help") {
   process.exit(0);
 }
 
-// dispatch with a single error boundary
+// commands
 try {
   runCommand(command, args.slice(1));
 } catch (error) {
@@ -36,7 +36,7 @@ try {
     console.error(error.message);
     process.exit(1);
   }
-  // unexpected error — show message, stack trace only with DEBUG=1
+  // unexpected errors
   const err = error instanceof Error ? error : new Error(String(error));
   console.error(err.message);
   if (process.env.DEBUG) {
