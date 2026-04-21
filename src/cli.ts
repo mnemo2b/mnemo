@@ -4,14 +4,14 @@ import { CLIError } from "./core/errors";
 const args = process.argv.slice(2);
 const command = args[0];
 
-// help text — shown when no command or --help
+// help text
 if (!command || command === "--help") {
   console.log("usage: mnemo <list|load|base|set|setup|teardown|doctor> [options]");
   console.log("");
   console.log("commands:");
   console.log("  list [path]               browse the knowledge base");
   console.log("  load <path|:set ...>      resolve paths to absolute files");
-  console.log("  prime                     prime an agent with available sets");
+  console.log("  prime                     teaches agents about mnemo");
   console.log("  base add <name> <path>    register a knowledge base");
   console.log("  base remove <name>        unregister a knowledge base");
   console.log("  base move <name> <path>   change a base's path");
@@ -20,11 +20,11 @@ if (!command || command === "--help") {
   console.log("  set add <name> <paths...> create or update a set");
   console.log("  set remove <name>         remove a set");
   console.log("  set rename <old> <new>    rename a set");
-  console.log("  set show <name>           show resolved paths in a set");
+  console.log("  set show <name>           show paths in a set");
   console.log("  set list                  show all sets");
-  console.log("  setup                     install skill + session hook");
-  console.log("  teardown                  remove skill + session hook + config");
-  console.log("  doctor                    check install state and KB wiring");
+  console.log("  setup                     install skill + agent + session hook");
+  console.log("  teardown                  remove skill + agent + session hook + config");
+  console.log("  doctor                    check install state and knowledge bases");
   process.exit(0);
 }
 
