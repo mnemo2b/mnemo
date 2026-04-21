@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync, rmSync } from "fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync, rmSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
 import { homedir } from "os";
 import { CONFIG_PATH } from "../core/config";
@@ -8,6 +8,21 @@ function removeSkill(): boolean {
   if (!existsSync(target)) return false;
 
   rmSync(target, { recursive: true, force: true });
+  return true;
+}
+
+// remove only the mnemo-*.md files we staged, not the agents/ dir itself —
+// other tools may have placed agents there.
+function removeAgents(): boolean {
+  const target = join(homedir(), ".claude", "agents");
+  if (!existsSync(target)) return false;
+
+  const mnemoFiles = readdirSync(target).filter(
+    (file) => file.startsWith("mnemo-") && file.endsWith(".md"),
+  );
+  if (mnemoFiles.length === 0) return false;
+
+  for (const file of mnemoFiles) unlinkSync(join(target, file));
   return true;
 }
 
@@ -44,9 +59,10 @@ function removeConfig(): boolean {
   return true;
 }
 
-/** Remove skill files, session hook, and config */
+/** Remove skill files, staged agents, session hook, and config */
 export function runTeardown(): void {
   const skillRemoved = removeSkill();
+  const agentsRemoved = removeAgents();
   const hookRemoved = removeHook();
   const configRemoved = removeConfig();
 
@@ -55,6 +71,7 @@ export function runTeardown(): void {
   console.log("mnemo removed.");
   console.log("");
   console.log(`  skill    ~/.claude/skills/mnemo/ ${status(skillRemoved)}`);
+  console.log(`  agents   ~/.claude/agents/mnemo-*.md ${status(agentsRemoved)}`);
   console.log(`  hook     ~/.claude/settings.json ${status(hookRemoved)}`);
   console.log(`  config   ~/.config/mnemo/ ${status(configRemoved)}`);
   console.log("");

@@ -2,7 +2,7 @@ import { existsSync, readFileSync, realpathSync, statSync } from "fs";
 import { dirname, join } from "path";
 import { homedir } from "os";
 import { CONFIG_PATH, loadConfig, shortenPath } from "../core/config";
-import { isSkillInstalled, isHookInstalled } from "./install";
+import { isSkillInstalled, isAgentsInstalled, isHookInstalled } from "./install";
 import { DIM, RESET, GREEN, RED } from "./format";
 
 const OK = `${GREEN}✓${RESET}`;
@@ -37,10 +37,11 @@ export function runDoctor(): void {
   const baseEntries = Object.entries(bases).sort(([a], [b]) => a.localeCompare(b));
 
   const skillOk = isSkillInstalled();
+  const agentsOk = isAgentsInstalled();
   const hookOk = isHookInstalled();
   const brokenBases = baseEntries.filter(([, path]) => !baseHealthy(path));
 
-  const failed = !skillOk || !hookOk || brokenBases.length > 0;
+  const failed = !skillOk || !agentsOk || !hookOk || brokenBases.length > 0;
 
   console.log(`${DIM}cli    ${RESET} ${version}`);
   console.log(`${DIM}config ${RESET} ${shortenPath(CONFIG_PATH)}`);
@@ -71,8 +72,9 @@ export function runDoctor(): void {
     `${DIM}sets   ${RESET} ${setCount === 0 ? "none" : `${setCount} global`}`,
   );
 
-  // install state — skill + hook wiring into ~/.claude
+  // install state — skill + agents + hook wiring into ~/.claude
   const skillPath = shortenPath(join(homedir(), ".claude", "skills", "mnemo"));
+  const agentsGlob = shortenPath(join(homedir(), ".claude", "agents")) + "/mnemo-*.md";
   const settingsPath = shortenPath(join(homedir(), ".claude", "settings.json"));
 
   if (skillOk) {
@@ -80,6 +82,14 @@ export function runDoctor(): void {
   } else {
     console.log(
       `${DIM}skill  ${RESET} ${skillPath} ${FAIL} missing — run \`mnemo setup\``,
+    );
+  }
+
+  if (agentsOk) {
+    console.log(`${DIM}agents ${RESET} ${agentsGlob} ${OK}`);
+  } else {
+    console.log(
+      `${DIM}agents ${RESET} ${agentsGlob} ${FAIL} missing — run \`mnemo setup\``,
     );
   }
 

@@ -28,6 +28,29 @@ describe("teardown command", () => {
     cleanupTempDir(home);
   });
 
+  test("removes staged mnemo-*.md agents but preserves other agents", async () => {
+    const home = makeTempHome();
+
+    await runCli(["setup"], { home });
+    const agentsDir = join(home, ".claude", "agents");
+
+    // drop a non-mnemo agent to verify selective removal
+    writeFileSync(join(agentsDir, "other-tool.md"), "other agent\n", "utf-8");
+
+    const { exitCode, stdout } = await runCli(["teardown"], { home });
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("agents");
+    expect(stdout).toContain("(removed)");
+
+    // mnemo-*.md gone, other-tool.md still there
+    expect(existsSync(join(agentsDir, "mnemo-save.md"))).toBe(false);
+    expect(existsSync(join(agentsDir, "mnemo-maintenance.md"))).toBe(false);
+    expect(existsSync(join(agentsDir, "other-tool.md"))).toBe(true);
+
+    cleanupTempDir(home);
+  });
+
   test("removes hook from settings.json", async () => {
     const home = makeTempHome();
 
@@ -129,9 +152,9 @@ describe("teardown command", () => {
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain("mnemo removed.");
-    // all three lines should say not found
+    // all four lines (skill, agents, hook, config) should say not found
     const notFoundCount = (stdout.match(/\(not found\)/g) || []).length;
-    expect(notFoundCount).toBe(3);
+    expect(notFoundCount).toBe(4);
 
     cleanupTempDir(home);
   });

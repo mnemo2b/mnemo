@@ -8,8 +8,10 @@ import { isValidName } from "../core/validate-name";
 import { DIM, RESET } from "./format";
 import {
   isSkillInstalled,
+  isAgentsInstalled,
   isHookInstalled,
   installSkill,
+  installAgents,
   installHook,
 } from "./install";
 
@@ -69,14 +71,16 @@ function baseAdd(name: string | undefined, rawPath: string | undefined): void {
  * happened. No-op when everything is already wired.
  */
 function maybeWireClaudeCode(): void {
-  if (isSkillInstalled() && isHookInstalled()) return;
+  if (isSkillInstalled() && isAgentsInstalled() && isHookInstalled()) return;
 
   installSkill();
+  installAgents();
   installHook();
 
   console.log("");
   console.log("wiring up Claude Code:");
   console.log("  skill    ~/.claude/skills/mnemo/");
+  console.log("  agents   ~/.claude/agents/mnemo-*.md");
   console.log("  hook     ~/.claude/settings.json");
   console.log("");
   console.log("your next Claude Code session will start with your knowledge");

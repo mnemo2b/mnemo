@@ -18,6 +18,7 @@ describe("doctor command", () => {
     expect(stdout).toContain("config");
     expect(stdout).toContain("none registered");
     expect(stdout).toContain("skill");
+    expect(stdout).toContain("agents");
     expect(stdout).toContain("hook");
     // remediation pointer
     expect(stdout).toContain("mnemo setup");
@@ -54,6 +55,25 @@ describe("doctor command", () => {
     expect(exitCode).toBe(1);
     expect(stdout).toContain("broken");
     expect(stdout).toContain("path does not exist");
+
+    cleanupTempDir(home);
+  });
+
+  test("skill + hook present but agents missing — flagged and exits 1", async () => {
+    const home = makeTempHome();
+
+    await runCli(["setup"], { home });
+
+    // simulate user deleting the staged agents
+    const { rmSync } = await import("fs");
+    const { join } = await import("path");
+    rmSync(join(home, ".claude", "agents"), { recursive: true, force: true });
+
+    const { exitCode, stdout } = await runCli(["doctor"], { home });
+
+    expect(exitCode).toBe(1);
+    expect(stdout).toContain("agents");
+    expect(stdout).toContain("missing");
 
     cleanupTempDir(home);
   });

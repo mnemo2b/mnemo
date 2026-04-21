@@ -35,6 +35,16 @@ export function isSkillInstalled(): boolean {
   return existsSync(join(SKILL_TARGET(), "SKILL.md"));
 }
 
+/** True if any mnemo-*.md agent is staged under ~/.claude/agents/ */
+export function isAgentsInstalled(): boolean {
+  const target = AGENTS_TARGET();
+  if (!existsSync(target)) return false;
+
+  return readdirSync(target).some(
+    (file) => file.startsWith("mnemo-") && file.endsWith(".md"),
+  );
+}
+
 /** True if a SessionStart hook running `mnemo prime` is configured */
 export function isHookInstalled(): boolean {
   const settingsPath = SETTINGS_PATH();

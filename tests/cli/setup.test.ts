@@ -27,6 +27,22 @@ describe("setup command", () => {
     cleanupTempDir(home);
   });
 
+  test("stages mnemo-*.md agents for Claude Code discovery", async () => {
+    const home = makeTempHome();
+
+    const { exitCode, stdout } = await runCli(["setup"], { home });
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("agents");
+
+    // agents copied with mnemo- prefix for named sub-agent discovery
+    const agentsDir = join(home, ".claude", "agents");
+    expect(existsSync(join(agentsDir, "mnemo-save.md"))).toBe(true);
+    expect(existsSync(join(agentsDir, "mnemo-maintenance.md"))).toBe(true);
+
+    cleanupTempDir(home);
+  });
+
   test("adds session hook to settings.json", async () => {
     const home = makeTempHome();
 
