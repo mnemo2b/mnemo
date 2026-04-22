@@ -33,9 +33,13 @@ function baseAdd(name: string | undefined, rawPath: string | undefined): void {
   }
 
   if (!isValidBaseName(name)) {
-    throw new CLIError(
-      "failed: base name must be:\n  - lowercase letters\n  - numbers\n  - hyphens\n  - underscores",
-    );
+    throw new CLIError([
+      "failed: base name must be:",
+      "  - lowercase letters",
+      "  - numbers",
+      "  - hyphens",
+      "  - underscores",
+    ].join("\n"));
   }
 
   const absolutePath = resolveUserPath(rawPath);
@@ -135,9 +139,13 @@ function baseRename(oldName: string | undefined, newName: string | undefined): v
   }
 
   if (!isValidBaseName(newName)) {
-    throw new CLIError(
-      "failed: base name must be:\n  - lowercase letters\n  - numbers\n  - hyphens\n  - underscores",
-    );
+    throw new CLIError([
+      "failed: base name must be:",
+      "  - lowercase letters",
+      "  - numbers",
+      "  - hyphens",
+      "  - underscores",
+    ].join("\n"));
   }
 
   const { bases, sets } = loadConfig();
