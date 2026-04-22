@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { formatBasesHint } from "../../src/core/base";
-import { formatSetsHint } from "../../src/core/set";
+import { formatBasesHint } from "@/core/base";
+import { formatSetsHint } from "@/core/set";
 
 describe("formatBasesHint", () => {
   test("returns empty string when no bases", () => {

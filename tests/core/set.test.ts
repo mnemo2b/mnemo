@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { resolveSet } from "../../src/core/set";
-import { CLIError } from "../../src/core/errors";
+import { resolveSet } from "@/core/set";
+import { CLIError } from "@/core/errors";
 
 describe("resolveSet", () => {
   test("resolves a simple set to its paths", () => {

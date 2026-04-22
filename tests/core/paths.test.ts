@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "path";
 import { homedir } from "os";
-import { expandPath, resolvePath, shortenPath } from "../../src/core/paths";
+import { expandPath, resolvePath, shortenPath } from "@/core/paths";
 import { FIXTURES_DIR } from "../helpers/fixtures";
 
 describe("expandPath", () => {

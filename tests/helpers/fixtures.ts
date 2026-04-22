@@ -2,8 +2,8 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "fs";
 import { join, resolve } from "path";
 import { tmpdir } from "os";
 import { stringify } from "yaml";
-import type { Bases } from "../../src/types/bases";
-import type { Sets } from "../../src/types/sets";
+import type { Bases } from "@/types/bases";
+import type { Sets } from "@/types/sets";
 
 // ----------------------------------------------------------------------------
 

@@ -2,11 +2,11 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { resolve, dirname, join } from "path";
 import { homedir } from "os";
 import { parse, stringify } from "yaml";
-import { CLIError } from "./errors";
-import { expandPath, shortenPath } from "./paths";
-import type { Bases } from "../types/bases";
-import type { Sets } from "../types/sets";
-import type { Config, ProjectConfig } from "../types/config";
+import { CLIError } from "@/core/errors";
+import { expandPath, shortenPath } from "@/core/paths";
+import type { Bases } from "@/types/bases";
+import type { Sets } from "@/types/sets";
+import type { Config, ProjectConfig } from "@/types/config";
 
 // -----------------------------------------------------------------------------
 

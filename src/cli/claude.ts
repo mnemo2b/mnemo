@@ -9,8 +9,8 @@ import {
 } from "fs";
 import { join, dirname } from "path";
 import { homedir } from "os";
-import { findPackageRoot } from "./package";
-import type { SessionStartEntry } from "../types/hooks";
+import { findPackageRoot } from "@/cli/package";
+import type { SessionStartEntry } from "@/types/hooks";
 
 // -----------------------------------------------------------------------------
 

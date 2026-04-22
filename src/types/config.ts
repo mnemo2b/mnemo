@@ -1,5 +1,5 @@
-import type { Bases } from "./bases";
-import type { Sets } from "./sets";
+import type { Bases } from "@/types/bases";
+import type { Sets } from "@/types/sets";
 
 export interface Config {
   bases: Bases;

@@ -1,5 +1,5 @@
-import { CLIError } from "./errors";
-import type { Sets } from "../types/sets";
+import { CLIError } from "@/core/errors";
+import type { Sets } from "@/types/sets";
 
 // -----------------------------------------------------------------------------
 

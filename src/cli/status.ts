@@ -1,9 +1,9 @@
 import { existsSync, statSync } from "fs";
-import { CONFIG_PATH, loadConfig } from "../core/config";
-import { shortenPath } from "../core/paths";
-import { isSkillInstalled, isAgentsInstalled, isHookInstalled, missingAgents, skillDir, agentsDir, settingsPath } from "./claude";
-import { readVersion } from "./package";
-import { DIM, RESET, GREEN, RED } from "./format";
+import { CONFIG_PATH, loadConfig } from "@/core/config";
+import { shortenPath } from "@/core/paths";
+import { isSkillInstalled, isAgentsInstalled, isHookInstalled, missingAgents, skillDir, agentsDir, settingsPath } from "@/cli/claude";
+import { readVersion } from "@/cli/package";
+import { DIM, RESET, GREEN, RED } from "@/cli/format";
 
 // -----------------------------------------------------------------------------
 

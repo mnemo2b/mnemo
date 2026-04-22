@@ -1,6 +1,6 @@
 import { createInterface } from "readline";
-import { installIntegrations } from "./claude";
-import { DIM, RESET } from "./format";
+import { installIntegrations } from "@/cli/claude";
+import { DIM, RESET } from "@/cli/format";
 
 // -----------------------------------------------------------------------------
 

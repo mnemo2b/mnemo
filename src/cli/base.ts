@@ -1,11 +1,11 @@
 import { existsSync, statSync } from "fs";
-import { loadConfig, saveConfig } from "../core/config";
-import { expandPath, shortenPath } from "../core/paths";
-import { CLIError } from "../core/errors";
-import { formatBasesHint } from "../core/base";
-import { isValidBaseName } from "../core/validations";
-import { DIM, RESET } from "./format";
-import { installIntegrations } from "./claude";
+import { loadConfig, saveConfig } from "@/core/config";
+import { expandPath, shortenPath } from "@/core/paths";
+import { CLIError } from "@/core/errors";
+import { formatBasesHint } from "@/core/base";
+import { isValidBaseName } from "@/core/validations";
+import { DIM, RESET } from "@/cli/format";
+import { installIntegrations } from "@/cli/claude";
 
 // -----------------------------------------------------------------------------
 

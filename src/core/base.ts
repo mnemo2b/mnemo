@@ -1,8 +1,8 @@
 import { existsSync, statSync } from "fs";
-import { CLIError } from "./errors";
-import { resolvePath, shortenPath } from "./paths";
-import { collectFiles } from "./scan";
-import type { Bases } from "../types/bases";
+import { CLIError } from "@/core/errors";
+import { resolvePath, shortenPath } from "@/core/paths";
+import { collectFiles } from "@/core/scan";
+import type { Bases } from "@/types/bases";
 
 // -----------------------------------------------------------------------------
 

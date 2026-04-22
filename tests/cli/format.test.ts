@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { formatTokens } from "../../src/cli/format";
+import { formatTokens } from "@/cli/format";
 
 describe("formatTokens", () => {
   test("under 1k: rounds to nearest 100", () => {

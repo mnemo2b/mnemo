@@ -1,8 +1,8 @@
-import { loadConfig, loadProjectConfig, mergeSets, saveConfig } from "../core/config";
-import { CLIError } from "../core/errors";
-import { resolveSet, formatSetsHint } from "../core/set";
-import { isValidSetName } from "../core/validations";
-import { DIM, RESET } from "./format";
+import { loadConfig, loadProjectConfig, mergeSets, saveConfig } from "@/core/config";
+import { CLIError } from "@/core/errors";
+import { resolveSet, formatSetsHint } from "@/core/set";
+import { isValidSetName } from "@/core/validations";
+import { DIM, RESET } from "@/cli/format";
 
 // -----------------------------------------------------------------------------
 

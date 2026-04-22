@@ -9,8 +9,8 @@ import {
   loadProjectConfig,
   mergeSets,
   CONFIG_PATH,
-} from "../../src/core/config";
-import { CLIError } from "../../src/core/errors";
+} from "@/core/config";
+import { CLIError } from "@/core/errors";
 import { makeTempHome, cleanupTempDir } from "../helpers/fixtures";
 
 describe("mergeSets", () => {

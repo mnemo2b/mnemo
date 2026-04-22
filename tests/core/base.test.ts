@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { parseBasePath, resolveBasePath, resolveToFiles } from "../../src/core/base";
-import { CLIError } from "../../src/core/errors";
+import { parseBasePath, resolveBasePath, resolveToFiles } from "@/core/base";
+import { CLIError } from "@/core/errors";
 import { FIXTURES_DIR } from "../helpers/fixtures";
 
 describe("parseBasePath", () => {

@@ -1,12 +1,12 @@
-import { runList } from "./list";
-import { runLoad } from "./load";
-import { runBase } from "./base";
-import { runSet } from "./set";
-import { runPrime } from "./prime";
-import { runInstall } from "./install";
-import { runUninstall } from "./uninstall";
-import { runStatus } from "./status";
-import { CLIError } from "../core/errors";
+import { runList } from "@/cli/list";
+import { runLoad } from "@/cli/load";
+import { runBase } from "@/cli/base";
+import { runSet } from "@/cli/set";
+import { runPrime } from "@/cli/prime";
+import { runInstall } from "@/cli/install";
+import { runUninstall } from "@/cli/uninstall";
+import { runStatus } from "@/cli/status";
+import { CLIError } from "@/core/errors";
 
 // -----------------------------------------------------------------------------
 

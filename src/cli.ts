@@ -1,6 +1,6 @@
-import { runCommand } from "./cli/run";
-import { readVersion } from "./cli/package";
-import { CLIError } from "./core/errors";
+import { runCommand } from "@/cli/run";
+import { readVersion } from "@/cli/package";
+import { CLIError } from "@/core/errors";
 
 const args = process.argv.slice(2);
 const command = args[0];

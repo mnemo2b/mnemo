@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
 import { runCli } from "../helpers/run-cli";
-import { parseLoadItems } from "../../src/cli/load";
+import { parseLoadItems } from "@/cli/load";
 import {
   makeTempHome,
   seedConfig,

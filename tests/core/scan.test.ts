@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { join } from "path";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
-import { scanDirectory, collectFiles } from "../../src/core/scan";
+import { scanDirectory, collectFiles } from "@/core/scan";
 import { FIXTURES_DIR } from "../helpers/fixtures";
 
 describe("scanDirectory", () => {
