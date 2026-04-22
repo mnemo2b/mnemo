@@ -3,16 +3,32 @@ import { join, dirname } from "path";
 import { homedir } from "os";
 import { CONFIG_PATH } from "../core/config";
 
-function removeSkill(): boolean {
-  const target = join(homedir(), ".claude", "skills", "mnemo");
-  if (!existsSync(target)) return false;
+// -----------------------------------------------------------------------------
 
-  rmSync(target, { recursive: true, force: true });
-  return true;
+/** remove skill, agents, session hook, and config */
+
+export function runTeardown(): void {
+  const skillRemoved = removeSkill();
+  const agentsRemoved = removeAgents();
+  const hookRemoved = removeHook();
+  const configRemoved = removeConfig();
+
+  const status = (removed: boolean) => (removed ? "(removed)" : "(not found)");
+
+  console.log("mnemo removed.");
+  console.log("");
+  console.log(`  skill    ~/.claude/skills/mnemo/ ${status(skillRemoved)}`);
+  console.log(`  agents   ~/.claude/agents/mnemo-*.md ${status(agentsRemoved)}`);
+  console.log(`  hook     ~/.claude/settings.json ${status(hookRemoved)}`);
+  console.log(`  config   ~/.config/mnemo/ ${status(configRemoved)}`);
+  console.log("");
+  console.log("to reinstall, run: mnemo setup");
 }
 
-// remove only the mnemo-*.md files we staged, not the agents/ dir itself —
-// other tools may have placed agents there.
+// -----------------------------------------------------------------------------
+
+/** remove mnemo-*.md agents from ~/.claude/agents/ */
+
 function removeAgents(): boolean {
   const target = join(homedir(), ".claude", "agents");
   if (!existsSync(target)) return false;
@@ -25,6 +41,18 @@ function removeAgents(): boolean {
   for (const file of mnemoFiles) unlinkSync(join(target, file));
   return true;
 }
+
+/** delete ~/.config/mnemo/ */
+
+function removeConfig(): boolean {
+  const configDir = dirname(CONFIG_PATH);
+  if (!existsSync(configDir)) return false;
+
+  rmSync(configDir, { recursive: true, force: true });
+  return true;
+}
+
+/** remove the mnemo prime hook from ~/.claude/settings.json */
 
 function removeHook(): boolean {
   const settingsPath = join(homedir(), ".claude", "settings.json");
@@ -42,7 +70,6 @@ function removeHook(): boolean {
     (entry) => !entry.hooks?.some((h) => h.command.includes("mnemo prime")),
   );
 
-  // nothing was removed
   if (filtered.length === sessionStart.length) return false;
 
   hooks.SessionStart = filtered;
@@ -51,29 +78,12 @@ function removeHook(): boolean {
   return true;
 }
 
-function removeConfig(): boolean {
-  const configDir = dirname(CONFIG_PATH);
-  if (!existsSync(configDir)) return false;
+/** delete ~/.claude/skills/mnemo/ */
 
-  rmSync(configDir, { recursive: true, force: true });
+function removeSkill(): boolean {
+  const target = join(homedir(), ".claude", "skills", "mnemo");
+  if (!existsSync(target)) return false;
+
+  rmSync(target, { recursive: true, force: true });
   return true;
-}
-
-/** Remove skill files, staged agents, session hook, and config */
-export function runTeardown(): void {
-  const skillRemoved = removeSkill();
-  const agentsRemoved = removeAgents();
-  const hookRemoved = removeHook();
-  const configRemoved = removeConfig();
-
-  const status = (removed: boolean) => (removed ? "(removed)" : "(not found)");
-
-  console.log("mnemo removed.");
-  console.log("");
-  console.log(`  skill    ~/.claude/skills/mnemo/ ${status(skillRemoved)}`);
-  console.log(`  agents   ~/.claude/agents/mnemo-*.md ${status(agentsRemoved)}`);
-  console.log(`  hook     ~/.claude/settings.json ${status(hookRemoved)}`);
-  console.log(`  config   ~/.config/mnemo/ ${status(configRemoved)}`);
-  console.log("");
-  console.log("to reinstall, run: mnemo setup");
 }
