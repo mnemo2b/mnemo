@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { isValidBaseName, isValidSetName } from "@/core/validations";
 
+// ----------------------------------------------------------------------------
+
 describe("isValidBaseName", () => {
   test.each(["personal", "my-notes", "work2", "a", "notes-123", "_hidden", "my_notes"])
     ("accepts valid base name: %s", (name) => {
