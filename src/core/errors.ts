@@ -1,4 +1,5 @@
-/** error thrown for user-facing failures (bad input, missing config, etc) */
+/** user-facing errors (incorrect usage, malformed commands, etc) */
+
 export class CLIError extends Error {
   constructor(message: string) {
     super(message);
