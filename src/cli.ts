@@ -1,4 +1,5 @@
 import { runCommand } from "./cli/run";
+import { readVersion } from "./cli/install";
 import { CLIError } from "./core/errors";
 
 const args = process.argv.slice(2);
@@ -27,6 +28,14 @@ if (!command || command === "--help") {
   console.log("  setup                     install skill + agent + session hook");
   console.log("  teardown                  remove skill + agent + session hook + config");
   console.log("  doctor                    check install state and knowledge bases");
+  process.exit(0);
+}
+
+// -----------------------------------------------------------------------------
+// version
+
+if (command === "--version" || command === "-v") {
+  console.log(readVersion());
   process.exit(0);
 }
 

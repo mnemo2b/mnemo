@@ -11,6 +11,20 @@ describe("entry point", () => {
     expect(stdout).toContain("commands:");
   });
 
+  test("--version shows version and exits 0", async () => {
+    const { stdout, exitCode } = await runCli(["--version"]);
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
+  test("-v shows version and exits 0", async () => {
+    const { stdout, exitCode } = await runCli(["-v"]);
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
   test("no args shows usage and exits 0", async () => {
     const { stdout, exitCode } = await runCli([]);
 
