@@ -1,12 +1,17 @@
 import { resolve, join } from "path";
 
-// project root — two levels up from tests/helpers/
+// ----------------------------------------------------------------------------
+
 const PROJECT_ROOT = resolve(import.meta.dir, "../..");
 
-// TEST_DIST=1 switches from source (bun src/cli.ts) to built output (node dist/cli.mjs)
+// tests run against source by default (bun src/cli.ts).
+// set TEST_DIST=1 to run against the built output (node dist/cli.mjs)
+// to verify the bundle before publishing.
 const USE_DIST = !!process.env.TEST_DIST;
 const ENTRY_POINT = resolve(PROJECT_ROOT, USE_DIST ? "dist/cli.mjs" : "src/cli.ts");
 const RUNTIME = USE_DIST ? "node" : "bun";
+
+// ----------------------------------------------------------------------------
 
 interface RunOptions {
   home?: string;
@@ -20,6 +25,8 @@ interface RunResult {
   stderr: string;
   exitCode: number;
 }
+
+// ----------------------------------------------------------------------------
 
 /** spawn the CLI as a subprocess and capture output */
 
