@@ -35,6 +35,14 @@ function findPackageRoot(): string {
   throw new Error(message);
 }
 
+/** read the version from package.json */
+
+export function readVersion(): string {
+  const pkgPath = join(findPackageRoot(), "package.json");
+  const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+  return typeof pkg.version === "string" ? pkg.version : "unknown";
+}
+
 // -----------------------------------------------------------------------------
 
 /** copy skill files to ~/.claude/skills/mnemo/ (clean install) */
