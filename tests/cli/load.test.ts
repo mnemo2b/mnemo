@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
-import { runCli } from "../helpers/run-cli";
+import { runCli } from "../helpers/cli";
 import { parseLoadItems } from "@/cli/load";
 import {
   makeTempHome,

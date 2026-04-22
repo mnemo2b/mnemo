@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { runCli } from "../helpers/run-cli";
+import { runCli } from "../helpers/cli";
 import { makeTempHome, cleanupTempDir } from "../helpers/fixtures";
 
 describe("entry point", () => {

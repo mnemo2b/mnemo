@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
-import { runCli } from "../helpers/run-cli";
+import { runCli } from "../helpers/cli";
 import { makeTempHome, cleanupTempDir } from "../helpers/fixtures";
 
 describe("install command", () => {

@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
-import { runCli } from "../helpers/run-cli";
+import { runCli } from "../helpers/cli";
 import {
   makeTempHome,
   seedConfig,
