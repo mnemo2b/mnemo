@@ -13,6 +13,14 @@ import { findPackageRoot } from "./package";
 
 // -----------------------------------------------------------------------------
 
+export interface InstallResult {
+  skill: boolean;
+  agents: boolean;
+  hook: boolean;
+}
+
+// -----------------------------------------------------------------------------
+
 // paths where the skill, agents, and hooks live (used by integrations, status)
 
 const SKILL_TARGET = () => join(homedir(), ".claude", "skills", "mnemo");
@@ -20,12 +28,6 @@ const AGENTS_TARGET = () => join(homedir(), ".claude", "agents");
 const SETTINGS_PATH = () => join(homedir(), ".claude", "settings.json");
 
 // -----------------------------------------------------------------------------
-
-export interface InstallResult {
-  skill: boolean;
-  agents: boolean;
-  hook: boolean;
-}
 
 /** install skill, agents, and hook — skips what's already in place */
 
@@ -123,7 +125,7 @@ function stagedAgentName(sourceFile: string): string {
 
 /** add SessionStart hook to ~/.claude/settings.json */
 
-export function installHook(): boolean {
+export function installHook(): void {
   const settingsPath = SETTINGS_PATH();
 
   let settings: Record<string, unknown> = {};
@@ -141,7 +143,7 @@ export function installHook(): boolean {
     entry.hooks?.some((h) => h.command.includes("mnemo prime")),
   );
 
-  if (alreadyInstalled) return true;
+  if (alreadyInstalled) return;
 
   sessionStart.push({
     matcher: "",
@@ -153,7 +155,6 @@ export function installHook(): boolean {
 
   mkdirSync(dirname(settingsPath), { recursive: true });
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf-8");
-  return false;
 }
 
 /** checks if `mnemo prime` is configured */
