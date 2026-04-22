@@ -1,9 +1,7 @@
 import { existsSync, statSync } from "fs";
-import { join } from "path";
-import { homedir } from "os";
 import { CONFIG_PATH, loadConfig } from "../core/config";
 import { shortenPath } from "../core/paths";
-import { isSkillInstalled, isAgentsInstalled, isHookInstalled, missingAgents } from "./integrations";
+import { isSkillInstalled, isAgentsInstalled, isHookInstalled, missingAgents, skillDir, agentsDir, settingsPath } from "./integrations";
 import { readVersion } from "./package";
 import { DIM, RESET, GREEN, RED } from "./format";
 
@@ -58,9 +56,9 @@ export function runStatus(): void {
   );
 
   // install state
-  const skillPath = shortenPath(join(homedir(), ".claude", "skills", "mnemo"));
-  const agentsGlob = shortenPath(join(homedir(), ".claude", "agents")) + "/mnemo-*.md";
-  const settingsPath = shortenPath(join(homedir(), ".claude", "settings.json"));
+  const skillPath = shortenPath(skillDir());
+  const agentsGlob = shortenPath(agentsDir()) + "/mnemo-*.md";
+  const settingsDisplay = shortenPath(settingsPath());
 
   if (skillOk) {
     console.log(`${DIM}skill  ${RESET} ${skillPath} ${OK}`);
@@ -81,10 +79,10 @@ export function runStatus(): void {
   }
 
   if (hookOk) {
-    console.log(`${DIM}hook   ${RESET} ${settingsPath} ${OK}`);
+    console.log(`${DIM}hook   ${RESET} ${settingsDisplay} ${OK}`);
   } else {
     console.log(
-      `${DIM}hook   ${RESET} ${settingsPath} ${FAIL} missing — run \`mnemo install\``,
+      `${DIM}hook   ${RESET} ${settingsDisplay} ${FAIL} missing — run \`mnemo install\``,
     );
   }
 

@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync, rmSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
-import { homedir } from "os";
 import { CONFIG_PATH } from "../core/config";
+import { skillDir, agentsDir, settingsPath } from "./integrations";
+import type { SessionStartEntry } from "../types/hooks";
 
 // -----------------------------------------------------------------------------
 
@@ -30,7 +31,7 @@ export function runUninstall(): void {
 /** remove mnemo-*.md agents from ~/.claude/agents/ */
 
 function removeAgents(): boolean {
-  const target = join(homedir(), ".claude", "agents");
+  const target = agentsDir();
   if (!existsSync(target)) return false;
 
   const mnemoFiles = readdirSync(target).filter(
@@ -55,16 +56,13 @@ function removeConfig(): boolean {
 /** remove the mnemo prime hook from ~/.claude/settings.json */
 
 function removeHook(): boolean {
-  const settingsPath = join(homedir(), ".claude", "settings.json");
-  if (!existsSync(settingsPath)) return false;
+  const path = settingsPath();
+  if (!existsSync(path)) return false;
 
-  const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
+  const settings = JSON.parse(readFileSync(path, "utf-8"));
 
   const hooks = (settings.hooks ?? {}) as Record<string, unknown>;
-  const sessionStart = (hooks.SessionStart ?? []) as Array<{
-    matcher?: string;
-    hooks?: Array<{ type: string; command: string }>;
-  }>;
+  const sessionStart = (hooks.SessionStart ?? []) as SessionStartEntry[];
 
   const filtered = sessionStart.filter(
     (entry) => !entry.hooks?.some((h) => h.command.includes("mnemo prime")),
@@ -74,14 +72,14 @@ function removeHook(): boolean {
 
   hooks.SessionStart = filtered;
   settings.hooks = hooks;
-  writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf-8");
+  writeFileSync(path, JSON.stringify(settings, null, 2), "utf-8");
   return true;
 }
 
 /** delete ~/.claude/skills/mnemo/ */
 
 function removeSkill(): boolean {
-  const target = join(homedir(), ".claude", "skills", "mnemo");
+  const target = skillDir();
   if (!existsSync(target)) return false;
 
   rmSync(target, { recursive: true, force: true });

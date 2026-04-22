@@ -10,6 +10,7 @@ import {
 import { join, dirname } from "path";
 import { homedir } from "os";
 import { findPackageRoot } from "./package";
+import type { SessionStartEntry } from "../types/hooks";
 
 // -----------------------------------------------------------------------------
 
@@ -19,13 +20,23 @@ export interface InstallResult {
   hook: boolean;
 }
 
-// -----------------------------------------------------------------------------
+/** path to the installed skill directory */
 
-// paths where the skill, agents, and hooks live (used by integrations, status)
+export function skillDir(): string {
+  return join(homedir(), ".claude", "skills", "mnemo");
+}
 
-const SKILL_TARGET = () => join(homedir(), ".claude", "skills", "mnemo");
-const AGENTS_TARGET = () => join(homedir(), ".claude", "agents");
-const SETTINGS_PATH = () => join(homedir(), ".claude", "settings.json");
+/** path to the claude agents directory */
+
+export function agentsDir(): string {
+  return join(homedir(), ".claude", "agents");
+}
+
+/** path to the claude settings file */
+
+export function settingsPath(): string {
+  return join(homedir(), ".claude", "settings.json");
+}
 
 // -----------------------------------------------------------------------------
 
@@ -57,9 +68,9 @@ export function installIntegrations(options: { force?: boolean } = {}): InstallR
 
 /** copy skill files to ~/.claude/skills/mnemo/ (clean install) */
 
-export function installSkill(): void {
+function installSkill(): void {
   const source = join(findPackageRoot(), "skill");
-  const target = SKILL_TARGET();
+  const target = skillDir();
   // clean install — remove stale files before copying
   rmSync(target, { recursive: true, force: true });
   mkdirSync(target, { recursive: true });
@@ -69,7 +80,7 @@ export function installSkill(): void {
 /** checks if the skill exists in the users claude skills directory */
 
 export function isSkillInstalled(): boolean {
-  return existsSync(join(SKILL_TARGET(), "SKILL.md"));
+  return existsSync(join(skillDir(), "SKILL.md"));
 }
 
 // -----------------------------------------------------------------------------
@@ -86,11 +97,11 @@ function expectedAgentFilenames(): string[] {
 
 /** stage agents from agents/ to ~/.claude/agents/ for named discovery */
 
-export function installAgents(): void {
+function installAgents(): void {
   const source = join(findPackageRoot(), "agents");
   if (!existsSync(source)) return;
 
-  const target = AGENTS_TARGET();
+  const target = agentsDir();
   mkdirSync(target, { recursive: true });
 
   for (const file of readdirSync(source)) {
@@ -108,7 +119,7 @@ export function isAgentsInstalled(): boolean {
 /** list of mnemo agents missing from ~/.claude/agents */
 
 export function missingAgents(): string[] {
-  const target = AGENTS_TARGET();
+  const target = agentsDir();
   const expected = expectedAgentFilenames();
   if (expected.length === 0) return [];
   if (!existsSync(target)) return expected;
@@ -125,19 +136,16 @@ function stagedAgentName(sourceFile: string): string {
 
 /** add SessionStart hook to ~/.claude/settings.json */
 
-export function installHook(): void {
-  const settingsPath = SETTINGS_PATH();
+function installHook(): void {
+  const path = settingsPath();
 
   let settings: Record<string, unknown> = {};
-  if (existsSync(settingsPath)) {
-    settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
+  if (existsSync(path)) {
+    settings = JSON.parse(readFileSync(path, "utf-8"));
   }
 
   const hooks = (settings.hooks ?? {}) as Record<string, unknown>;
-  const sessionStart = (hooks.SessionStart ?? []) as Array<{
-    matcher?: string;
-    hooks?: Array<{ type: string; command: string }>;
-  }>;
+  const sessionStart = (hooks.SessionStart ?? []) as SessionStartEntry[];
 
   // prevent duplicate entries on force reinstall
   const alreadyInstalled = sessionStart.some((entry) =>
@@ -154,28 +162,26 @@ export function installHook(): void {
   hooks.SessionStart = sessionStart;
   settings.hooks = hooks;
 
-  mkdirSync(dirname(settingsPath), { recursive: true });
-  writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf-8");
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, JSON.stringify(settings, null, 2), "utf-8");
 }
 
 /** checks if `mnemo prime` is configured */
 
 export function isHookInstalled(): boolean {
-  const settingsPath = SETTINGS_PATH();
-  if (!existsSync(settingsPath)) return false;
+  const path = settingsPath();
+  if (!existsSync(path)) return false;
 
   let settings: Record<string, unknown>;
   try {
-    settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
+    settings = JSON.parse(readFileSync(path, "utf-8"));
   } catch {
     // malformed settings file
     return false;
   }
 
   const hooks = (settings.hooks ?? {}) as Record<string, unknown>;
-  const sessionStart = (hooks.SessionStart ?? []) as Array<{
-    hooks?: Array<{ command: string }>;
-  }>;
+  const sessionStart = (hooks.SessionStart ?? []) as SessionStartEntry[];
 
   return sessionStart.some((entry) =>
     entry.hooks?.some((h) => h.command.includes("mnemo prime")),
