@@ -3,6 +3,7 @@ import { CLIError } from "./errors";
 import { shortenPath } from "./config";
 import { resolvePath } from "./paths";
 import { collectFiles } from "./scan";
+import type { Bases } from "../types/bases";
 
 // ----------------------------------------------------------------------------
 
@@ -15,7 +16,7 @@ export interface ParsedBasePath {
 
 /** list of bases for error output */
 
-export function formatBasesHint(bases: Record<string, string>): string {
+export function formatBasesHint(bases: Bases): string {
   const entries = Object.entries(bases).sort(([a], [b]) => a.localeCompare(b));
   if (entries.length === 0) return "";
 
@@ -41,7 +42,7 @@ export function parseBasePath(input: string): ParsedBasePath {
 /** resolve a base-prefixed path to an absolute path */
 
 export function resolveBasePath(
-  bases: Record<string, string>,
+  bases: Bases,
   input: string,
 ): string {
   const { baseName, relativePath } = parseBasePath(input);
@@ -60,7 +61,7 @@ export function resolveBasePath(
 
 /** resolve a base-prefixed path to absolute paths, returns [] if not found */
 
-export function resolveToFiles(bases: Record<string, string>, path: string): string[] {
+export function resolveToFiles(bases: Bases, path: string): string[] {
   const absolute = resolveBasePath(bases, path);
 
   if (!existsSync(absolute)) return [];

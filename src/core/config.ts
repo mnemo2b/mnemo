@@ -85,7 +85,7 @@ export function saveConfig(update: Partial<Config>): void {
   const current = loadConfig();
 
   const bases = update.bases ?? current.bases;
-  const shortBases: Record<string, string> = {};
+  const shortBases: Bases = {};
   for (const [name, absolutePath] of Object.entries(bases)) {
     shortBases[name] = shortenPath(absolutePath);
   }
