@@ -1,11 +1,13 @@
 import { installSkill, installAgents, installHook } from "./install";
 
-/** Install skill files and session hook */
+// -----------------------------------------------------------------------------
+
+/** installs skill, agents, and session hook */
+
 export function runSetup(): void {
   installSkill();
   installAgents();
   const hookExisted = installHook();
-
   const hookNote = hookExisted ? " (already configured)" : "";
 
   console.log("mnemo is ready.");
@@ -14,14 +16,10 @@ export function runSetup(): void {
   console.log("  agents   ~/.claude/agents/mnemo-*.md");
   console.log(`  hook     ~/.claude/settings.json${hookNote}`);
   console.log("");
-  console.log("next, add a knowledge base:");
+  console.log("get started:");
   console.log("");
-  console.log("  mnemo base add <name> <path>");
+  console.log("  mnemo base add <name> <path>       register a knowledge base");
+  console.log("  mnemo set add <name> <paths...>    collect files into reusable sets");
   console.log("");
-  console.log("when you start a Claude Code session, send any message");
-  console.log("and Claude will present your sets automatically.");
-  console.log("");
-  console.log("to create sets, run:");
-  console.log("");
-  console.log("  mnemo set add <name> <paths...>");
+  console.log("your sets and knowledge bases will be available in Claude Code.");
 }
