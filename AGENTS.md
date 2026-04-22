@@ -1,5 +1,7 @@
 # mnemo
 
+> `CLAUDE.md` is a symlink to this file. Edit `AGENTS.md` directly.
+
 A personal context layer that sits above your AI tools. Instead of each tool starting cold, mnemo gives them access to your knowledge — conventions, research, preferences, domain expertise — so every AI interaction starts informed.
 
 ## Vision
