@@ -47,7 +47,7 @@ Not needed for: development with `bun src/cli.ts` directly.
 
 ## Style
 
-- Sections: imports, types/constants, and functions are separate sections — use 80-char `// ---` separators between them, not between peer functions within a section
+- Separators: 80-char `// ---` lines. Place between imports, types/constants, and functions. In single-responsibility files, also between exports and private helpers. In multi-responsibility files, between each responsibility group. Never between peer functions within the same group.
 - JSDoc: lowercase, on all functions, blank line before function signature
 - Ordering: sections first, export at the top of its section, supporting functions below alphabetically
 - Breathing room: blank lines between logic blocks inside functions
