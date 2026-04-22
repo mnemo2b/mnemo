@@ -23,6 +23,13 @@ export interface BuildTreeOptions {
   skipTokens?: boolean;
 }
 
+interface TreeLine {
+  structure: string;
+  name: string;
+  tokens: string;
+  isDirectory: boolean;
+}
+
 // -----------------------------------------------------------------------------
 
 /** browse the base as a tree */
@@ -162,13 +169,6 @@ function printTree(rootLabel: string, nodes: TreeNode[]): void {
 
   console.log("");
   console.log(`${dirs} directories, ${files} files${tokenSuffix}`);
-}
-
-interface TreeLine {
-  structure: string;
-  name: string;
-  tokens: string;
-  isDirectory: boolean;
 }
 
 /** render tree lines with box-drawing connectors */
