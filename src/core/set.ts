@@ -13,6 +13,21 @@ export function formatSetsHint(sets: Sets): string {
   return `\n\nsets:\n${list}`;
 }
 
+/** merge global and project sets — project overrides global on collision */
+
+export function mergeSets(global: Sets, project: Sets): Sets {
+  const merged = { ...global };
+
+  for (const name of Object.keys(project)) {
+    if (merged[name]) {
+      console.error(`set "${name}" defined in both global and project config — using project`);
+    }
+    merged[name] = project[name]!;
+  }
+
+  return merged;
+}
+
 /** resolve a set name to a list of paths */
 
 export function resolveSet(name: string, sets: Sets): string[] {

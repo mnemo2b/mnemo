@@ -1,7 +1,7 @@
-import { loadConfig, loadProjectConfig, mergeSets } from "@/core/config";
+import { loadConfig, loadProjectConfig } from "@/core/config";
 import { CLIError } from "@/core/errors";
 import { resolveToFiles } from "@/core/base";
-import { resolveSet } from "@/core/set";
+import { mergeSets, resolveSet } from "@/core/set";
 
 // -----------------------------------------------------------------------------
 

@@ -65,21 +65,6 @@ export function loadProjectConfig(cwd: string): ProjectConfig {
   return { sets };
 }
 
-/** merge global and project sets — project overrides global on collision */
-
-export function mergeSets(global: Sets, project: Sets): Sets {
-  const merged = { ...global };
-
-  for (const name of Object.keys(project)) {
-    if (merged[name]) {
-      console.error(`set "${name}" defined in both global and project config — using project`);
-    }
-    merged[name] = project[name]!;
-  }
-
-  return merged;
-}
-
 /** write a partial config update — reads current config, merges, writes back */
 
 export function saveConfig(update: Partial<Config>): void {

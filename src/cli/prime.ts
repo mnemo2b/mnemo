@@ -1,6 +1,6 @@
-import { loadConfig, loadProjectConfig, mergeSets } from "@/core/config";
+import { loadConfig, loadProjectConfig } from "@/core/config";
 import { shortenPath } from "@/core/paths";
-import { resolveSet } from "@/core/set";
+import { mergeSets, resolveSet } from "@/core/set";
 import { buildTree, type TreeNode } from "@/cli/list";
 
 // -----------------------------------------------------------------------------
