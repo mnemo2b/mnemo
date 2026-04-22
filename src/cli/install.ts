@@ -10,11 +10,16 @@ export async function runInstall(args: string[] = []): Promise<void> {
   const force = args.includes("--force");
 
   if (force) {
-    const confirmed = await confirm(
-      `this will overwrite:\n  - skill    ${DIM}~/.claude/skills/mnemo/${RESET}\n  - agents   ${DIM}~/.claude/agents/mnemo-*.md${RESET}\n  - hook     ${DIM}~/.claude/settings.json${RESET}\n\ncontinue? (y/n)`,
-    );
+    const message = [
+      "this will overwrite:",
+      `  - skill    ${DIM}~/.claude/skills/mnemo/${RESET}`,
+      `  - agents   ${DIM}~/.claude/agents/mnemo-*.md${RESET}`,
+      `  - hook     ${DIM}~/.claude/settings.json${RESET}`,
+      "",
+      "continue? (y/n)",
+    ].join("\n");
 
-    if (!confirmed) {
+    if (!await confirm(message)) {
       console.log("cancelled.");
       return;
     }

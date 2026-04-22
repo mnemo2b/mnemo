@@ -1,6 +1,5 @@
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, realpathSync } from "fs";
 import { join, dirname } from "path";
-import { realpathSync } from "fs";
 
 // -----------------------------------------------------------------------------
 
