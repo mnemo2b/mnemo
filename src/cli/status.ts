@@ -1,7 +1,8 @@
 import { existsSync, statSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
-import { CONFIG_PATH, loadConfig, shortenPath } from "../core/config";
+import { CONFIG_PATH, loadConfig } from "../core/config";
+import { shortenPath } from "../core/paths";
 import { isSkillInstalled, isAgentsInstalled, isHookInstalled, missingAgents } from "./integrations";
 import { readVersion } from "./package";
 import { DIM, RESET, GREEN, RED } from "./format";

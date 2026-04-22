@@ -1,7 +1,27 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "path";
-import { resolvePath } from "../../src/core/paths";
+import { homedir } from "os";
+import { expandPath, resolvePath, shortenPath } from "../../src/core/paths";
 import { FIXTURES_DIR } from "../helpers/fixtures";
+
+describe("expandPath", () => {
+  const home = homedir();
+
+  test("expands ~ to home directory", () => {
+    expect(expandPath("~/projects/mnemo")).toBe(`${home}/projects/mnemo`);
+  });
+
+  test("resolves relative paths to absolute", () => {
+    const result = expandPath("relative/path");
+
+    expect(result).toMatch(/^\//);
+    expect(result).toEndWith("relative/path");
+  });
+
+  test("leaves absolute paths unchanged", () => {
+    expect(expandPath("/usr/local/bin")).toBe("/usr/local/bin");
+  });
+});
 
 describe("resolvePath", () => {
   test("returns exact path when file exists", () => {
@@ -29,5 +49,21 @@ describe("resolvePath", () => {
     const result = resolvePath(FIXTURES_DIR, "topic-a");
 
     expect(result).toBe(join(FIXTURES_DIR, "topic-a"));
+  });
+});
+
+describe("shortenPath", () => {
+  const home = homedir();
+
+  test("replaces home directory with ~", () => {
+    expect(shortenPath(`${home}/projects/mnemo`)).toBe("~/projects/mnemo");
+  });
+
+  test("leaves non-home paths unchanged", () => {
+    expect(shortenPath("/usr/local/bin")).toBe("/usr/local/bin");
+  });
+
+  test("handles exact home directory", () => {
+    expect(shortenPath(home)).toBe("~");
   });
 });

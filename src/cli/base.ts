@@ -1,7 +1,6 @@
 import { existsSync, statSync } from "fs";
-import { resolve } from "path";
-import { homedir } from "os";
-import { loadConfig, saveConfig, shortenPath } from "../core/config";
+import { loadConfig, saveConfig } from "../core/config";
+import { expandPath, shortenPath } from "../core/paths";
 import { CLIError } from "../core/errors";
 import { formatBasesHint } from "../core/base";
 import { isValidBaseName } from "../core/validations";
@@ -42,7 +41,7 @@ function baseAdd(name: string | undefined, rawPath: string | undefined): void {
     ].join("\n"));
   }
 
-  const absolutePath = resolveUserPath(rawPath);
+  const absolutePath = expandPath(rawPath);
 
   if (!existsSync(absolutePath) || !statSync(absolutePath).isDirectory()) {
     throw new CLIError(`failed: not a directory: ${rawPath}`);
@@ -102,7 +101,7 @@ function baseMove(name: string | undefined, rawPath: string | undefined): void {
     throw new CLIError(`unknown base: "${name}"${formatBasesHint(bases)}`);
   }
 
-  const absolutePath = resolveUserPath(rawPath);
+  const absolutePath = expandPath(rawPath);
 
   if (!existsSync(absolutePath) || !statSync(absolutePath).isDirectory()) {
     throw new CLIError(`failed: not a directory: ${rawPath}`);
@@ -181,16 +180,4 @@ function baseRename(oldName: string | undefined, newName: string | undefined): v
     : "";
 
   console.log(`renamed base "${oldName}" → "${newName}"${hint}`);
-}
-
-// -----------------------------------------------------------------------------
-
-/** expand ~ and resolve to absolute path */
-
-function resolveUserPath(rawPath: string): string {
-  const expanded = rawPath.startsWith("~")
-    ? rawPath.replace("~", homedir())
-    : rawPath;
-
-  return resolve(expanded);
 }

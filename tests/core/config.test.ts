@@ -1,23 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { spyOn } from "bun:test";
-import { shortenPath, mergeSets } from "../../src/core/config";
-import { homedir } from "os";
-
-describe("shortenPath", () => {
-  const home = homedir();
-
-  test("replaces home directory with ~", () => {
-    expect(shortenPath(`${home}/projects/mnemo`)).toBe("~/projects/mnemo");
-  });
-
-  test("leaves non-home paths unchanged", () => {
-    expect(shortenPath("/usr/local/bin")).toBe("/usr/local/bin");
-  });
-
-  test("handles exact home directory", () => {
-    expect(shortenPath(home)).toBe("~");
-  });
-});
+import { mergeSets } from "../../src/core/config";
 
 describe("mergeSets", () => {
   test("combines non-colliding sets", () => {

@@ -3,6 +3,7 @@ import { resolve, dirname, join } from "path";
 import { homedir } from "os";
 import { parse, stringify } from "yaml";
 import { CLIError } from "./errors";
+import { expandPath, shortenPath } from "./paths";
 import type { Bases } from "../types/bases";
 import type { Sets } from "../types/sets";
 import type { Config, ProjectConfig } from "../types/config";
@@ -99,20 +100,6 @@ export function saveConfig(update: Partial<Config>): void {
 
   mkdirSync(dirname(CONFIG_PATH), { recursive: true });
   writeFileSync(CONFIG_PATH, stringify(output), "utf-8");
-}
-
-/** replace home directory with ~ for display */
-
-export function shortenPath(path: string): string {
-  const home = homedir();
-  return path.startsWith(home) ? path.replace(home, "~") : path;
-}
-
-/** expand ~ to home directory and resolve to absolute path */
-
-function expandPath(path: string): string {
-  const expanded = path.startsWith("~") ? path.replace("~", homedir()) : path;
-  return resolve(expanded);
 }
 
 /** parse a raw sets object from yaml into a validated Sets record */
