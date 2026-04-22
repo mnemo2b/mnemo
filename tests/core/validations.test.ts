@@ -1,15 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { isValidName, isValidSetName } from "../../src/core/validate-name";
+import { isValidBaseName, isValidSetName } from "../../src/core/validations";
 
-describe("isValidName", () => {
+describe("isValidBaseName", () => {
   test.each(["personal", "my-notes", "work2", "a", "notes-123", "_hidden", "my_notes"])
     ("accepts valid base name: %s", (name) => {
-      expect(isValidName(name)).toBe(true);
+      expect(isValidBaseName(name)).toBe(true);
     });
 
   test.each(["My Notes", "personal/sub", "", "UPPER", "has space", "with.dot"])
     ("rejects invalid base name: %s", (name) => {
-      expect(isValidName(name)).toBe(false);
+      expect(isValidBaseName(name)).toBe(false);
     });
 });
 

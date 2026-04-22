@@ -2,7 +2,7 @@ const BASE_NAME_PATTERN = /^[a-z0-9_-]+$/;
 const SET_NAME_PATTERN = /^[a-z0-9_-]+(?:\/[a-z0-9_-]+)*$/;
 
 /** Check if a name is valid for bases (lowercase alphanumeric + hyphens + underscores) */
-export function isValidName(name: string): boolean {
+export function isValidBaseName(name: string): boolean {
   return BASE_NAME_PATTERN.test(name);
 }
 

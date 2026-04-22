@@ -4,7 +4,7 @@ import { homedir } from "os";
 import { loadConfig, saveConfig, shortenPath } from "../core/config";
 import { CLIError } from "../core/errors";
 import { formatBasesHint } from "../core/base";
-import { isValidName } from "../core/validate-name";
+import { isValidBaseName } from "../core/validations";
 import { DIM, RESET } from "./format";
 import { installIntegrations } from "./integrations";
 
@@ -32,7 +32,7 @@ function baseAdd(name: string | undefined, rawPath: string | undefined): void {
     throw new CLIError("usage: mnemo base add <name> <path>");
   }
 
-  if (!isValidName(name)) {
+  if (!isValidBaseName(name)) {
     throw new CLIError(
       "failed: base name must be:\n  - lowercase letters\n  - numbers\n  - hyphens\n  - underscores",
     );
@@ -135,7 +135,7 @@ function baseRename(oldName: string | undefined, newName: string | undefined): v
     throw new CLIError("usage: mnemo base rename <old-name> <new-name>");
   }
 
-  if (!isValidName(newName)) {
+  if (!isValidBaseName(newName)) {
     throw new CLIError(
       "failed: base name must be:\n  - lowercase letters\n  - numbers\n  - hyphens\n  - underscores",
     );
