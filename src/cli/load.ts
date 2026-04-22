@@ -2,7 +2,12 @@ import { loadConfig, loadProjectConfig, mergeSets } from "../core/config";
 import { CLIError } from "../core/errors";
 import { resolveToFiles } from "../core/base";
 import { resolveSet } from "../core/set";
-import { parseLoadItems } from "../core/parse-items";
+
+// ----------------------------------------------------------------------------
+
+export type LoadItem =
+  | { type: "set"; name: string }
+  | { type: "path"; path: string };
 
 // ----------------------------------------------------------------------------
 
@@ -53,4 +58,18 @@ export function runLoad(args: string[]): void {
       }
     }
   }
+}
+
+/** parse space-separated input into structured load items */
+
+export function parseLoadItems(input: string): LoadItem[] {
+  return input
+    .split(/\s+/)
+    .filter((s) => s.length > 0)
+    .map((s) => {
+      if (s.startsWith(":")) {
+        return { type: "set", name: s.slice(1) };
+      }
+      return { type: "path", path: s };
+    });
 }
