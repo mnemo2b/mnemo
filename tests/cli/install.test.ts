@@ -178,6 +178,21 @@ describe("install --force", () => {
     cleanupTempDir(home);
   });
 
+  test("does not duplicate hook entry on repeated force install", async () => {
+    const home = makeTempHome();
+
+    await runCli(["install", "--force"], { home, stdin: "y\n" });
+    await runCli(["install", "--force"], { home, stdin: "y\n" });
+
+    const settingsPath = join(home, ".claude", "settings.json");
+    const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
+    const sessionStart = settings.hooks.SessionStart;
+
+    expect(sessionStart.length).toBe(1);
+
+    cleanupTempDir(home);
+  });
+
   test("cancels when user declines", async () => {
     const home = makeTempHome();
 
