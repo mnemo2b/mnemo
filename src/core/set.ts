@@ -1,7 +1,7 @@
 import { CLIError } from "./errors";
 import type { Sets } from "../types/sets";
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 /** helpful list of available sets for output */
 

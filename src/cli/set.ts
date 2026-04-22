@@ -4,7 +4,7 @@ import { resolveSet, formatSetsHint } from "../core/set";
 import { isValidSetName } from "../core/validations";
 import { DIM, RESET } from "./format";
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 /** dispatches set subcommands */
 

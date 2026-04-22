@@ -181,5 +181,3 @@ export function isHookInstalled(): boolean {
     entry.hooks?.some((h) => h.command.includes("mnemo prime")),
   );
 }
-
-

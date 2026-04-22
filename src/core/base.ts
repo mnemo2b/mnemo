@@ -4,14 +4,14 @@ import { resolvePath, shortenPath } from "./paths";
 import { collectFiles } from "./scan";
 import type { Bases } from "../types/bases";
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 export interface ParsedBasePath {
   baseName: string;
   relativePath: string | null;
 }
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 /** list of bases for error output */
 

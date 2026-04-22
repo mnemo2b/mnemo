@@ -3,13 +3,13 @@ import { CLIError } from "../core/errors";
 import { resolveToFiles } from "../core/base";
 import { resolveSet } from "../core/set";
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 export type LoadItem =
   | { type: "set"; name: string }
   | { type: "path"; path: string };
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 /** resolves paths/sets to files and prints to stdout */
 

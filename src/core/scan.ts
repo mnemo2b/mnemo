@@ -2,14 +2,14 @@ import { readdirSync } from "fs";
 import { join } from "path";
 import type { Dirent } from "fs";
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 interface ScanResult {
   dirs: Dirent[];
   files: Dirent[];
 }
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 /** scan a directory and return sorted dirs and markdown files, skipping hidden entries */
 

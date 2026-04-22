@@ -2,7 +2,7 @@ import { existsSync } from "fs";
 import { resolve } from "path";
 import { homedir } from "os";
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 /** expand ~ to home directory and resolve to absolute path */
 

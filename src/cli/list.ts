@@ -120,8 +120,7 @@ export function buildTree(dir: string, options: BuildTreeOptions = {}, currentDe
   const { dirs, files } = scanDirectory(dir);
   const nodes: TreeNode[] = [];
 
-  // depth controls display, not recursion
-	// always recurse for accurate token counts
+  // depth controls display, not recursion — always recurse for accurate token counts
   const atLimit = maxDepth !== undefined && currentDepth >= maxDepth;
 
   for (const d of dirs) {

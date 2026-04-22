@@ -3,7 +3,7 @@ import { shortenPath } from "../core/paths";
 import { resolveSet } from "../core/set";
 import { buildTree, type TreeNode } from "./list";
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 /** outputs knowledge base info for the SessionStart hooks */
 
@@ -70,7 +70,7 @@ export function runPrime(): void {
   }
 }
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 /** renders a tree with plain indentation (no boxes, for agent context) */
 

@@ -7,7 +7,8 @@ export const RED = setColor("\x1b[31m");
 
 // -----------------------------------------------------------------------------
 
-/** Format token counts with tiered rounding */
+/** format token counts with tiered rounding */
+
 export function formatTokens(tokens: number): string {
 
   // 10k+ → nearest 1k: "12k", "36k"
@@ -32,9 +33,8 @@ export function formatTokens(tokens: number): string {
 
 // -----------------------------------------------------------------------------
 
-function setColor(color: string): string {
-	// only used when stdout is a terminal
-	const value = isTTY ? color : "";
-	return value;
-}
+/** return ansi code only when stdout is a terminal */
 
+function setColor(color: string): string {
+  return isTTY ? color : "";
+}

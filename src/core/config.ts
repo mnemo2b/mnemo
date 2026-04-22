@@ -8,12 +8,12 @@ import type { Bases } from "../types/bases";
 import type { Sets } from "../types/sets";
 import type { Config, ProjectConfig } from "../types/config";
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 export const CONFIG_PATH =
   process.env.MNEMO_CONFIG ?? resolve(homedir(), ".config/mnemo/config.yml");
 
-// ----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 /** read global config from ~/.config/mnemo/config.yml */
 
