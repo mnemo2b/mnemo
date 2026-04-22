@@ -139,6 +139,13 @@ export function installHook(): void {
     hooks?: Array<{ type: string; command: string }>;
   }>;
 
+  // prevent duplicate entries on force reinstall
+  const alreadyInstalled = sessionStart.some((entry) =>
+    entry.hooks?.some((h) => h.command.includes("mnemo prime")),
+  );
+
+  if (alreadyInstalled) return;
+
   sessionStart.push({
     matcher: "",
     hooks: [{ type: "command", command: "mnemo prime" }],
