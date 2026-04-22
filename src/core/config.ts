@@ -3,23 +3,14 @@ import { resolve, dirname, join } from "path";
 import { homedir } from "os";
 import { parse, stringify } from "yaml";
 import { CLIError } from "./errors";
-import type { Sets } from "./set";
+import type { Bases } from "../types/bases";
+import type { Sets } from "../types/sets";
+import type { Config, ProjectConfig } from "../types/config";
 
 // ----------------------------------------------------------------------------
 
 export const CONFIG_PATH =
   process.env.MNEMO_CONFIG ?? resolve(homedir(), ".config/mnemo/config.yml");
-
-export type Bases = Record<string, string>;
-
-export interface Config {
-  bases: Bases;
-  sets: Sets;
-}
-
-export interface ProjectConfig {
-  sets: Sets;
-}
 
 // ----------------------------------------------------------------------------
 
