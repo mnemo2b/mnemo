@@ -9,15 +9,14 @@ import { DIM, RESET } from "./format";
 /** dispatches set subcommands */
 
 export function runSet(args: string[]): void {
-  const subcommand = args[0];
-
-  if (subcommand === "list") return setList();
-  if (subcommand === "show") return setShow(args[1]);
-  if (subcommand === "add") return setAdd(args[1], args.slice(2));
-  if (subcommand === "remove") return setRemove(args[1]);
-  if (subcommand === "rename") return setRename(args[1], args[2]);
-
-  throw new CLIError("usage: mnemo set <list|show|add|remove|rename>");
+  switch (args[0]) {
+    case "list": return setList();
+    case "show": return setShow(args[1]);
+    case "add": return setAdd(args[1], args.slice(2));
+    case "remove": return setRemove(args[1]);
+    case "rename": return setRename(args[1], args[2]);
+    default: throw new CLIError("usage: mnemo set <list|show|add|remove|rename>");
+  }
 }
 
 /** creates a new set or appends paths to an existing one */

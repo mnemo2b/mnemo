@@ -120,7 +120,7 @@ export function buildTree(dir: string, options: BuildTreeOptions = {}, currentDe
   const { dirs, files } = scanDirectory(dir);
   const nodes: TreeNode[] = [];
 
-  // depth controls display, not recursion — always recurse for accurate token counts
+  // depth controls display, always recurse for accurate token counts
   const atLimit = maxDepth !== undefined && currentDepth >= maxDepth;
 
   for (const d of dirs) {
@@ -152,6 +152,47 @@ export function buildTree(dir: string, options: BuildTreeOptions = {}, currentDe
 }
 
 // -----------------------------------------------------------------------------
+
+/** count directories and files in a tree */
+
+function countTree(nodes: TreeNode[]): { dirs: number; files: number } {
+  let dirs = 0;
+  let files = 0;
+
+  for (const node of nodes) {
+    if (node.type === "directory") {
+      dirs++;
+      const sub = countTree(node.children);
+      dirs += sub.dirs;
+      files += sub.files;
+    } else {
+      files++;
+    }
+  }
+
+  return { dirs, files };
+}
+
+/** print lines with dimming for files and right-aligned token counts */
+
+function printLines(lines: TreeLine[]): void {
+  const maxWidth = lines.reduce(
+    (max, line) => Math.max(max, line.structure.length + line.name.length),
+    0,
+  );
+
+  for (const line of lines) {
+    const plainWidth = line.structure.length + line.name.length;
+    const padding = line.tokens ? " ".repeat(maxWidth - plainWidth + 3) : "";
+    const tokenPart = line.tokens ? `${padding}${line.tokens}` : "";
+
+    if (line.isDirectory) {
+      console.log(`${line.structure}${line.name}${tokenPart}`);
+    } else {
+      console.log(`${line.structure}${DIM}${line.name}${tokenPart}${RESET}`);
+    }
+  }
+}
 
 /** print a full tree with summary line */
 
@@ -194,45 +235,4 @@ function renderTree(nodes: TreeNode[], prefix: string): TreeLine[] {
   });
 
   return lines;
-}
-
-/** print lines with dimming for files and right-aligned token counts */
-
-function printLines(lines: TreeLine[]): void {
-  const maxWidth = lines.reduce(
-    (max, line) => Math.max(max, line.structure.length + line.name.length),
-    0,
-  );
-
-  for (const line of lines) {
-    const plainWidth = line.structure.length + line.name.length;
-    const padding = line.tokens ? " ".repeat(maxWidth - plainWidth + 3) : "";
-    const tokenPart = line.tokens ? `${padding}${line.tokens}` : "";
-
-    if (line.isDirectory) {
-      console.log(`${line.structure}${line.name}${tokenPart}`);
-    } else {
-      console.log(`${line.structure}${DIM}${line.name}${tokenPart}${RESET}`);
-    }
-  }
-}
-
-/** count directories and files in a tree */
-
-function countTree(nodes: TreeNode[]): { dirs: number; files: number } {
-  let dirs = 0;
-  let files = 0;
-
-  for (const node of nodes) {
-    if (node.type === "directory") {
-      dirs++;
-      const sub = countTree(node.children);
-      dirs += sub.dirs;
-      files += sub.files;
-    } else {
-      files++;
-    }
-  }
-
-  return { dirs, files };
 }
