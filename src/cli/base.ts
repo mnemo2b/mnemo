@@ -5,7 +5,7 @@ import { CLIError } from "../core/errors";
 import { formatBasesHint } from "../core/base";
 import { isValidBaseName } from "../core/validations";
 import { DIM, RESET } from "./format";
-import { installIntegrations } from "./integrations";
+import { installIntegrations } from "./claude";
 
 // -----------------------------------------------------------------------------
 

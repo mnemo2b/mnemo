@@ -1,5 +1,5 @@
 import { createInterface } from "readline";
-import { installIntegrations } from "./integrations";
+import { installIntegrations } from "./claude";
 import { DIM, RESET } from "./format";
 
 // -----------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync, rmSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
 import { CONFIG_PATH } from "../core/config";
-import { skillDir, agentsDir, settingsPath } from "./integrations";
+import { skillDir, agentsDir, settingsPath } from "./claude";
 import type { SessionStartEntry } from "../types/hooks";
 
 // -----------------------------------------------------------------------------

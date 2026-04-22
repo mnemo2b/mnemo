@@ -20,6 +20,8 @@ export interface InstallResult {
   hook: boolean;
 }
 
+// -----------------------------------------------------------------------------
+
 /** path to the installed skill directory */
 
 export function skillDir(): string {
@@ -40,7 +42,7 @@ export function settingsPath(): string {
 
 // -----------------------------------------------------------------------------
 
-/** install skill, agents, and hook — skips what's already in place */
+/** install skill, agents, and hook (if necessary) */
 
 export function installIntegrations(options: { force?: boolean } = {}): InstallResult {
   const { force = false } = options;
