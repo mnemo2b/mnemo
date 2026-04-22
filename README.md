@@ -83,7 +83,7 @@ mnemo base add notes ~/notes
 
 That's it. Your first `mnemo base add` automatically wires Claude Code — installing a SessionStart hook that primes every session with a map of your knowledge base, plus a skill that teaches Claude the `mnemo list` and `mnemo load` commands. The hook is the important one. Without it, the agent doesn't know your KB exists when it interprets a question — ask "what do I have on Svelte?" cold and it might grep your filesystem instead of loading `notes/code/svelte`.
 
-If you ever need to reinstall the skill or hook (say you removed them by hand), run `mnemo setup` to put them back.
+If you ever need to reinstall the skill or hook (say you removed them by hand), run `mnemo install` to put them back.
 
 ## Bases
 
@@ -149,7 +149,7 @@ Start a Claude Code session from that directory and the set is available automat
 
 ## Claude Code
 
-`mnemo setup` installs two things:
+`mnemo install` sets up two things:
 
 - A **SessionStart hook** that runs `mnemo prime` — injects your bases, sets, and a shallow tree into the session at startup. This is what lets the agent route "my cooking notes" to the right path without exploring first.
 - A **skill** that teaches Claude the `mnemo list` and `mnemo load` commands. Activates when you use those keywords explicitly.
@@ -178,9 +178,9 @@ mnemo load <path|:set ...>          load notes into context
 mnemo prime                         prime an agent with available sets
 mnemo base <add|remove|move|rename|list>
 mnemo set <add|remove|rename|show|list>
-mnemo setup                         install skill + session hook
-mnemo teardown                      remove skill + session hook + config
-mnemo doctor                        check install state and KB wiring
+mnemo install [--force]              install skill + agents + session hook
+mnemo uninstall                     remove skill + agents + session hook + config
+mnemo status                        check install state and KB wiring
 ```
 
 ## Configuration
@@ -217,7 +217,7 @@ sets:
 First, remove the skill, session hook, and config:
 
 ```sh
-mnemo teardown
+mnemo uninstall
 ```
 
 Then remove the package:

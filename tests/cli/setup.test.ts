@@ -4,14 +4,14 @@ import { join } from "path";
 import { runCli } from "../helpers/run-cli";
 import { makeTempHome, cleanupTempDir } from "../helpers/fixtures";
 
-describe("setup command", () => {
+describe("install command", () => {
   test("installs skill files", async () => {
     const home = makeTempHome();
 
-    const { exitCode, stdout } = await runCli(["setup"], { home });
+    const { exitCode, stdout } = await runCli(["install"], { home });
 
     expect(exitCode).toBe(0);
-    expect(stdout).toContain("mnemo is ready.");
+    expect(stdout).toContain("installed:");
     expect(stdout).toContain("skill");
 
     // skill routing table exists
@@ -30,7 +30,7 @@ describe("setup command", () => {
   test("stages mnemo-*.md agents for Claude Code discovery", async () => {
     const home = makeTempHome();
 
-    const { exitCode, stdout } = await runCli(["setup"], { home });
+    const { exitCode, stdout } = await runCli(["install"], { home });
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain("agents");
@@ -46,7 +46,7 @@ describe("setup command", () => {
   test("adds session hook to settings.json", async () => {
     const home = makeTempHome();
 
-    const { exitCode, stdout } = await runCli(["setup"], { home });
+    const { exitCode, stdout } = await runCli(["install"], { home });
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain("hook");
@@ -62,14 +62,14 @@ describe("setup command", () => {
     cleanupTempDir(home);
   });
 
-  test("idempotent — no duplicate hooks on second run", async () => {
+  test("idempotent — second run reports already installed", async () => {
     const home = makeTempHome();
 
-    await runCli(["setup"], { home });
-    const { exitCode, stdout } = await runCli(["setup"], { home });
+    await runCli(["install"], { home });
+    const { exitCode, stdout } = await runCli(["install"], { home });
 
     expect(exitCode).toBe(0);
-    expect(stdout).toContain("already configured");
+    expect(stdout).toContain("already installed");
 
     const settingsPath = join(home, ".claude", "settings.json");
     const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
@@ -93,7 +93,7 @@ describe("setup command", () => {
       "utf-8",
     );
 
-    const { exitCode } = await runCli(["setup"], { home });
+    const { exitCode } = await runCli(["install"], { home });
 
     expect(exitCode).toBe(0);
 
@@ -115,13 +115,89 @@ describe("setup command", () => {
     const settingsPath = join(home, ".claude", "settings.json");
     expect(existsSync(settingsPath)).toBe(false);
 
-    const { exitCode } = await runCli(["setup"], { home });
+    const { exitCode } = await runCli(["install"], { home });
 
     expect(exitCode).toBe(0);
     expect(existsSync(settingsPath)).toBe(true);
 
     const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
     expect(settings.hooks.SessionStart).toBeArray();
+
+    cleanupTempDir(home);
+  });
+
+  test("installs only what's missing", async () => {
+    const home = makeTempHome();
+
+    // first install — everything
+    await runCli(["install"], { home });
+
+    // remove only agents, leave skill and hook
+    const { rmSync } = await import("fs");
+    rmSync(join(home, ".claude", "agents"), { recursive: true, force: true });
+
+    const { exitCode, stdout } = await runCli(["install"], { home });
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("installed:");
+    expect(stdout).toContain("agents");
+    // skill and hook were already there — not reinstalled
+    expect(stdout).not.toContain("skill");
+    expect(stdout).not.toContain("hook");
+
+    // agents are back
+    expect(existsSync(join(home, ".claude", "agents", "mnemo-save.md"))).toBe(true);
+
+    cleanupTempDir(home);
+  });
+});
+
+describe("install --force", () => {
+  test("reinstalls everything when confirmed", async () => {
+    const home = makeTempHome();
+
+    await runCli(["install"], { home });
+
+    // modify a skill file to verify it gets overwritten
+    const skillFile = join(home, ".claude", "skills", "mnemo", "SKILL.md");
+    const originalContent = readFileSync(skillFile, "utf-8");
+    writeFileSync(skillFile, "modified content", "utf-8");
+
+    const { exitCode, stdout } = await runCli(
+      ["install", "--force"],
+      { home, stdin: "y\n" },
+    );
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("this will overwrite:");
+    expect(stdout).toContain("installed:");
+
+    // skill file restored to original
+    expect(readFileSync(skillFile, "utf-8")).toBe(originalContent);
+
+    cleanupTempDir(home);
+  });
+
+  test("cancels when user declines", async () => {
+    const home = makeTempHome();
+
+    await runCli(["install"], { home });
+
+    // modify a skill file
+    const skillFile = join(home, ".claude", "skills", "mnemo", "SKILL.md");
+    writeFileSync(skillFile, "modified content", "utf-8");
+
+    const { exitCode, stdout } = await runCli(
+      ["install", "--force"],
+      { home, stdin: "n\n" },
+    );
+
+    expect(exitCode).toBe(0);
+    expect(stdout).toContain("cancelled.");
+    expect(stdout).not.toContain("installed:");
+
+    // skill file unchanged
+    expect(readFileSync(skillFile, "utf-8")).toBe("modified content");
 
     cleanupTempDir(home);
   });

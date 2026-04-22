@@ -7,11 +7,11 @@ import {
   FIXTURES_DIR,
 } from "../helpers/fixtures";
 
-describe("doctor command", () => {
+describe("status command", () => {
   test("fresh home — reports everything missing and exits 1", async () => {
     const home = makeTempHome();
 
-    const { exitCode, stdout } = await runCli(["doctor"], { home });
+    const { exitCode, stdout } = await runCli(["status"], { home });
 
     expect(exitCode).toBe(1);
     expect(stdout).toContain("cli");
@@ -21,7 +21,7 @@ describe("doctor command", () => {
     expect(stdout).toContain("agents");
     expect(stdout).toContain("hook");
     // remediation pointer
-    expect(stdout).toContain("mnemo setup");
+    expect(stdout).toContain("mnemo install");
 
     cleanupTempDir(home);
   });
@@ -31,13 +31,13 @@ describe("doctor command", () => {
 
     await runCli(["base", "add", "notes", FIXTURES_DIR], { home });
 
-    const { exitCode, stdout } = await runCli(["doctor"], { home });
+    const { exitCode, stdout } = await runCli(["status"], { home });
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain("notes");
     expect(stdout).not.toContain("none registered");
     // no remediation pointer when healthy
-    expect(stdout).not.toContain("mnemo setup");
+    expect(stdout).not.toContain("mnemo install");
 
     cleanupTempDir(home);
   });
@@ -48,9 +48,9 @@ describe("doctor command", () => {
     // register a base via config seed so we skip the existence check in base add
     seedConfig(home, { bases: { broken: "/nonexistent/path" } });
     // still need skill + hook so those don't also fail
-    await runCli(["setup"], { home });
+    await runCli(["install"], { home });
 
-    const { exitCode, stdout } = await runCli(["doctor"], { home });
+    const { exitCode, stdout } = await runCli(["status"], { home });
 
     expect(exitCode).toBe(1);
     expect(stdout).toContain("broken");
@@ -62,14 +62,14 @@ describe("doctor command", () => {
   test("skill + hook present but agents missing — flagged and exits 1", async () => {
     const home = makeTempHome();
 
-    await runCli(["setup"], { home });
+    await runCli(["install"], { home });
 
     // simulate user deleting the staged agents
     const { rmSync } = await import("fs");
     const { join } = await import("path");
     rmSync(join(home, ".claude", "agents"), { recursive: true, force: true });
 
-    const { exitCode, stdout } = await runCli(["doctor"], { home });
+    const { exitCode, stdout } = await runCli(["status"], { home });
 
     expect(exitCode).toBe(1);
     expect(stdout).toContain("agents");
@@ -81,14 +81,14 @@ describe("doctor command", () => {
   test("one of two agents missing — flagged and names the missing file", async () => {
     const home = makeTempHome();
 
-    await runCli(["setup"], { home });
+    await runCli(["install"], { home });
 
     // simulate a half-broken install — remove only the maintenance agent
     const { rmSync } = await import("fs");
     const { join } = await import("path");
     rmSync(join(home, ".claude", "agents", "mnemo-maintenance.md"));
 
-    const { exitCode, stdout } = await runCli(["doctor"], { home });
+    const { exitCode, stdout } = await runCli(["status"], { home });
 
     expect(exitCode).toBe(1);
     expect(stdout).toContain("agents");
@@ -100,8 +100,8 @@ describe("doctor command", () => {
   test("skill present but hook removed — flagged and exits 1", async () => {
     const home = makeTempHome();
 
-    // setup installs both skill and hook
-    await runCli(["setup"], { home });
+    // install sets up both skill and hook
+    await runCli(["install"], { home });
 
     // simulate the user hand-editing settings.json to remove the hook entry
     const { readFileSync, writeFileSync } = await import("fs");
@@ -111,7 +111,7 @@ describe("doctor command", () => {
     settings.hooks.SessionStart = [];
     writeFileSync(settingsPath, JSON.stringify(settings, null, 2), "utf-8");
 
-    const { exitCode, stdout } = await runCli(["doctor"], { home });
+    const { exitCode, stdout } = await runCli(["status"], { home });
 
     expect(exitCode).toBe(1);
     expect(stdout).toContain("hook");

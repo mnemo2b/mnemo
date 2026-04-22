@@ -11,7 +11,7 @@ Uses the `mnemo` CLI (globally installed) for path resolution and the Read tool 
 
 The primary entry to mnemo is the SessionStart hook (`mnemo prime`), which injects a `[mnemo]` system reminder with bases, sets, and a structure tree at session start. When present, route requests directly using that context — don't re-explore. Paths always start with a base name (`eval/cooking`, not `cooking`). If a path fails, run `mnemo list --depth 2` to reorient.
 
-If the prime reminder isn't present, the hook isn't installed. You can still execute explicit `mnemo save` and `mnemo load` keyword commands using the references below, but routing from ambiguous phrasing ("my python", "my recipes") will miss — tell the user to run `mnemo setup` to install the hook.
+If the prime reminder isn't present, the hook isn't installed. You can still execute explicit `mnemo save` and `mnemo load` keyword commands using the references below, but routing from ambiguous phrasing ("my python", "my recipes") will miss — tell the user to run `mnemo install` to install the hook.
 
 ## Reference files
 

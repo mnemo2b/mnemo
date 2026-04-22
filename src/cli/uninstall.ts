@@ -7,7 +7,7 @@ import { CONFIG_PATH } from "../core/config";
 
 /** remove skill, agents, session hook, and config */
 
-export function runTeardown(): void {
+export function runUninstall(): void {
   const skillRemoved = removeSkill();
   const agentsRemoved = removeAgents();
   const hookRemoved = removeHook();
@@ -15,14 +15,14 @@ export function runTeardown(): void {
 
   const status = (removed: boolean) => (removed ? "(removed)" : "(not found)");
 
-  console.log("mnemo removed.");
+  console.log("mnemo uninstalled.");
   console.log("");
   console.log(`  skill    ~/.claude/skills/mnemo/ ${status(skillRemoved)}`);
   console.log(`  agents   ~/.claude/agents/mnemo-*.md ${status(agentsRemoved)}`);
   console.log(`  hook     ~/.claude/settings.json ${status(hookRemoved)}`);
   console.log(`  config   ~/.config/mnemo/ ${status(configRemoved)}`);
   console.log("");
-  console.log("to reinstall, run: mnemo setup");
+  console.log("to reinstall, run: mnemo install");
 }
 
 // -----------------------------------------------------------------------------

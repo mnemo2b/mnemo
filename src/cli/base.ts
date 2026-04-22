@@ -6,28 +6,26 @@ import { CLIError } from "../core/errors";
 import { formatBasesHint } from "../core/base";
 import { isValidName } from "../core/validate-name";
 import { DIM, RESET } from "./format";
-import {
-  isSkillInstalled,
-  isAgentsInstalled,
-  isHookInstalled,
-  installSkill,
-  installAgents,
-  installHook,
-} from "./install";
+import { installIntegrations } from "./integrations";
 
-function baseList(): void {
-  const { bases } = loadConfig();
+// -----------------------------------------------------------------------------
 
-  if (Object.keys(bases).length === 0) {
-    console.log('no bases configured — run "mnemo base add <name> <path>"');
-    return;
-  }
+/** dispatch base subcommands to handlers */
 
-  const sorted = Object.entries(bases).sort(([a], [b]) => a.localeCompare(b));
-  for (const [name, path] of sorted) {
-    console.log(`${name}: ${DIM}${shortenPath(path)}${RESET}`);
+export function runBase(args: string[]): void {
+  switch (args[0]) {
+    case "list": return baseList();
+    case "add": return baseAdd(args[1], args[2]);
+    case "remove": return baseRemove(args[1]);
+    case "move": return baseMove(args[1], args[2]);
+    case "rename": return baseRename(args[1], args[2]);
+    default: throw new CLIError("usage: mnemo base <add|remove|move|rename|list>");
   }
 }
+
+// -----------------------------------------------------------------------------
+
+/** register a new base directory */
 
 function baseAdd(name: string | undefined, rawPath: string | undefined): void {
   if (!name || !rawPath) {
@@ -36,15 +34,11 @@ function baseAdd(name: string | undefined, rawPath: string | undefined): void {
 
   if (!isValidName(name)) {
     throw new CLIError(
-      "failed: base name must be lowercase letters, numbers, hyphens, and underscores",
+      "failed: base name must be:\n  - lowercase letters\n  - numbers\n  - hyphens\n  - underscores",
     );
   }
 
-  // expand ~ and resolve to absolute path
-  const expanded = rawPath.startsWith("~")
-    ? rawPath.replace("~", homedir())
-    : rawPath;
-  const absolutePath = resolve(expanded);
+  const absolutePath = resolveUserPath(rawPath);
 
   if (!existsSync(absolutePath) || !statSync(absolutePath).isDirectory()) {
     throw new CLIError(`failed: not a directory: ${rawPath}`);
@@ -60,32 +54,63 @@ function baseAdd(name: string | undefined, rawPath: string | undefined): void {
   saveConfig({ bases });
   console.log(`added base "${name}" → ${shortenPath(absolutePath)}`);
 
-  // auto-wire claude code if setup hasn't run yet. registering a base is
-  // the strongest signal that the user intends to use mnemo, so it's the
-  // right moment to put the skill and hook in place.
-  maybeWireClaudeCode();
+  // registering a base is the strongest signal that the user intends to use
+  // mnemo, so it's the right moment to put the skill and hook in place.
+  const installed = installIntegrations();
+
+  if (installed.skill || installed.agents || installed.hook) {
+    console.log("");
+    console.log("installed:");
+    if (installed.skill)  console.log(`  skill    ${DIM}~/.claude/skills/mnemo/${RESET}`);
+    if (installed.agents) console.log(`  agents   ${DIM}~/.claude/agents/mnemo-*.md${RESET}`);
+    if (installed.hook)   console.log(`  hook     ${DIM}~/.claude/settings.json${RESET}`);
+    console.log("");
+    console.log("your knowledge base will be available in your next Claude Code session.");
+  }
 }
 
-/**
- * If the skill or hook is missing, install both and tell the user what
- * happened. No-op when everything is already wired.
- */
-function maybeWireClaudeCode(): void {
-  if (isSkillInstalled() && isAgentsInstalled() && isHookInstalled()) return;
+/** list all registered bases */
 
-  installSkill();
-  installAgents();
-  installHook();
+function baseList(): void {
+  const { bases } = loadConfig();
 
-  console.log("");
-  console.log("wiring up Claude Code:");
-  console.log("  skill    ~/.claude/skills/mnemo/");
-  console.log("  agents   ~/.claude/agents/mnemo-*.md");
-  console.log("  hook     ~/.claude/settings.json");
-  console.log("");
-  console.log("your next Claude Code session will start with your knowledge");
-  console.log("base in context. run `mnemo setup` again if these get removed.");
+  if (Object.keys(bases).length === 0) {
+    console.log('no bases configured — run "mnemo base add <name> <path>"');
+    return;
+  }
+
+  const sorted = Object.entries(bases).sort(([a], [b]) => a.localeCompare(b));
+
+  for (const [name, path] of sorted) {
+    console.log(`${name}: ${DIM}${shortenPath(path)}${RESET}`);
+  }
 }
+
+/** update a base's path */
+
+function baseMove(name: string | undefined, rawPath: string | undefined): void {
+  if (!name || !rawPath) {
+    throw new CLIError("usage: mnemo base move <name> <path>");
+  }
+
+  const { bases } = loadConfig();
+
+  if (!bases[name]) {
+    throw new CLIError(`unknown base: "${name}"${formatBasesHint(bases)}`);
+  }
+
+  const absolutePath = resolveUserPath(rawPath);
+
+  if (!existsSync(absolutePath) || !statSync(absolutePath).isDirectory()) {
+    throw new CLIError(`failed: not a directory: ${rawPath}`);
+  }
+
+  bases[name] = absolutePath;
+  saveConfig({ bases });
+  console.log(`moved base "${name}" → ${shortenPath(absolutePath)}`);
+}
+
+/** unregister a base */
 
 function baseRemove(name: string | undefined): void {
   if (!name) {
@@ -103,30 +128,7 @@ function baseRemove(name: string | undefined): void {
   console.log(`removed base "${name}"`);
 }
 
-function baseMove(name: string | undefined, rawPath: string | undefined): void {
-  if (!name || !rawPath) {
-    throw new CLIError("usage: mnemo base move <name> <path>");
-  }
-
-  const { bases } = loadConfig();
-
-  if (!bases[name]) {
-    throw new CLIError(`unknown base: "${name}"${formatBasesHint(bases)}`);
-  }
-
-  const expanded = rawPath.startsWith("~")
-    ? rawPath.replace("~", homedir())
-    : rawPath;
-  const absolutePath = resolve(expanded);
-
-  if (!existsSync(absolutePath) || !statSync(absolutePath).isDirectory()) {
-    throw new CLIError(`failed: not a directory: ${rawPath}`);
-  }
-
-  bases[name] = absolutePath;
-  saveConfig({ bases });
-  console.log(`moved base "${name}" → ${shortenPath(absolutePath)}`);
-}
+/** rename a base and update any set paths that reference it */
 
 function baseRename(oldName: string | undefined, newName: string | undefined): void {
   if (!oldName || !newName) {
@@ -135,7 +137,7 @@ function baseRename(oldName: string | undefined, newName: string | undefined): v
 
   if (!isValidName(newName)) {
     throw new CLIError(
-      "failed: base name must be lowercase letters, numbers, hyphens, and underscores",
+      "failed: base name must be:\n  - lowercase letters\n  - numbers\n  - hyphens\n  - underscores",
     );
   }
 
@@ -152,9 +154,10 @@ function baseRename(oldName: string | undefined, newName: string | undefined): v
   bases[newName] = bases[oldName];
   delete bases[oldName];
 
-  // update set entries that reference the old base name
+  // cascade the rename into set entries that reference the old base name
   const prefix = oldName + "/";
   let updatedPaths = 0;
+
   for (const entries of Object.values(sets)) {
     for (let i = 0; i < entries.length; i++) {
       if (entries[i]!.startsWith(prefix)) {
@@ -165,18 +168,22 @@ function baseRename(oldName: string | undefined, newName: string | undefined): v
   }
 
   saveConfig({ bases, sets });
-  const hint = updatedPaths > 0 ? ` (updated ${updatedPaths} set path${updatedPaths !== 1 ? "s" : ""})` : "";
+
+  const hint = updatedPaths > 0
+    ? ` (updated ${updatedPaths} set path${updatedPaths !== 1 ? "s" : ""})`
+    : "";
+
   console.log(`renamed base "${oldName}" → "${newName}"${hint}`);
 }
 
-export function runBase(args: string[]): void {
-  const subcommand = args[0];
+// -----------------------------------------------------------------------------
 
-  if (subcommand === "list") return baseList();
-  if (subcommand === "add") return baseAdd(args[1], args[2]);
-  if (subcommand === "remove") return baseRemove(args[1]);
-  if (subcommand === "move") return baseMove(args[1], args[2]);
-  if (subcommand === "rename") return baseRename(args[1], args[2]);
+/** expand ~ and resolve to absolute path */
 
-  throw new CLIError("usage: mnemo base <add|remove|move|rename|list>");
+function resolveUserPath(rawPath: string): string {
+  const expanded = rawPath.startsWith("~")
+    ? rawPath.replace("~", homedir())
+    : rawPath;
+
+  return resolve(expanded);
 }

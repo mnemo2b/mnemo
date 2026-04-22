@@ -9,18 +9,18 @@ import {
   FIXTURES_DIR,
 } from "../helpers/fixtures";
 
-describe("teardown command", () => {
+describe("uninstall command", () => {
   test("removes skill directory", async () => {
     const home = makeTempHome();
 
-    await runCli(["setup"], { home });
+    await runCli(["install"], { home });
     const skillDir = join(home, ".claude", "skills", "mnemo");
     expect(existsSync(skillDir)).toBe(true);
 
-    const { exitCode, stdout } = await runCli(["teardown"], { home });
+    const { exitCode, stdout } = await runCli(["uninstall"], { home });
 
     expect(exitCode).toBe(0);
-    expect(stdout).toContain("mnemo removed.");
+    expect(stdout).toContain("mnemo uninstalled.");
     expect(stdout).toContain("skill");
     expect(stdout).toContain("(removed)");
     expect(existsSync(skillDir)).toBe(false);
@@ -31,13 +31,13 @@ describe("teardown command", () => {
   test("removes staged mnemo-*.md agents but preserves other agents", async () => {
     const home = makeTempHome();
 
-    await runCli(["setup"], { home });
+    await runCli(["install"], { home });
     const agentsDir = join(home, ".claude", "agents");
 
     // drop a non-mnemo agent to verify selective removal
     writeFileSync(join(agentsDir, "other-tool.md"), "other agent\n", "utf-8");
 
-    const { exitCode, stdout } = await runCli(["teardown"], { home });
+    const { exitCode, stdout } = await runCli(["uninstall"], { home });
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain("agents");
@@ -54,8 +54,8 @@ describe("teardown command", () => {
   test("removes hook from settings.json", async () => {
     const home = makeTempHome();
 
-    await runCli(["setup"], { home });
-    const { exitCode } = await runCli(["teardown"], { home });
+    await runCli(["install"], { home });
+    const { exitCode } = await runCli(["uninstall"], { home });
 
     expect(exitCode).toBe(0);
 
@@ -76,7 +76,7 @@ describe("teardown command", () => {
     const configDir = join(home, ".config", "mnemo");
     expect(existsSync(configDir)).toBe(true);
 
-    const { exitCode, stdout } = await runCli(["teardown"], { home });
+    const { exitCode, stdout } = await runCli(["uninstall"], { home });
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain("config");
@@ -115,7 +115,7 @@ describe("teardown command", () => {
       "utf-8",
     );
 
-    const { exitCode } = await runCli(["teardown"], { home });
+    const { exitCode } = await runCli(["uninstall"], { home });
 
     expect(exitCode).toBe(0);
 
@@ -132,12 +132,12 @@ describe("teardown command", () => {
     cleanupTempDir(home);
   });
 
-  test("idempotent — second teardown shows not found", async () => {
+  test("idempotent — second uninstall shows not found", async () => {
     const home = makeTempHome();
 
-    await runCli(["setup"], { home });
-    await runCli(["teardown"], { home });
-    const { exitCode, stdout } = await runCli(["teardown"], { home });
+    await runCli(["install"], { home });
+    await runCli(["uninstall"], { home });
+    const { exitCode, stdout } = await runCli(["uninstall"], { home });
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain("(not found)");
@@ -145,13 +145,13 @@ describe("teardown command", () => {
     cleanupTempDir(home);
   });
 
-  test("no prior setup — all not found", async () => {
+  test("no prior install — all not found", async () => {
     const home = makeTempHome();
 
-    const { exitCode, stdout } = await runCli(["teardown"], { home });
+    const { exitCode, stdout } = await runCli(["uninstall"], { home });
 
     expect(exitCode).toBe(0);
-    expect(stdout).toContain("mnemo removed.");
+    expect(stdout).toContain("mnemo uninstalled.");
     // all four lines (skill, agents, hook, config) should say not found
     const notFoundCount = (stdout.match(/\(not found\)/g) || []).length;
     expect(notFoundCount).toBe(4);

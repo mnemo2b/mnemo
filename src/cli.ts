@@ -1,5 +1,5 @@
 import { runCommand } from "./cli/run";
-import { readVersion } from "./cli/install";
+import { readVersion } from "./cli/package";
 import { CLIError } from "./core/errors";
 
 const args = process.argv.slice(2);
@@ -9,7 +9,7 @@ const command = args[0];
 // help
 
 if (!command || command === "--help") {
-  console.log("usage: mnemo <list|load|base|set|setup|teardown|doctor> [options]");
+  console.log("usage: mnemo <list|load|base|set|install|uninstall|status> [options]");
   console.log("");
   console.log("commands:");
   console.log("  list [path]               browse the knowledge base");
@@ -25,9 +25,9 @@ if (!command || command === "--help") {
   console.log("  set rename <old> <new>    rename a set");
   console.log("  set show <name>           show paths in a set");
   console.log("  set list                  show all sets");
-  console.log("  setup                     install skill + agent + session hook");
-  console.log("  teardown                  remove skill + agent + session hook + config");
-  console.log("  doctor                    check install state and knowledge bases");
+  console.log("  install [--force]          install skill + agents + session hook");
+  console.log("  uninstall                 remove skill + agents + session hook + config");
+  console.log("  status                    check install state and knowledge bases");
   process.exit(0);
 }
 
@@ -43,7 +43,7 @@ if (command === "--version" || command === "-v") {
 // commands
 
 try {
-  runCommand(command, args.slice(1));
+  await runCommand(command, args.slice(1));
 } catch (error) {
   if (error instanceof CLIError) {
     console.error(error.message);

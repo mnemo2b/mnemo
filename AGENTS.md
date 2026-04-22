@@ -14,7 +14,7 @@ v0.8.0 is published on npm as `@mnemo2b/mnemo`. The save skill ships with a disp
 
 After making code changes, run `bun test` to verify nothing is broken. Tests cover all core logic (pure functions in `src/core/`) and CLI behavior (subprocess integration tests). If you add new functionality, add corresponding tests in `tests/`.
 
-After committing files in `skill/` or `agents/`, run `bun src/cli.ts setup` to reinstall locally.
+After committing files in `skill/` or `agents/`, run `bun src/cli.ts install` to reinstall locally.
 
 ## Principles
 
@@ -40,7 +40,7 @@ The global `mnemo` binary and `bun src/cli.ts` are different builds. Changes to 
 
 `bun run build && npm install -g .`
 
-Rebuild before: running evals, testing CLI in terminal, or running `bun src/cli.ts setup`.
+Rebuild before: running evals, testing CLI in terminal, or running `bun src/cli.ts install`.
 Not needed for: development with `bun src/cli.ts` directly.
 
 ## Style

@@ -12,6 +12,7 @@ interface RunOptions {
   home?: string;
   cwd?: string;
   env?: Record<string, string>;
+  stdin?: string;
 }
 
 interface RunResult {
@@ -33,9 +34,15 @@ export async function runCli(
       // override HOME for config isolation when provided
       ...(options.home ? { HOME: options.home } : {}),
     },
+    stdin: options.stdin !== undefined ? "pipe" : "inherit",
     stdout: "pipe",
     stderr: "pipe",
   });
+
+  if (options.stdin !== undefined && proc.stdin) {
+    proc.stdin.write(options.stdin);
+    proc.stdin.end();
+  }
 
   // read streams and wait for exit in parallel
   const [stdout, stderr] = await Promise.all([

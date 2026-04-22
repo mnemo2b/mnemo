@@ -2,7 +2,8 @@ import { existsSync, statSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import { CONFIG_PATH, loadConfig, shortenPath } from "../core/config";
-import { isSkillInstalled, isAgentsInstalled, isHookInstalled, missingAgents, readVersion } from "./install";
+import { isSkillInstalled, isAgentsInstalled, isHookInstalled, missingAgents } from "./integrations";
+import { readVersion } from "./package";
 import { DIM, RESET, GREEN, RED } from "./format";
 
 // -----------------------------------------------------------------------------
@@ -14,7 +15,7 @@ const FAIL = `${RED}✗${RESET}`;
 
 /** show install state and knowledge base wiring (exits if any check fails) */
 
-export function runDoctor(): void {
+export function runStatus(): void {
   const version = readVersion();
   const { bases, sets } = loadConfig();
   const baseEntries = Object.entries(bases).sort(([a], [b]) => a.localeCompare(b));
@@ -64,7 +65,7 @@ export function runDoctor(): void {
     console.log(`${DIM}skill  ${RESET} ${skillPath} ${OK}`);
   } else {
     console.log(
-      `${DIM}skill  ${RESET} ${skillPath} ${FAIL} missing — run \`mnemo setup\``,
+      `${DIM}skill  ${RESET} ${skillPath} ${FAIL} missing — run \`mnemo install\``,
     );
   }
 
@@ -74,7 +75,7 @@ export function runDoctor(): void {
     const missing = missingAgents();
     const detail = missing.length > 0 ? `missing: ${missing.join(", ")}` : "missing";
     console.log(
-      `${DIM}agents ${RESET} ${agentsGlob} ${FAIL} ${detail} — run \`mnemo setup\``,
+      `${DIM}agents ${RESET} ${agentsGlob} ${FAIL} ${detail} — run \`mnemo install\``,
     );
   }
 
@@ -82,7 +83,7 @@ export function runDoctor(): void {
     console.log(`${DIM}hook   ${RESET} ${settingsPath} ${OK}`);
   } else {
     console.log(
-      `${DIM}hook   ${RESET} ${settingsPath} ${FAIL} missing — run \`mnemo setup\``,
+      `${DIM}hook   ${RESET} ${settingsPath} ${FAIL} missing — run \`mnemo install\``,
     );
   }
 

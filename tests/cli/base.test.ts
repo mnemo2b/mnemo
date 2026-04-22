@@ -123,8 +123,8 @@ describe("base add auto-wires Claude Code", () => {
     expect(exitCode).toBe(0);
     // base add output still present
     expect(stdout).toContain('added base "notes"');
-    // wiring message informs the user what's happening
-    expect(stdout).toContain("wiring up Claude Code");
+    // install message shows what was set up
+    expect(stdout).toContain("installed:");
     expect(stdout).toContain("skill");
     expect(stdout).toContain("hook");
 
@@ -154,7 +154,7 @@ describe("base add auto-wires Claude Code", () => {
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain('added base "more"');
-    expect(stdout).not.toContain("wiring up Claude Code");
+    expect(stdout).not.toContain("installed:");
 
     cleanupTempDir(home);
   });
