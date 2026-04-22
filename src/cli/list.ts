@@ -3,7 +3,7 @@ import { join } from "path";
 import { loadConfig } from "../core/config";
 import { CLIError } from "../core/errors";
 import { parseBasePath, formatBasesHint } from "../core/base";
-import { resolvePath } from "../core/resolve-path";
+import { resolvePath } from "../core/paths";
 import { scanDirectory } from "../core/scan";
 import { estimateTokens } from "../core/tokens";
 import { DIM, RESET, formatTokens } from "./format";

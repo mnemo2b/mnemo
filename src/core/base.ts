@@ -1,7 +1,7 @@
 import { existsSync, statSync } from "fs";
 import { CLIError } from "./errors";
 import { shortenPath } from "./config";
-import { resolvePath } from "./resolve-path";
+import { resolvePath } from "./paths";
 import { collectFiles } from "./scan";
 
 /** Format a "bases:" hint listing registered bases with shortened paths */

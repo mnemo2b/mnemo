@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "path";
-import { resolvePath } from "../../src/core/resolve-path";
+import { resolvePath } from "../../src/core/paths";
 import { FIXTURES_DIR } from "../helpers/fixtures";
 
 describe("resolvePath", () => {

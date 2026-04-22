@@ -1,7 +1,10 @@
 import { existsSync } from "fs";
 import { resolve } from "path";
 
-/** Resolve a path, trying .md extension if the exact path doesn't exist */
+// ----------------------------------------------------------------------------
+
+/** resolve a path, trying .md extension if the exact path doesn't exist */
+
 export function resolvePath(baseRoot: string, inputPath: string): string {
   const exact = resolve(baseRoot, inputPath);
   if (existsSync(exact)) return exact;
