@@ -1,4 +1,4 @@
-import { resolve } from "path";
+import { resolve, join } from "path";
 
 // project root — two levels up from tests/helpers/
 const PROJECT_ROOT = resolve(import.meta.dir, "../..");
@@ -31,8 +31,11 @@ export async function runCli(
     env: {
       ...process.env,
       ...options.env,
-      // override HOME for config isolation when provided
-      ...(options.home ? { HOME: options.home } : {}),
+      // override HOME and MNEMO_CONFIG for config isolation when provided
+      ...(options.home ? {
+        HOME: options.home,
+        MNEMO_CONFIG: join(options.home, ".config", "mnemo", "config.yml"),
+      } : {}),
     },
     stdin: options.stdin !== undefined ? "pipe" : "inherit",
     stdout: "pipe",
