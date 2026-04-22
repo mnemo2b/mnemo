@@ -21,7 +21,8 @@ interface RunResult {
   exitCode: number;
 }
 
-/** Spawn the CLI as a subprocess and capture output */
+/** spawn the CLI as a subprocess and capture output */
+
 export async function runCli(
   args: string[],
   options: RunOptions = {},

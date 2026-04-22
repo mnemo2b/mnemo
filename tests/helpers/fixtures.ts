@@ -1,21 +1,33 @@
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "fs";
-import { join } from "path";
+import { join, resolve } from "path";
 import { tmpdir } from "os";
-import { resolve } from "path";
 import { stringify } from "yaml";
+import type { Bases } from "../../src/types/bases";
+import type { Sets } from "../../src/types/sets";
 
-// absolute path to the static fixture notes directory
+// ----------------------------------------------------------------------------
+
 export const FIXTURES_DIR = resolve(import.meta.dir, "../fixtures/notes");
 
-/** Create a temp directory that acts as an isolated HOME */
+// ----------------------------------------------------------------------------
+
+/** remove a temp directory */
+
+export function cleanupTempDir(dir: string): void {
+  rmSync(dir, { recursive: true, force: true });
+}
+
+/** create a temp home directory */
+
 export function makeTempHome(): string {
   return mkdtempSync(join(tmpdir(), "mnemo-test-"));
 }
 
-/** Seed a temp HOME with a mnemo config file */
+/** seed the temp home directory with a mnemo config file */
+
 export function seedConfig(
   home: string,
-  config: { bases?: Record<string, string>; sets?: Record<string, string[]> },
+  config: { bases?: Bases; sets?: Sets },
 ): void {
   const configDir = join(home, ".config", "mnemo");
   mkdirSync(configDir, { recursive: true });
@@ -25,9 +37,4 @@ export function seedConfig(
   if (config.sets) output.sets = config.sets;
 
   writeFileSync(join(configDir, "config.yml"), stringify(output), "utf-8");
-}
-
-/** Remove a temp directory and all its contents */
-export function cleanupTempDir(dir: string): void {
-  rmSync(dir, { recursive: true, force: true });
 }
