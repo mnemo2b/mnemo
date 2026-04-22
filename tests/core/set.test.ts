@@ -1,8 +1,44 @@
 import { describe, expect, test } from "bun:test";
-import { resolveSet } from "@/core/set";
+import { resolveSet, formatSetsHint } from "@/core/set";
 import { CLIError } from "@/core/errors";
 
+// ----------------------------------------------------------------------------
+
+describe("formatSetsHint", () => {
+
+  test("returns empty string when no sets", () => {
+    expect(formatSetsHint({})).toBe("");
+  });
+
+  test("formats a single set", () => {
+    const result = formatSetsHint({ react: ["base/react"] });
+
+    expect(result).toContain("sets:");
+    expect(result).toContain("react");
+  });
+
+  test("sorts sets alphabetically", () => {
+    const result = formatSetsHint({
+      zsh: ["base/zsh"],
+      aws: ["base/aws"],
+      node: ["base/node"],
+    });
+
+    const lines = result.split("\n").filter((l) => l.startsWith("  "));
+    const names = lines.map((l) => l.trim());
+    expect(names).toEqual(["aws", "node", "zsh"]);
+  });
+
+  test("starts with double newline for error message spacing", () => {
+    const result = formatSetsHint({ react: ["base/react"] });
+
+    expect(result).toStartWith("\n\n");
+  });
+
+});
+
 describe("resolveSet", () => {
+
   test("resolves a simple set to its paths", () => {
     const sets = {
       react: ["base/docs/react", "base/docs/hooks"],
@@ -101,4 +137,5 @@ describe("resolveSet", () => {
       expect((e as Error).message).not.toContain("sets:");
     }
   });
+
 });

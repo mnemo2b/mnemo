@@ -4,7 +4,10 @@ import { homedir } from "os";
 import { expandPath, resolvePath, shortenPath } from "@/core/paths";
 import { FIXTURES_DIR } from "../helpers/fixtures";
 
+// ----------------------------------------------------------------------------
+
 describe("expandPath", () => {
+
   const home = homedir();
 
   test("expands ~ to home directory", () => {
@@ -21,9 +24,11 @@ describe("expandPath", () => {
   test("leaves absolute paths unchanged", () => {
     expect(expandPath("/usr/local/bin")).toBe("/usr/local/bin");
   });
+
 });
 
 describe("resolvePath", () => {
+
   test("returns exact path when file exists", () => {
     const result = resolvePath(FIXTURES_DIR, "standalone.md");
 
@@ -50,9 +55,11 @@ describe("resolvePath", () => {
 
     expect(result).toBe(join(FIXTURES_DIR, "topic-a"));
   });
+
 });
 
 describe("shortenPath", () => {
+
   const home = homedir();
 
   test("replaces home directory with ~", () => {
@@ -66,4 +73,5 @@ describe("shortenPath", () => {
   test("handles exact home directory", () => {
     expect(shortenPath(home)).toBe("~");
   });
+
 });
