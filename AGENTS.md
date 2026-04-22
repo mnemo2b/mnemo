@@ -45,11 +45,14 @@ Not needed for: development with `bun src/cli.ts` directly.
 
 ## Style
 
-- Section separators: 80-char `// ---` lines between logical sections
+- Section separators: 80-char `// ---` lines between logical sections, no labels
 - JSDoc: lowercase, on all functions, blank line before function signature
-- Ordering: exported functions first, then internal, alphabetical within each group
+- Ordering: sections first, export at the top of its section, supporting functions below alphabetically
 - Breathing room: blank lines between logic blocks inside functions
 - Comments: `//` lowercase, explain why not what
+- Multiline strings: use array `.join("\n")` over inline `\n` for readability
+- Error messages: use `\n  - ` list format over comma-separated when listing multiple items
+- File naming: prefer general names (`validations.ts`) over narrow ones (`validate-name.ts`)
 
 ## Context
 

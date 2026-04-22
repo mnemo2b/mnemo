@@ -11,6 +11,7 @@ import { CLIError } from "../core/errors";
 // -----------------------------------------------------------------------------
 
 /** dispatch commands to appropriate handlers */
+
 export function runCommand(command: string, args: string[]): void | Promise<void> {
   switch (command) {
     case "base": return runBase(args);

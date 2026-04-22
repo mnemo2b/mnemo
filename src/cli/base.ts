@@ -25,7 +25,7 @@ export function runBase(args: string[]): void {
 
 // -----------------------------------------------------------------------------
 
-/** register a new base directory */
+/** register a base */
 
 function baseAdd(name: string | undefined, rawPath: string | undefined): void {
   if (!name || !rawPath) {
@@ -54,8 +54,7 @@ function baseAdd(name: string | undefined, rawPath: string | undefined): void {
   saveConfig({ bases });
   console.log(`added base "${name}" → ${shortenPath(absolutePath)}`);
 
-  // registering a base is the strongest signal that the user intends to use
-  // mnemo, so it's the right moment to put the skill and hook in place.
+  // adding a base signals an intent to use mnemo, ensure installation
   const installed = installIntegrations();
 
   if (installed.skill || installed.agents || installed.hook) {
@@ -69,7 +68,7 @@ function baseAdd(name: string | undefined, rawPath: string | undefined): void {
   }
 }
 
-/** list all registered bases */
+/** list registered bases */
 
 function baseList(): void {
   const { bases } = loadConfig();
@@ -86,7 +85,7 @@ function baseList(): void {
   }
 }
 
-/** update a base's path */
+/** update a base path */
 
 function baseMove(name: string | undefined, rawPath: string | undefined): void {
   if (!name || !rawPath) {

@@ -48,7 +48,7 @@ export async function runInstall(args: string[] = []): Promise<void> {
 
 // -----------------------------------------------------------------------------
 
-/** simple y/n confirmation prompt */
+/** simple y/n confirmation */
 
 function confirm(message: string): Promise<boolean> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
