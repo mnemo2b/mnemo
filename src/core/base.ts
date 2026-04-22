@@ -4,24 +4,30 @@ import { shortenPath } from "./config";
 import { resolvePath } from "./paths";
 import { collectFiles } from "./scan";
 
-/** Format a "bases:" hint listing registered bases with shortened paths */
-export function formatBasesHint(bases: Record<string, string>): string {
-  const entries = Object.entries(bases).sort(([a], [b]) => a.localeCompare(b));
-  if (entries.length === 0) return "";
-  const list = entries.map(([name, path]) => `  ${name}: ${shortenPath(path)}`).join("\n");
-  return `\n\nbases:\n${list}`;
-}
+// ----------------------------------------------------------------------------
 
 export interface ParsedBasePath {
   baseName: string;
   relativePath: string | null;
 }
 
-/** Split a base-prefixed path into base name and relative path */
+// ----------------------------------------------------------------------------
+
+/** list of bases for error output */
+
+export function formatBasesHint(bases: Record<string, string>): string {
+  const entries = Object.entries(bases).sort(([a], [b]) => a.localeCompare(b));
+  if (entries.length === 0) return "";
+
+  const list = entries.map(([name, path]) => `  ${name}: ${shortenPath(path)}`).join("\n");
+  return `\n\nbases:\n${list}`;
+}
+
+/** split a base-prefixed path into base name and relative path */
+
 export function parseBasePath(input: string): ParsedBasePath {
   const slashIndex = input.indexOf("/");
 
-  // no slash means the input is just a base name
   if (slashIndex === -1) {
     return { baseName: input, relativePath: null };
   }
@@ -32,7 +38,8 @@ export function parseBasePath(input: string): ParsedBasePath {
   };
 }
 
-/** Resolve a base-prefixed path to an absolute filesystem path */
+/** resolve a base-prefixed path to an absolute path */
+
 export function resolveBasePath(
   bases: Record<string, string>,
   input: string,
@@ -44,7 +51,6 @@ export function resolveBasePath(
     throw new CLIError(`unknown base: "${baseName}"${formatBasesHint(bases)}`);
   }
 
-  // no relative path means the caller wants the base root itself
   if (!relativePath) {
     return baseRoot;
   }
@@ -52,7 +58,8 @@ export function resolveBasePath(
   return resolvePath(baseRoot, relativePath);
 }
 
-/** Resolve a base-prefixed path to absolute file paths, returns [] if not found */
+/** resolve a base-prefixed path to absolute paths, returns [] if not found */
+
 export function resolveToFiles(bases: Record<string, string>, path: string): string[] {
   const absolute = resolveBasePath(bases, path);
 
