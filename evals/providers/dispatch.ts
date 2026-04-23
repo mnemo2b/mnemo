@@ -1,32 +1,14 @@
-import { mkdtempSync, mkdirSync, cpSync, writeFileSync, rmSync, existsSync, readdirSync, readFileSync } from "fs";
+import { mkdtempSync, mkdirSync, cpSync, writeFileSync, rmSync, readdirSync, readFileSync } from "fs";
 import { execSync } from "child_process";
 import { spawn } from "child_process";
 import { createHash } from "crypto";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { tmpdir } from "os";
-
-import { TrajectoryAccumulator, type ExecuteResult } from "./_trajectory.ts";
+import { TrajectoryAccumulator, setupFixture } from "./_shared";
+import type { ExecuteResult, ProviderResponse, ProviderOptions } from "./_shared";
 
 //-----------------------------------------------------------------------------
-
-interface ProviderResponse {
-  output: string | object;
-  error?: string;
-  tokenUsage?: {
-    total?: number;
-    prompt?: number;
-    completion?: number;
-  };
-  cost?: number;
-}
-
-interface ProviderOptions {
-  id?: string;
-  config?: {
-    timeoutMs?: number;
-  };
-}
 
 interface TestAssertion {
   type?: string;
@@ -76,8 +58,7 @@ export default class DispatchProvider {
     return "dispatch";
   }
 
-  // checks for common env issues that produce cryptic failures.
-  // runs once on the first callApi invocation.
+  /** checks for common env issues that produce cryptic failures */
 
   private preflightDone = false;
 
@@ -101,8 +82,7 @@ export default class DispatchProvider {
     }
   }
 
-  // writes the raw stream-json lines to a trajectory file so each run
-  // can be inspected outside of promptfoo
+  /** writes raw stream-json lines to a trajectory file for post-run inspection */
 
   private writeTrajectory(
     index: number,
@@ -124,10 +104,7 @@ export default class DispatchProvider {
     writeFileSync(join(this.runDir, filename), meta + "\n" + rawLines.join("\n") + "\n");
   }
 
-  // walks a directory and returns a map of relative-path → sha256 of content.
-  // used to snapshot the fixture before and after a run so assertions can
-  // check filesystem effects (files_created / files_modified / files_deleted)
-  // without having to regex against tool inputs or the dispatcher's prose.
+  /** walks a directory and returns a map of relative-path → sha256 */
 
   private snapshotDir(root: string): Map<string, string> {
     const snapshot = new Map<string, string>();
@@ -147,8 +124,7 @@ export default class DispatchProvider {
     return snapshot;
   }
 
-  // diffs two snapshots into created / modified / deleted path lists.
-  // paths are relative to the fixture root and sorted for stable output.
+  /** diffs two snapshots into created / modified / deleted path lists */
 
   private diffSnapshots(
     before: Map<string, string>,
@@ -172,41 +148,10 @@ export default class DispatchProvider {
     };
   }
 
-  // sets up two temp dirs: one for the fixture KB (becomes cwd), one for
-  // CLAUDE_CONFIG_DIR (isolated user-scope config with the mnemo skill staged).
-  // keeping them separate makes each dir's purpose obvious when debugging.
-
-  // detects fixture layout and returns the bases to register.
-  // single-base: fixtures with an AGENTS.md at the root use the whole dir as `eval`.
-  // multi-base: fixtures without a root AGENTS.md treat each top-level directory as a base.
-
-  private detectBases(fixtureDir: string): Record<string, string> {
-    if (existsSync(join(fixtureDir, "AGENTS.md"))) {
-      return { eval: fixtureDir };
-    }
-
-    const bases: Record<string, string> = {};
-    for (const entry of readdirSync(fixtureDir, { withFileTypes: true })) {
-      if (entry.isDirectory()) {
-        bases[entry.name] = join(fixtureDir, entry.name);
-      }
-    }
-    return bases;
-  }
+  /** sets up fixture and isolated claude config dirs */
 
   private setup(fixtureName: string) {
-    // copy the fixture kb to a temp directory
-    const fixtureSource = join(__dirname, "..", "fixtures", fixtureName);
-    const fixtureDir = mkdtempSync(join(tmpdir(), "mnemo-dispatch-fixture-"));
-    cpSync(fixtureSource, fixtureDir, { recursive: true });
-
-    // register bases in a mnemo config
-    const bases = this.detectBases(fixtureDir);
-    const basesYaml = Object.entries(bases)
-      .map(([name, path]) => `  ${name}: ${path}`)
-      .join("\n");
-    const mnemoConfig = join(fixtureDir, ".mnemo-config.yml");
-    writeFileSync(mnemoConfig, `bases:\n${basesYaml}\n`);
+    const { fixtureDir, mnemoConfig } = setupFixture(fixtureName, "mnemo-dispatch-fixture-");
 
     // isolate CLAUDE_CONFIG_DIR so nothing from ~/.claude leaks in
     const configDir = mkdtempSync(join(tmpdir(), "mnemo-dispatch-config-"));
@@ -227,16 +172,14 @@ export default class DispatchProvider {
     return { fixtureDir, configDir, mnemoConfig };
   }
 
-  // cleans up both temp dirs
+  /** cleans up both temp dirs */
 
   private teardown(fixtureDir: string, configDir: string) {
     rmSync(fixtureDir, { recursive: true, force: true });
     rmSync(configDir, { recursive: true, force: true });
   }
 
-  // composes the --settings JSON for primed cases: a SessionStart hook that
-  // runs mnemo prime. returns null when unprimed so we can omit --settings entirely.
-  // toggling the hook is how the primed/unprimed ablation is mechanically implemented.
+  /** composes --settings JSON with a SessionStart hook for primed cases */
 
   private buildSettings(primed: boolean): string | null {
     if (!primed) return null;
@@ -254,10 +197,7 @@ export default class DispatchProvider {
     return JSON.stringify(settings);
   }
 
-  // spawns claude -p in non-bare mode so the default system prompt runs,
-  // skills auto-load from CLAUDE_CONFIG_DIR, and SessionStart hooks fire.
-  // consumes --output-format stream-json line-by-line to accumulate the full
-  // trajectory from stdout — no filesystem session file reads.
+  /** spawns claude -p and accumulates the stream-json trajectory */
 
   private async execute(
     fixtureDir: string,
@@ -381,7 +321,7 @@ export default class DispatchProvider {
     });
   }
 
-  // orchestrates one eval run
+  /** orchestrates one eval run */
 
   async callApi(
     prompt: string,

@@ -1,21 +1,13 @@
-import { mkdtempSync, cpSync, readFileSync, writeFileSync, rmSync, readdirSync, statSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, rmSync, readdirSync, statSync, existsSync } from 'fs';
 import { execSync, spawn } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { tmpdir, homedir } from 'os';
+import { homedir } from 'os';
+
+import { setupFixture } from './_shared';
+import type { ProviderResponse, ProviderOptions } from './_shared';
 
 //-----------------------------------------------------------------------------
-
-interface ProviderResponse {
-	output: string | object;
-	error?: string;
-	tokenUsage?: {
-		total?: number;
-		prompt?: number;
-		completion?: number;
-	};
-	cost?: number;
-}
 
 interface FileChange {
 	path: string;
@@ -30,13 +22,6 @@ interface InspectResult {
 interface ToolCall {
 	name: string;
 	summary: string;
-}
-
-interface ProviderOptions {
-	id?: string;
-	config?: {
-		timeoutMs?: number;
-	}
 }
 
 interface CallApiContext {
@@ -71,41 +56,14 @@ export default class AgentProvider {
 		return "agent";
 	}
 
-	// detects fixture layout and returns the bases to register.
-	// mirrors dispatch.ts so agent-mode evals see the same base shape as
-	// integration-mode evals. fixtures with a root AGENTS.md are single-base
-	// ("eval"); fixtures without one treat each top-level dir as its own base.
-
-	private detectBases (fixtureDir: string): Record<string, string> {
-		if (existsSync(join(fixtureDir, 'AGENTS.md'))) {
-			return { eval: fixtureDir };
-		}
-		const bases: Record<string, string> = {};
-		for (const entry of readdirSync(fixtureDir, { withFileTypes: true })) {
-			if (entry.isDirectory()) {
-				bases[entry.name] = join(fixtureDir, entry.name);
-			}
-		}
-		return bases;
-	}
-
-	// copy the fixture knowledge base to a temp directory and register bases
+	/** copies a fixture to a temp directory and registers bases */
 
 	private setup (fixtureName: string) {
-		const fixtureSource = join(__dirname, '..', 'fixtures', fixtureName);
-		const tempDir = mkdtempSync(join(tmpdir(), 'mnemo-eval-'));
-		cpSync(fixtureSource, tempDir, { recursive: true })
-
-		const bases = this.detectBases(tempDir);
-		const basesYaml = Object.entries(bases)
-			.map(([name, path]) => `  ${name}: ${path}`)
-			.join('\n');
-		const tempConfig = join(tempDir, '.mnemo-config.yml');
-		writeFileSync(tempConfig, `bases:\n${basesYaml}\n`)
-		return { tempDir, tempConfig };
+		const { fixtureDir, mnemoConfig } = setupFixture(fixtureName, 'mnemo-eval-');
+		return { tempDir: fixtureDir, tempConfig: mnemoConfig };
 	}
 
-	// snapshots the files (path, content) in the temp directory
+	/** snapshots the files (path, content) in a directory */
 
 	private listFiles (dir: string) {
 		const files = new Map<string, string>();
@@ -125,7 +83,7 @@ export default class AgentProvider {
 		return files;
 	}
 
-	// captures snapshots to surface modified files
+	/** diffs before/after snapshots to surface created and modified files */
 
 	private inspect (tempDir: string, before: Map<string, string>): InspectResult {
 		const after = this.listFiles(tempDir);
@@ -141,13 +99,13 @@ export default class AgentProvider {
 		return { created, modified }
 	}
 
-	// deletes the temp directory
+	/** deletes the temp directory */
 
 	private teardown(tempDir: string) {
 		rmSync(tempDir, { recursive: true, force: true })
 	}
 
-	// extracts the tool call sequence from the session jsonl
+	/** extracts the tool call sequence from the session jsonl */
 
 	private extractToolCalls(sessionId: string): ToolCall[] {
 		const projectDir = join(homedir(), '.claude', 'projects', '-Users-neil---mnemo-mnemo');
@@ -182,7 +140,7 @@ export default class AgentProvider {
 		return toolCalls;
 	}
 
-	// load the agent prompt and append the brief
+	/** loads the agent prompt and appends the brief */
 
 	private buildPrompt(agent: string, brief: string) {
 		if (!this.agentPrompts.has(agent)) {
@@ -192,8 +150,7 @@ export default class AgentProvider {
 		return [this.agentPrompts.get(agent)!, brief].join('\n')
 	}
 
-	// need an oauth token to use with --bare
-	// https://github.com/anthropics/claude-code/issues/38022
+	/** fetches an oauth token for --bare mode */
 
 	private getAuthToken() {
 		if (!this.authToken) {
@@ -207,7 +164,7 @@ export default class AgentProvider {
 		return this.authToken;
 	}
 
-	// run the agent (using claude -p one shots)
+	/** runs the agent using claude -p one-shots */
 
 	private async execute(prompt: string, tempDir: string, tempConfig: string, message: string, model?: string) {
 		const token = this.getAuthToken();
@@ -278,7 +235,7 @@ export default class AgentProvider {
 		});
 	}
 
-	// orchestrates the eval
+	/** orchestrates the eval */
 
 	async callApi (prompt: string, context: CallApiContext): Promise<ProviderResponse> {
 		const { agent, fixture, message, model } = context.vars
