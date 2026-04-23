@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { formatTokens } from "@/cli/format";
 
+// ----------------------------------------------------------------------------
+
 describe("formatTokens", () => {
+
   test("under 1k: rounds to nearest 100", () => {
     expect(formatTokens(456)).toBe("500");
     expect(formatTokens(150)).toBe("200");
@@ -33,4 +36,5 @@ describe("formatTokens", () => {
     expect(formatTokens(36000)).toBe("36k");
     expect(formatTokens(10500)).toBe("11k");
   });
+
 });

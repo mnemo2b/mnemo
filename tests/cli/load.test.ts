@@ -8,7 +8,10 @@ import {
   FIXTURES_DIR,
 } from "../helpers/fixtures";
 
+// ----------------------------------------------------------------------------
+
 describe("load command", () => {
+
   let home: string;
 
   beforeAll(() => {
@@ -95,9 +98,11 @@ describe("load command", () => {
     expect(exitCode).toBe(1);
     expect(stderr).toContain("usage:");
   });
+
 });
 
 describe("parseLoadItems", () => {
+
   test("parses a single path", () => {
     expect(parseLoadItems("base/docs/react")).toEqual([
       { type: "path", path: "base/docs/react" },
@@ -132,4 +137,5 @@ describe("parseLoadItems", () => {
   test("returns empty array for whitespace-only input", () => {
     expect(parseLoadItems("   ")).toEqual([]);
   });
+
 });

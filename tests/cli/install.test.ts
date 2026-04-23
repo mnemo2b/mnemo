@@ -1,13 +1,24 @@
-import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync, mkdirSync, writeFileSync } from "fs";
+import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { existsSync, readFileSync, mkdirSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
 import { runCli } from "../helpers/cli";
 import { makeTempHome, cleanupTempDir } from "../helpers/fixtures";
 
-describe("install command", () => {
-  test("installs skill files", async () => {
-    const home = makeTempHome();
+// ----------------------------------------------------------------------------
 
+describe("install command", () => {
+
+  let home: string;
+
+  beforeEach(() => {
+    home = makeTempHome();
+  });
+
+  afterEach(() => {
+    cleanupTempDir(home);
+  });
+
+  test("installs skill files", async () => {
     const { exitCode, stdout } = await runCli(["install"], { home });
 
     expect(exitCode).toBe(0);
@@ -23,13 +34,9 @@ describe("install command", () => {
     expect(existsSync(join(refsDir, "list.md"))).toBe(true);
     expect(existsSync(join(refsDir, "load.md"))).toBe(true);
     expect(existsSync(join(refsDir, "save.md"))).toBe(true);
-
-    cleanupTempDir(home);
   });
 
   test("stages mnemo-*.md agents for Claude Code discovery", async () => {
-    const home = makeTempHome();
-
     const { exitCode, stdout } = await runCli(["install"], { home });
 
     expect(exitCode).toBe(0);
@@ -39,13 +46,9 @@ describe("install command", () => {
     const agentsDir = join(home, ".claude", "agents");
     expect(existsSync(join(agentsDir, "mnemo-save.md"))).toBe(true);
     expect(existsSync(join(agentsDir, "mnemo-maintenance.md"))).toBe(true);
-
-    cleanupTempDir(home);
   });
 
   test("adds session hook to settings.json", async () => {
-    const home = makeTempHome();
-
     const { exitCode, stdout } = await runCli(["install"], { home });
 
     expect(exitCode).toBe(0);
@@ -58,18 +61,17 @@ describe("install command", () => {
     expect(sessionStart).toBeArray();
     expect(sessionStart.length).toBe(1);
     expect(sessionStart[0].hooks[0].command).toBe("mnemo prime");
-
-    cleanupTempDir(home);
   });
 
   test("idempotent — second run reports already installed", async () => {
-    const home = makeTempHome();
-
     await runCli(["install"], { home });
     const { exitCode, stdout } = await runCli(["install"], { home });
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain("already installed");
+    expect(stdout).not.toContain("skill");
+    expect(stdout).not.toContain("agents");
+    expect(stdout).not.toContain("hook");
 
     const settingsPath = join(home, ".claude", "settings.json");
     const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
@@ -77,13 +79,9 @@ describe("install command", () => {
 
     // still only one entry
     expect(sessionStart.length).toBe(1);
-
-    cleanupTempDir(home);
   });
 
   test("preserves existing settings", async () => {
-    const home = makeTempHome();
-
     // seed settings with other keys
     const claudeDir = join(home, ".claude");
     mkdirSync(claudeDir, { recursive: true });
@@ -105,13 +103,9 @@ describe("install command", () => {
     expect(settings.permissions.allow).toEqual(["Read"]);
     // hook added
     expect(settings.hooks.SessionStart).toBeArray();
-
-    cleanupTempDir(home);
   });
 
   test("creates settings.json when none exists", async () => {
-    const home = makeTempHome();
-
     const settingsPath = join(home, ".claude", "settings.json");
     expect(existsSync(settingsPath)).toBe(false);
 
@@ -122,18 +116,13 @@ describe("install command", () => {
 
     const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
     expect(settings.hooks.SessionStart).toBeArray();
-
-    cleanupTempDir(home);
   });
 
   test("installs only what's missing", async () => {
-    const home = makeTempHome();
-
     // first install — everything
     await runCli(["install"], { home });
 
     // remove only agents, leave skill and hook
-    const { rmSync } = await import("fs");
     rmSync(join(home, ".claude", "agents"), { recursive: true, force: true });
 
     const { exitCode, stdout } = await runCli(["install"], { home });
@@ -147,15 +136,23 @@ describe("install command", () => {
 
     // agents are back
     expect(existsSync(join(home, ".claude", "agents", "mnemo-save.md"))).toBe(true);
-
-    cleanupTempDir(home);
   });
+
 });
 
 describe("install --force", () => {
-  test("reinstalls everything when confirmed", async () => {
-    const home = makeTempHome();
 
+  let home: string;
+
+  beforeEach(() => {
+    home = makeTempHome();
+  });
+
+  afterEach(() => {
+    cleanupTempDir(home);
+  });
+
+  test("reinstalls everything when confirmed", async () => {
     await runCli(["install"], { home });
 
     // modify a skill file to verify it gets overwritten
@@ -174,13 +171,9 @@ describe("install --force", () => {
 
     // skill file restored to original
     expect(readFileSync(skillFile, "utf-8")).toBe(originalContent);
-
-    cleanupTempDir(home);
   });
 
   test("does not duplicate hook entry on repeated force install", async () => {
-    const home = makeTempHome();
-
     await runCli(["install", "--force"], { home, stdin: "y\n" });
     await runCli(["install", "--force"], { home, stdin: "y\n" });
 
@@ -189,13 +182,9 @@ describe("install --force", () => {
     const sessionStart = settings.hooks.SessionStart;
 
     expect(sessionStart.length).toBe(1);
-
-    cleanupTempDir(home);
   });
 
   test("cancels when user declines", async () => {
-    const home = makeTempHome();
-
     await runCli(["install"], { home });
 
     // modify a skill file
@@ -213,7 +202,6 @@ describe("install --force", () => {
 
     // skill file unchanged
     expect(readFileSync(skillFile, "utf-8")).toBe("modified content");
-
-    cleanupTempDir(home);
   });
+
 });

@@ -7,7 +7,10 @@ import {
   FIXTURES_DIR,
 } from "../helpers/fixtures";
 
+// ----------------------------------------------------------------------------
+
 describe("list command", () => {
+
   let home: string;
 
   beforeAll(() => {
@@ -145,4 +148,5 @@ describe("list command", () => {
     expect(stdout).not.toContain("note-1.md");
     expect(stdout).not.toContain("tokens");
   });
+
 });

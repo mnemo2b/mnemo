@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeAll, afterAll } from "bun:test";
+import { describe, expect, test, beforeEach, afterEach } from "bun:test";
 import { runCli } from "../helpers/cli";
 import {
   makeTempHome,
@@ -7,21 +7,30 @@ import {
   FIXTURES_DIR,
 } from "../helpers/fixtures";
 
+// ----------------------------------------------------------------------------
+
 describe("prime command", () => {
+
+  let home: string;
+
+  beforeEach(() => {
+    home = makeTempHome();
+  });
+
+  afterEach(() => {
+    cleanupTempDir(home);
+  });
+
   test("no bases produces no output", async () => {
-    const home = makeTempHome();
     seedConfig(home, { bases: {} });
 
     const { stdout, exitCode } = await runCli(["prime"], { home, cwd: home });
 
     expect(exitCode).toBe(0);
     expect(stdout).toBe("");
-
-    cleanupTempDir(home);
   });
 
   test("bases without sets shows directive, bases, and structure", async () => {
-    const home = makeTempHome();
     seedConfig(home, { bases: { notes: FIXTURES_DIR } });
 
     const { stdout, exitCode } = await runCli(["prime"], { home, cwd: home });
@@ -38,12 +47,9 @@ describe("prime command", () => {
     expect(stdout).toContain("structure:");
     expect(stdout).toContain("topic-a/");
     expect(stdout).toContain("topic-b/");
-
-    cleanupTempDir(home);
   });
 
   test("with sets shows sets and their paths", async () => {
-    const home = makeTempHome();
     seedConfig(home, {
       bases: { notes: FIXTURES_DIR },
       sets: {
@@ -66,7 +72,6 @@ describe("prime command", () => {
     expect(stdout).toContain("[global]");
     // structure still present
     expect(stdout).toContain("structure:");
-
-    cleanupTempDir(home);
   });
+
 });

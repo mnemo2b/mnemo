@@ -7,7 +7,10 @@ import {
   FIXTURES_DIR,
 } from "../helpers/fixtures";
 
+// ----------------------------------------------------------------------------
+
 describe("set commands", () => {
+
   let home: string;
 
   beforeAll(() => {
@@ -160,4 +163,5 @@ describe("set commands", () => {
     expect(exitCode).toBe(1);
     expect(stderr).toContain("usage:");
   });
+
 });

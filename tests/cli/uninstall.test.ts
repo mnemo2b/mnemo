@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, beforeEach, afterEach } from "bun:test";
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 import { runCli } from "../helpers/cli";
@@ -9,10 +9,21 @@ import {
   FIXTURES_DIR,
 } from "../helpers/fixtures";
 
-describe("uninstall command", () => {
-  test("removes skill directory", async () => {
-    const home = makeTempHome();
+// ----------------------------------------------------------------------------
 
+describe("uninstall command", () => {
+
+  let home: string;
+
+  beforeEach(() => {
+    home = makeTempHome();
+  });
+
+  afterEach(() => {
+    cleanupTempDir(home);
+  });
+
+  test("removes skill directory", async () => {
     await runCli(["install"], { home });
     const skillDir = join(home, ".claude", "skills", "mnemo");
     expect(existsSync(skillDir)).toBe(true);
@@ -24,13 +35,9 @@ describe("uninstall command", () => {
     expect(stdout).toContain("skill");
     expect(stdout).toContain("(removed)");
     expect(existsSync(skillDir)).toBe(false);
-
-    cleanupTempDir(home);
   });
 
   test("removes staged mnemo-*.md agents but preserves other agents", async () => {
-    const home = makeTempHome();
-
     await runCli(["install"], { home });
     const agentsDir = join(home, ".claude", "agents");
 
@@ -47,13 +54,9 @@ describe("uninstall command", () => {
     expect(existsSync(join(agentsDir, "mnemo-save.md"))).toBe(false);
     expect(existsSync(join(agentsDir, "mnemo-maintenance.md"))).toBe(false);
     expect(existsSync(join(agentsDir, "other-tool.md"))).toBe(true);
-
-    cleanupTempDir(home);
   });
 
   test("removes hook from settings.json", async () => {
-    const home = makeTempHome();
-
     await runCli(["install"], { home });
     const { exitCode } = await runCli(["uninstall"], { home });
 
@@ -65,13 +68,9 @@ describe("uninstall command", () => {
 
     expect(sessionStart).toBeArray();
     expect(sessionStart.length).toBe(0);
-
-    cleanupTempDir(home);
   });
 
   test("removes config directory", async () => {
-    const home = makeTempHome();
-
     seedConfig(home, { bases: { test: FIXTURES_DIR } });
     const configDir = join(home, ".config", "mnemo");
     expect(existsSync(configDir)).toBe(true);
@@ -82,13 +81,9 @@ describe("uninstall command", () => {
     expect(stdout).toContain("config");
     expect(stdout).toContain("(removed)");
     expect(existsSync(configDir)).toBe(false);
-
-    cleanupTempDir(home);
   });
 
   test("preserves other settings when removing hook", async () => {
-    const home = makeTempHome();
-
     const claudeDir = join(home, ".claude");
     mkdirSync(claudeDir, { recursive: true });
     writeFileSync(
@@ -128,26 +123,18 @@ describe("uninstall command", () => {
     // only mnemo hook removed
     expect(settings.hooks.SessionStart.length).toBe(1);
     expect(settings.hooks.SessionStart[0].hooks[0].command).toBe("other-tool");
-
-    cleanupTempDir(home);
   });
 
   test("idempotent — second uninstall shows not found", async () => {
-    const home = makeTempHome();
-
     await runCli(["install"], { home });
     await runCli(["uninstall"], { home });
     const { exitCode, stdout } = await runCli(["uninstall"], { home });
 
     expect(exitCode).toBe(0);
     expect(stdout).toContain("(not found)");
-
-    cleanupTempDir(home);
   });
 
   test("no prior install — all not found", async () => {
-    const home = makeTempHome();
-
     const { exitCode, stdout } = await runCli(["uninstall"], { home });
 
     expect(exitCode).toBe(0);
@@ -155,7 +142,6 @@ describe("uninstall command", () => {
     // all four lines (skill, agents, hook, config) should say not found
     const notFoundCount = (stdout.match(/\(not found\)/g) || []).length;
     expect(notFoundCount).toBe(4);
-
-    cleanupTempDir(home);
   });
+
 });

@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeAll, afterAll } from "bun:test";
+import { describe, expect, test, beforeAll, beforeEach, afterAll, afterEach } from "bun:test";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { runCli } from "../helpers/cli";
@@ -9,7 +9,10 @@ import {
   FIXTURES_DIR,
 } from "../helpers/fixtures";
 
+// ----------------------------------------------------------------------------
+
 describe("base commands", () => {
+
   let home: string;
 
   beforeAll(() => {
@@ -109,12 +112,22 @@ describe("base commands", () => {
     expect(exitCode).toBe(1);
     expect(stderr).toContain("usage:");
   });
+
 });
 
 describe("base add auto-wires Claude Code", () => {
-  test("first base add installs skill and hook with wiring message", async () => {
-    const home = makeTempHome();
 
+  let home: string;
+
+  beforeEach(() => {
+    home = makeTempHome();
+  });
+
+  afterEach(() => {
+    cleanupTempDir(home);
+  });
+
+  test("first base add installs skill, agents, and hook with wiring message", async () => {
     const { stdout, exitCode } = await runCli(
       ["base", "add", "notes", FIXTURES_DIR],
       { home },
@@ -126,23 +139,24 @@ describe("base add auto-wires Claude Code", () => {
     // install message shows what was set up
     expect(stdout).toContain("installed:");
     expect(stdout).toContain("skill");
+    expect(stdout).toContain("agents");
     expect(stdout).toContain("hook");
 
     // skill files landed
     expect(existsSync(join(home, ".claude", "skills", "mnemo", "SKILL.md"))).toBe(true);
+
+    // agent files landed
+    expect(existsSync(join(home, ".claude", "agents", "mnemo-save.md"))).toBe(true);
+    expect(existsSync(join(home, ".claude", "agents", "mnemo-maintenance.md"))).toBe(true);
 
     // hook landed
     const settings = JSON.parse(
       readFileSync(join(home, ".claude", "settings.json"), "utf-8"),
     );
     expect(settings.hooks.SessionStart[0].hooks[0].command).toBe("mnemo prime");
-
-    cleanupTempDir(home);
   });
 
   test("second base add stays quiet when already wired", async () => {
-    const home = makeTempHome();
-
     // first base add wires things up
     await runCli(["base", "add", "notes", FIXTURES_DIR], { home });
 
@@ -155,12 +169,12 @@ describe("base add auto-wires Claude Code", () => {
     expect(exitCode).toBe(0);
     expect(stdout).toContain('added base "more"');
     expect(stdout).not.toContain("installed:");
-
-    cleanupTempDir(home);
   });
+
 });
 
 describe("base rename updates set paths", () => {
+
   let home: string;
 
   beforeAll(() => {
@@ -190,4 +204,5 @@ describe("base rename updates set paths", () => {
     expect(show.stdout).toContain("new/standalone");
     expect(show.stdout).not.toContain("old/");
   });
+
 });

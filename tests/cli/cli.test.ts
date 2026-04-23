@@ -2,7 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { runCli } from "../helpers/cli";
 import { makeTempHome, cleanupTempDir } from "../helpers/fixtures";
 
-describe("entry point", () => {
+// ----------------------------------------------------------------------------
+
+describe("cli", () => {
+
   test("--help shows usage and exits 0", async () => {
     const { stdout, exitCode } = await runCli(["--help"]);
 
@@ -57,4 +60,5 @@ describe("entry point", () => {
 
     cleanupTempDir(home);
   });
+
 });

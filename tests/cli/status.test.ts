@@ -1,4 +1,6 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { readFileSync, rmSync, writeFileSync } from "fs";
+import { join } from "path";
 import { runCli } from "../helpers/cli";
 import {
   makeTempHome,
@@ -7,10 +9,21 @@ import {
   FIXTURES_DIR,
 } from "../helpers/fixtures";
 
-describe("status command", () => {
-  test("fresh home — reports everything missing and exits 1", async () => {
-    const home = makeTempHome();
+// ----------------------------------------------------------------------------
 
+describe("status command", () => {
+
+  let home: string;
+
+  beforeEach(() => {
+    home = makeTempHome();
+  });
+
+  afterEach(() => {
+    cleanupTempDir(home);
+  });
+
+  test("fresh home — reports everything missing and exits 1", async () => {
     const { exitCode, stdout } = await runCli(["status"], { home });
 
     expect(exitCode).toBe(1);
@@ -22,13 +35,9 @@ describe("status command", () => {
     expect(stdout).toContain("hook");
     // remediation pointer
     expect(stdout).toContain("mnemo install");
-
-    cleanupTempDir(home);
   });
 
   test("after base add — reports healthy and exits 0", async () => {
-    const home = makeTempHome();
-
     await runCli(["base", "add", "notes", FIXTURES_DIR], { home });
 
     const { exitCode, stdout } = await runCli(["status"], { home });
@@ -38,13 +47,9 @@ describe("status command", () => {
     expect(stdout).not.toContain("none registered");
     // no remediation pointer when healthy
     expect(stdout).not.toContain("mnemo install");
-
-    cleanupTempDir(home);
   });
 
   test("base pointing to nonexistent path — flagged and exits 1", async () => {
-    const home = makeTempHome();
-
     // register a base via config seed so we skip the existence check in base add
     seedConfig(home, { bases: { broken: "/nonexistent/path" } });
     // still need skill + hook so those don't also fail
@@ -55,18 +60,12 @@ describe("status command", () => {
     expect(exitCode).toBe(1);
     expect(stdout).toContain("broken");
     expect(stdout).toContain("path does not exist");
-
-    cleanupTempDir(home);
   });
 
   test("skill + hook present but agents missing — flagged and exits 1", async () => {
-    const home = makeTempHome();
-
     await runCli(["install"], { home });
 
     // simulate user deleting the staged agents
-    const { rmSync } = await import("fs");
-    const { join } = await import("path");
     rmSync(join(home, ".claude", "agents"), { recursive: true, force: true });
 
     const { exitCode, stdout } = await runCli(["status"], { home });
@@ -74,18 +73,12 @@ describe("status command", () => {
     expect(exitCode).toBe(1);
     expect(stdout).toContain("agents");
     expect(stdout).toContain("missing");
-
-    cleanupTempDir(home);
   });
 
   test("one of two agents missing — flagged and names the missing file", async () => {
-    const home = makeTempHome();
-
     await runCli(["install"], { home });
 
     // simulate a half-broken install — remove only the maintenance agent
-    const { rmSync } = await import("fs");
-    const { join } = await import("path");
     rmSync(join(home, ".claude", "agents", "mnemo-maintenance.md"));
 
     const { exitCode, stdout } = await runCli(["status"], { home });
@@ -93,19 +86,13 @@ describe("status command", () => {
     expect(exitCode).toBe(1);
     expect(stdout).toContain("agents");
     expect(stdout).toContain("mnemo-maintenance.md");
-
-    cleanupTempDir(home);
   });
 
   test("skill present but hook removed — flagged and exits 1", async () => {
-    const home = makeTempHome();
-
     // install sets up both skill and hook
     await runCli(["install"], { home });
 
     // simulate the user hand-editing settings.json to remove the hook entry
-    const { readFileSync, writeFileSync } = await import("fs");
-    const { join } = await import("path");
     const settingsPath = join(home, ".claude", "settings.json");
     const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
     settings.hooks.SessionStart = [];
@@ -116,7 +103,6 @@ describe("status command", () => {
     expect(exitCode).toBe(1);
     expect(stdout).toContain("hook");
     expect(stdout).toContain("missing");
-
-    cleanupTempDir(home);
   });
+
 });
