@@ -56,6 +56,7 @@ Not needed for: development with `bun src/cli.ts` directly.
 - Error messages: use `\n  - ` list format over comma-separated when listing multiple items
 - File naming: prefer general names (`validations.ts`) over narrow ones (`validate-name.ts`)
 - Imports: use `@/` path alias for all project imports (`@/core/config`, `@/types/bases`), no relative paths
+- Coverage: all functionality should be tested — every branch, not just the happy path
 
 ## Context
 
