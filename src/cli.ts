@@ -2,11 +2,12 @@ import { runCommand } from "@/cli/run";
 import { readVersion } from "@/cli/package";
 import { CLIError } from "@/core/errors";
 
+// -----------------------------------------------------------------------------
+
 const args = process.argv.slice(2);
 const command = args[0];
 
 // -----------------------------------------------------------------------------
-// help
 
 if (!command || command === "--help") {
   console.log("usage: mnemo <list|load|base|set|install|uninstall|status> [options]");
@@ -32,7 +33,6 @@ if (!command || command === "--help") {
 }
 
 // -----------------------------------------------------------------------------
-// version
 
 if (command === "--version" || command === "-v") {
   console.log(readVersion());
@@ -40,7 +40,6 @@ if (command === "--version" || command === "-v") {
 }
 
 // -----------------------------------------------------------------------------
-// commands
 
 try {
   await runCommand(command, args.slice(1));
