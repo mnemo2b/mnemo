@@ -109,121 +109,127 @@ function timing(t: number | undefined, t0: number | null, lastT: number | null):
 
 function renderEvent(event: Record<string, unknown>, t0: number | null, lastT: number | null) {
   const type = event.type as string;
+
+  switch (type) {
+    case "meta": return renderMeta(event);
+    case "system": if (event.subtype === "hook_response") return renderHook(event, t0, lastT); break;
+    case "assistant": return renderAssistant(event, t0, lastT);
+    case "user": return renderUser(event, t0, lastT);
+    case "result": return renderResult(event);
+  }
+}
+
+function renderMeta(event: Record<string, unknown>) {
+  console.log(RULE);
+  console.log("request\n");
+  console.log(event.prompt as string);
+  console.log("\n");
+
+  const description = event.description as string | undefined;
+  const assertions = event.assertions as Array<Record<string, unknown>> | undefined;
+
+  if (!description && (!assertions || assertions.length === 0)) return;
+
+  console.log(RULE);
+  console.log(`test${description ? `: ${description}` : ""}\n`);
+  if (assertions && assertions.length > 0) {
+    for (const a of assertions) {
+      const metric = (a.metric as string) ?? "(unnamed)";
+      const weight = a.weight as number | undefined;
+      const value = a.value as string | undefined;
+      const weightStr = weight !== undefined ? ` (w=${weight})` : "";
+      console.log(`  • ${metric}${weightStr}`);
+      if (value) console.log(`    ${value}`);
+    }
+  }
+  console.log("\n");
+}
+
+function renderHook(event: Record<string, unknown>, t0: number | null, lastT: number | null) {
   const t = event.__t as number | undefined;
+  const name = (event.hook_name as string) ?? "hook";
+  const exit = event.exit_code as number;
+  const label = exit === 0 ? "ok" : `exit ${exit}`;
 
-  if (type === "meta") {
-    console.log(RULE);
-    console.log("request\n");
-    console.log(event.prompt as string);
-    console.log("\n");
+  console.log(RULE);
+  console.log(`hook: ${name} (${label})${timing(t, t0, lastT)}\n`);
 
-    const description = event.description as string | undefined;
-    const assertions = event.assertions as Array<Record<string, unknown>> | undefined;
+  const output = (event.output as string) ?? "";
+  const lines = output.split("\n");
+  console.log(lines.slice(0, 3).join("\n"));
+  if (lines.length > 3) {
+    console.log(`  ... (${lines.length} lines)`);
+  }
+  console.log("\n");
+}
 
-    if (description || (assertions && assertions.length > 0)) {
+function renderAssistant(event: Record<string, unknown>, t0: number | null, lastT: number | null) {
+  const t = event.__t as number | undefined;
+  const msg = event.message as Record<string, unknown>;
+  const content = (msg?.content as Array<Record<string, unknown>>) ?? [];
+  const tag = timing(t, t0, lastT);
+
+  for (const block of content) {
+    if (block.type === "thinking") {
       console.log(RULE);
-      console.log(`test${description ? `: ${description}` : ""}\n`);
-      if (assertions && assertions.length > 0) {
-        for (const a of assertions) {
-          const metric = (a.metric as string) ?? "(unnamed)";
-          const weight = a.weight as number | undefined;
-          const value = a.value as string | undefined;
-          const weightStr = weight !== undefined ? ` (w=${weight})` : "";
-          console.log(`  • ${metric}${weightStr}`);
-          if (value) console.log(`    ${value}`);
-        }
+      console.log(`thinking${tag}\n`);
+      console.log(block.thinking as string);
+      console.log("\n");
+    }
+
+    if (block.type === "tool_use") {
+      console.log(RULE);
+      console.log(`tool: ${block.name}${tag}\n`);
+      const input = block.input as Record<string, unknown>;
+      for (const [key, val] of Object.entries(input)) {
+        const valStr = typeof val === "string" ? val : JSON.stringify(val);
+        console.log(`  ${key}: ${valStr}`);
       }
       console.log("\n");
     }
-    return;
+
+    if (block.type === "text") {
+      console.log(RULE);
+      console.log(`response${tag}\n`);
+      console.log(block.text as string);
+      console.log("\n");
+    }
   }
+}
 
-  if (type === "system" && event.subtype === "hook_response") {
-    const name = (event.hook_name as string) ?? "hook";
-    const exit = event.exit_code as number;
-    const label = exit === 0 ? "ok" : `exit ${exit}`;
-    console.log(RULE);
-    console.log(`hook: ${name} (${label})${timing(t, t0, lastT)}\n`);
+function renderUser(event: Record<string, unknown>, t0: number | null, lastT: number | null) {
+  const t = event.__t as number | undefined;
+  const msg = event.message as Record<string, unknown>;
+  const content = (msg?.content as Array<Record<string, unknown>>) ?? [];
 
-    const output = (event.output as string) ?? "";
-    const firstLines = output.split("\n").slice(0, 3).join("\n");
-    console.log(firstLines);
-    if (output.split("\n").length > 3) {
-      console.log(`  ... (${output.split("\n").length} lines)`);
+  for (const block of content) {
+    if (block.type !== "tool_result") continue;
+
+    const output = block.content as string ?? "";
+    const isError = block.is_error as boolean;
+    const prefix = isError ? "✗" : "→";
+
+    console.log(`  ${prefix} result${timing(t, t0, lastT)}:`);
+    const lines = output.split("\n");
+    if (lines.length <= 15) {
+      console.log(output);
+    } else {
+      console.log(lines.slice(0, 10).join("\n"));
+      console.log(`  ... (${lines.length} lines)`);
     }
     console.log("\n");
-    return;
   }
+}
 
-  if (type === "assistant") {
-    const msg = event.message as Record<string, unknown>;
-    const content = (msg?.content as Array<Record<string, unknown>>) ?? [];
-    const tag = timing(t, t0, lastT);
+function renderResult(event: Record<string, unknown>) {
+  const turns = event.num_turns as number ?? 0;
+  const duration = event.duration_ms as number ?? 0;
+  const cost = event.total_cost_usd as number ?? 0;
+  const stop = event.stop_reason as string ?? "";
 
-    for (const block of content) {
-      if (block.type === "thinking") {
-        console.log(RULE);
-        console.log(`thinking${tag}\n`);
-        console.log(block.thinking as string);
-        console.log("\n");
-      }
-
-      if (block.type === "tool_use") {
-        console.log(RULE);
-        console.log(`tool: ${block.name}${tag}\n`);
-        const input = block.input as Record<string, unknown>;
-        for (const [key, val] of Object.entries(input)) {
-          const valStr = typeof val === "string" ? val : JSON.stringify(val);
-          console.log(`  ${key}: ${valStr}`);
-        }
-        console.log("\n");
-      }
-
-      if (block.type === "text") {
-        console.log(RULE);
-        console.log(`response${tag}\n`);
-        console.log(block.text as string);
-        console.log("\n");
-      }
-    }
-    return;
-  }
-
-  if (type === "user") {
-    const msg = event.message as Record<string, unknown>;
-    const content = (msg?.content as Array<Record<string, unknown>>) ?? [];
-
-    for (const block of content) {
-      if (block.type === "tool_result") {
-        const output = block.content as string ?? "";
-        const isError = block.is_error as boolean;
-        const prefix = isError ? "✗" : "→";
-
-        console.log(`  ${prefix} result${timing(t, t0, lastT)}:`);
-        const lines = output.split("\n");
-        if (lines.length <= 15) {
-          console.log(output);
-        } else {
-          console.log(lines.slice(0, 10).join("\n"));
-          console.log(`  ... (${lines.length} lines)`);
-        }
-        console.log("\n");
-      }
-    }
-    return;
-  }
-
-  if (type === "result") {
-    const turns = event.num_turns as number ?? 0;
-    const duration = event.duration_ms as number ?? 0;
-    const cost = event.total_cost_usd as number ?? 0;
-    const stop = event.stop_reason as string ?? "";
-
-    console.log(RULE);
-    console.log("summary\n");
-    console.log(`${turns} turns · ${(duration / 1000).toFixed(1)}s · $${cost.toFixed(4)} · ${stop}`);
-    return;
-  }
+  console.log(RULE);
+  console.log("summary\n");
+  console.log(`${turns} turns · ${(duration / 1000).toFixed(1)}s · $${cost.toFixed(4)} · ${stop}`);
 }
 
 // ------------------------------------------------------------------
