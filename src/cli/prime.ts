@@ -51,7 +51,10 @@ export function runPrime(): void {
       const source = name in projectSets ? "project" : "global";
       try {
         const paths = resolveSet(name, allSets);
-        console.log(`  ${name} [${source}]: ${paths.join(", ")}`);
+        console.log(`  ${name} [${source}]:`);
+        for (const p of paths) {
+          console.log(`    ${p}`);
+        }
       } catch {
         console.log(`  ${name} [${source}]: (unresolved)`);
       }
