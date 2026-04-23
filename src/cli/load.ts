@@ -5,7 +5,7 @@ import { mergeSets, resolveSet } from "@/core/set";
 
 // -----------------------------------------------------------------------------
 
-export type LoadItem =
+type LoadItem =
   | { type: "set"; name: string }
   | { type: "path"; path: string };
 

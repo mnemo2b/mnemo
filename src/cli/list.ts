@@ -18,7 +18,7 @@ export interface TreeNode {
   children: TreeNode[];
 }
 
-export interface BuildTreeOptions {
+interface BuildTreeOptions {
   maxDepth?: number;
   skipTokens?: boolean;
 }

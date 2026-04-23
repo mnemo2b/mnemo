@@ -14,7 +14,7 @@ import type { SessionStartEntry } from "@/types/hooks";
 
 // -----------------------------------------------------------------------------
 
-export interface InstallResult {
+interface InstallResult {
   skill: boolean;
   agents: boolean;
   hook: boolean;

@@ -6,7 +6,7 @@ import type { Bases } from "@/types/bases";
 
 // -----------------------------------------------------------------------------
 
-export interface ParsedBasePath {
+interface ParsedBasePath {
   baseName: string;
   relativePath: string | null;
 }
