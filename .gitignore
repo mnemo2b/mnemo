@@ -13,3 +13,4 @@ dist/
 
 # evals
 evals/runs/
+.fallow/

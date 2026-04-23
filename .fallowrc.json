@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": ["src/cli.ts"],
+  "overrides": [
+    {
+      "files": ["tests/**", "evals/**"],
+      "rules": {
+        "unused-files": "off",
+        "unused-exports": "off",
+        "unused-types": "off"
+      }
+    }
+  ]
+}
