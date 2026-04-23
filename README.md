@@ -1,39 +1,52 @@
-# mnemo
+# Mnemo
 
-If chatting with AI has you repeating the same instructions, explaining the same architectures, rebuilding the same context, try mnemo.
+Mnemo connects your notes to Claude Code. Instead of re-explaining your preferences, conventions, and research every session, you save them to a knowledge base and load them.
 
-It's a composable way to bring your markdown notes into AI. You probably already have tons of notes, conventions, research. mnemo adds these as context to guide your conversation.
+You already have notes across folders. Project briefs, style guides, research, reading notes. Mnemo makes it easy to bring them into AI sessions and save new knowledge back. Currently built for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), more surfaces coming.
 
-Currently built for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), more surfaces coming.
+## The knowledge base
+
+Mnemo is as much of a methodology as it is a tool. How you store your notes impacts how well they serve as context. Some structures are better than others for composing information without confusing the agent. Mnemo doesn't impose a specific structure, but it's designed to steer you towards better habits.
+
+**One topic per note.** A client's brand guidelines shouldn't cover project scope. Your style guide doesn't also list research sources. Keeping notes to a single topic makes them more useful as AI context. It makes it easier for the agent to find and update, and it doesn't muddy the agent's attention.
+
+**Structure for retrieval.** Mnemo can load folders of notes, making it easy to load larger subjects into context. Notes that belong in the same conversation should share a folder. `mnemo load clients/acme` pulls every note for that client. If this is a long-term client with many projects maybe `mnemo load clients/acme/projects/abc` is better.
+
+**Learning is messy.** A topic might start as a single note. As it grows, it splits into multiple files, eventually becoming a directory. `research/ai.md` becomes `research/ai/prompt-engineering.md`, `research/ai/fine-tuning.md`. Over time the structure keeps dividing.
+
+**Less is more.** You don't want to load all your notes, all the time. Stuffing everything into a conversation increases drift and hallucinations. Load only what's relevant to what you're doing right now. This is why structure is so important. Use the context window to your advantage by providing only what's crucial to the task.
 
 ## What it looks like
 
-Say you have a directory of notes you've built up over time:
+Say you have notes you've built up over time:
 
 ```
 ~/notes/
-  code/
-    svelte/
-      architecture.md
-      components.md
-      state.md
-    nextjs/
-      routing.md
-      architecture.md
-    typescript/
-      patterns.md
-      errors.md
-    api/
-      design.md
-      auth.md
-      errors.md
-  db/
-    drizzle.md
-    postgres.md
-    redis.md
-  reading/
-    designing-data-intensive-apps.md
-    philosophy-of-software-design.md
+  clients/
+    acme/
+      brand-guidelines.md
+      brief.md
+    bloom/
+      brief.md
+      scope.md
+  research/
+    ai/
+      agents.md
+      fine-tuning.md
+      prompt-engineering.md
+    comms/
+      content-strategy.md
+      copywriting.md
+      platforms.md
+  templates/
+    invoice.md
+    proposal.md
+  writing/
+    articles/
+      context-switching.md
+      structuring-a-knowledge-base.md
+    ideas.md
+    voice.md
 ```
 
 Point mnemo at it:
@@ -42,32 +55,33 @@ Point mnemo at it:
 mnemo base add notes ~/notes
 ```
 
-Now when you start a Claude Code session, you can browse and load your notes:
+Now Claude Code knows about your knowledge base. Use the commands directly in the session:
 
 ```
-> mnemo list notes/code/svelte
+> mnemo list notes/clients/acme
 
-svelte                       1.8k
-├── architecture.md             800
-├── components.md               600
-└── state.md                    400
+acme                                900
+├── brand-guidelines.md             400
+└── brief.md                        500
 
-0 directories, 3 files (1.8k tokens)
+0 directories, 2 files (900 tokens)
 ```
 
-```
-> mnemo load notes/code/svelte
-```
-
-Claude now has your Svelte architecture, component patterns, and state management notes in context. No copy-pasting, no re-explaining. Just your knowledge, loaded when you need it.
-
-You can also combine notes from different places into a [set](#sets):
+And load notes into the conversation:
 
 ```
-> mnemo load :svelte
+> mnemo load notes/clients/acme
 ```
 
-That one command loads your Svelte patterns and TypeScript conventions together.
+Claude now has your Acme brief and brand guidelines in context. Ask it to draft copy that matches their voice, review a deliverable against the brief, or prep talking points for a client call.
+
+You can also bundle notes from different places into a [set](#sets) and load them with one command:
+
+```
+> mnemo load :acme/project
+```
+
+This can load your Acme brief, brand guidelines, active tasks, templates, all at once. Useful for common groups of context, or something specific you're working on this week.
 
 ## Getting started
 
@@ -81,9 +95,9 @@ Connect a directory of markdown notes:
 mnemo base add notes ~/notes
 ```
 
-That's it. Your first `mnemo base add` automatically wires Claude Code — installing a SessionStart hook that primes every session with a map of your knowledge base, plus a skill that teaches Claude the `mnemo list` and `mnemo load` commands. The hook is the important one. Without it, the agent doesn't know your KB exists when it interprets a question — ask "what do I have on Svelte?" cold and it might grep your filesystem instead of loading `notes/code/svelte`.
+The first `mnemo base add` automatically sets up Claude Code with a startup hook, a skill, and agents that let Claude browse, load, and save to your knowledge base.
 
-If you ever need to reinstall the skill or hook (say you removed them by hand), run `mnemo install` to put them back.
+**Something not working?** Run `mnemo status` to check that everything is wired up. Run `mnemo install` to reinstall.
 
 ## Bases
 
@@ -91,10 +105,10 @@ A **base** is a named pointer to a directory. Connect as many as you want, where
 
 ```sh
 mnemo base add notes ~/notes
-mnemo base add work ~/work/docs
+mnemo base add app ~/work/acme/web/docs
 ```
 
-All paths in mnemo include the base name: `notes/code/svelte` means the `code/svelte` path inside the `notes` base. This keeps things unambiguous when you have multiple knowledge sources.
+All paths in mnemo include the base name. `notes/clients/acme` means the `clients/acme` path inside the `notes` base.
 
 ```sh
 mnemo base add <name> <path>       # connect a directory
@@ -106,23 +120,22 @@ mnemo base list                    # show all bases
 
 ## Sets
 
-A **set** saves a combination of notes so you can load them again with one command. Say you load the same Svelte and TypeScript notes for every frontend project:
+A **set** bundles notes so you can load them with one command:
 
 ```sh
-mnemo set add svelte notes/code/svelte notes/code/typescript
+mnemo set add acme-project notes/clients/acme notes/templates/proposal
 ```
 
-Now `mnemo load :svelte` loads both (the `:` tells mnemo it's a set, not a path). You can also pull from different places. Starting a Svelte project that uses Postgres?
+Now `mnemo load :acme-project` loads both. The `:` prefix tells mnemo it's a set, not a path.
+
+Sets can pull from different bases and reference other sets:
 
 ```sh
-mnemo set add svelte/stack :svelte notes/db/postgres notes/db/drizzle
+mnemo set add writing-kit notes/writing/voice notes/writing/ideas
+mnemo set add blog-post :writing-kit notes/research/comms/content-strategy
 ```
 
-```
-> mnemo load :svelte/stack
-```
-
-Sets can reference other sets. `:svelte/stack` already builds on `:svelte` above, so updating your Svelte notes updates both.
+`:blog-post` builds on `:writing-kit`, so updating your writing notes updates both.
 
 ```sh
 mnemo set add <name> <paths...>    # create or append
@@ -134,87 +147,67 @@ mnemo set list                     # show all sets
 
 ### Project sets
 
-For project-specific context or sharing with a team. Drop a `.mnemo` file in any directory:
+For project-specific context, drop a `.mnemo` file in any directory:
 
 ```yaml
 # .mnemo
 sets:
-  stack:
-    - notes/code/svelte
-    - notes/code/typescript
-    - work/conventions
+  context:
+    - notes/clients/acme
+    - notes/writing/voice
+    - notes/templates/proposal
 ```
 
-Start a Claude Code session from that directory and the set is available automatically. Project sets override global sets when names collide.
+Start Claude Code from that directory and the set is available automatically. Commit the `.mnemo` file to share sets with a team.
 
-## Claude Code
+## Saving notes
 
-`mnemo install` sets up two things:
+When a conversation surfaces something worth keeping, ask Claude to save it:
 
-- A **SessionStart hook** that runs `mnemo prime` — injects your bases, sets, and a shallow tree into the session at startup. This is what lets the agent route "my cooking notes" to the right path without exploring first.
-- A **skill** that teaches Claude the `mnemo list` and `mnemo load` commands. Activates when you use those keywords explicitly.
+```
+> save our content strategy findings to notes/research
+```
 
-Of the two, the hook does the heavy lifting. Mnemo is an interpretation layer — it shapes what the agent thinks you mean. That has to happen before the agent reads your question, which is why it lives in SessionStart and not in a Skill trigger.
+Mnemo writes the note, checks for contradictions with existing notes, and flags related files that might need updating. You review, it writes.
 
-When you have sets, the prime output includes a numbered menu with file counts and token costs. Pick a number to load one, or ignore it and keep working.
+Your knowledge base grows as you work without maintaining notes separately.
 
-## Organizing your notes
+## How mnemo works with Claude Code
 
-mnemo reads directories of markdown files. It doesn't impose a structure, but the way you organize your notes shapes how useful they are in context.
+`mnemo install` sets up three things:
 
-**One topic per note,** at whatever length it needs. A note about Svelte component patterns doesn't also cover state management. Focused notes let you load exactly what's relevant, and a clear structure helps the agent know where new notes belong.
+1. A **startup hook** that shows Claude your knowledge base at the beginning of every session: what bases you have, what's in them, what sets you've created. This lets Claude route "load my Acme notes" to the right path without searching your filesystem.
 
-**Structure around how you'll load.** Loading a full directory is common, so notes that belong in the same conversation should share a folder. `mnemo load notes/code/svelte` pulls everything in that directory.
+2. A **skill** that teaches Claude the `mnemo list`, `mnemo load`, and `mnemo save` commands.
 
-**Start messy, organize later.** A topic can start as a single note inside an existing folder. As it grows, it splits into files, becomes a subdirectory. `code/svelte.md` becomes `code/svelte/architecture.md`, `code/svelte/components.md`. Structure emerges from use, not upfront planning.
+3. **Agents** that handle specialized work like saving notes and maintaining knowledge base consistency.
 
-**Be deliberate with context.** A context window full of loosely related notes makes AI less precise, not more capable. Loading exactly what's relevant keeps the signal high.
+The startup hook does the heavy lifting. Claude sees your knowledge base before it reads your first message, so it interprets questions with that context already in place.
+
+For engineers: mnemo is composable by design. Plain markdown in directories you control. Bases are named pointers, sets are named path bundles, the CLI is the only programmatic interface. No database, no lock-in.
 
 ## CLI reference
 
 ```
 mnemo list [path]                   browse the knowledge base
 mnemo load <path|:set ...>          load notes into context
-mnemo prime                         prime an agent with available sets
+mnemo prime                         prime an agent with KB context
 mnemo base <add|remove|move|rename|list>
 mnemo set <add|remove|rename|show|list>
-mnemo install [--force]              install skill + agents + session hook
+mnemo install [--force]             install skill + agents + session hook
 mnemo uninstall                     remove skill + agents + session hook + config
-mnemo status                        check install state and KB wiring
+mnemo status                        check install state and knowledge bases
 ```
 
 ## Configuration
 
-**Global** — `~/.config/mnemo/config.yml`
+Mnemo stores its configuration at `~/.config/mnemo/config.yml`. The `base` and `set` commands manage it for you.
 
-```yaml
-bases:
-  notes: ~/notes
-  work: ~/work/docs
-
-sets:
-  svelte:
-    - notes/code/svelte
-    - notes/code/typescript
-  svelte/stack:
-    - :svelte
-    - notes/db/postgres
-    - notes/db/drizzle
-```
-
-**Project** — `.mnemo` in any directory
-
-```yaml
-sets:
-  stack:
-    - notes/code/svelte
-    - notes/code/typescript
-    - work/conventions
-```
+Project-specific sets live in a `.mnemo` file in your project directory (see [project sets](#project-sets)).
 
 ## Uninstalling
 
-First, remove the skill, session hook, and config:
+Remove the skill, agents, session hook, and config:
 
 ```sh
 mnemo uninstall
